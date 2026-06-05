@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGetMe, getGetMeQueryKey, User, setAuthTokenGetter } from "@workspace/api-client-react";
 
 interface AuthContextType {
@@ -15,15 +16,14 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const queryClient = useQueryClient();
   const [token, setToken] = useState<string | null>(() => localStorage.getItem("jwt_token"));
-  const [user, setUser] = useState<User | null>(null);
 
-  // Configure custom-fetch to use our token getter
   useEffect(() => {
     setAuthTokenGetter(() => localStorage.getItem("jwt_token"));
   }, []);
 
-  const { data: me, isLoading, error } = useGetMe({
+  const { data: me, isLoading: queryLoading, error } = useGetMe({
     query: {
       queryKey: getGetMeQueryKey(),
       enabled: !!token,
@@ -32,34 +32,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    if (me) {
-      setUser(me);
-    }
     if (error) {
-      logout();
+      localStorage.removeItem("jwt_token");
+      setAuthTokenGetter(() => null);
+      setToken(null);
+      queryClient.removeQueries({ queryKey: getGetMeQueryKey() });
     }
-  }, [me, error]);
+  }, [error, queryClient]);
 
   const login = (newToken: string) => {
     localStorage.setItem("jwt_token", newToken);
+    setAuthTokenGetter(() => newToken);
     setToken(newToken);
   };
 
   const logout = () => {
     localStorage.removeItem("jwt_token");
+    setAuthTokenGetter(() => null);
     setToken(null);
-    setUser(null);
+    queryClient.removeQueries({ queryKey: getGetMeQueryKey() });
   };
+
+  const user = me ?? null;
+
+  // Stay in loading state until the query resolves (either user data or error).
+  // This closes the race window where isLoading flips to false before user state
+  // is populated, which would incorrectly redirect to /connexion.
+  const isLoading = !!token && (queryLoading || (!me && !error));
 
   const value: AuthContextType = {
     user,
-    isLoading: !!token && isLoading,
+    isLoading,
     login,
     logout,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === "SUPER_ADMIN",
-    isAgent: user?.role === "AGENT",
-    isCustomer: user?.role === "CUSTOMER",
+    isAuthenticated: !!me,
+    isAdmin: me?.role === "SUPER_ADMIN",
+    isAgent: me?.role === "AGENT",
+    isCustomer: me?.role === "CUSTOMER",
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

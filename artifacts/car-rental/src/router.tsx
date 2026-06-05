@@ -55,83 +55,75 @@ function ProtectedRoute({ component: Component, allowedRoles }: { component: any
   return <Component />;
 }
 
+function AdminRoute({ component, allowedRoles }: { component: any; allowedRoles: string[] }) {
+  return (
+    <AdminLayout>
+      <ProtectedRoute component={component} allowedRoles={allowedRoles} />
+    </AdminLayout>
+  );
+}
+
+function CustomerRoute({ component }: { component: any }) {
+  return (
+    <PublicLayout>
+      <ProtectedRoute component={component} allowedRoles={["CUSTOMER"]} />
+    </PublicLayout>
+  );
+}
+
 export default function AppRouter() {
   return (
     <Switch>
       {/* Admin Routes */}
-      <Route path="/admin*">
-        <AdminLayout>
-          <Switch>
-            <Route path="/admin" component={() => <ProtectedRoute component={AdminDashboard} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/voitures" component={() => <ProtectedRoute component={AdminCars} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/voitures/nouvelle" component={() => <ProtectedRoute component={AdminNewCar} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/voitures/:id" component={() => <ProtectedRoute component={AdminEditCar} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/demandes" component={() => <ProtectedRoute component={AdminRequests} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/demandes/:id" component={() => <ProtectedRoute component={AdminRequestDetail} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/clients" component={() => <ProtectedRoute component={AdminCustomers} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/clients/:id" component={() => <ProtectedRoute component={AdminCustomerDetail} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/agents" component={() => <ProtectedRoute component={AdminAgents} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/agents/nouveau" component={() => <ProtectedRoute component={AdminNewAgent} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/charges" component={() => <ProtectedRoute component={AdminExpenses} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/blog" component={() => <ProtectedRoute component={AdminBlog} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/blog/nouveau" component={() => <ProtectedRoute component={AdminNewBlogPost} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/parametres" component={() => <ProtectedRoute component={AdminSettings} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route path="/admin/audit" component={() => <ProtectedRoute component={AdminAuditLogs} allowedRoles={["SUPER_ADMIN"]} />} />
-            <Route component={NotFound} />
-          </Switch>
-        </AdminLayout>
-      </Route>
+      <Route path="/admin" component={() => <AdminRoute component={AdminDashboard} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/voitures/nouvelle" component={() => <AdminRoute component={AdminNewCar} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/voitures/:id" component={() => <AdminRoute component={AdminEditCar} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/voitures" component={() => <AdminRoute component={AdminCars} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/demandes/:id" component={() => <AdminRoute component={AdminRequestDetail} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/demandes" component={() => <AdminRoute component={AdminRequests} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/clients/:id" component={() => <AdminRoute component={AdminCustomerDetail} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/clients" component={() => <AdminRoute component={AdminCustomers} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/agents/nouveau" component={() => <AdminRoute component={AdminNewAgent} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/agents" component={() => <AdminRoute component={AdminAgents} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/charges" component={() => <AdminRoute component={AdminExpenses} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/blog/nouveau" component={() => <AdminRoute component={AdminNewBlogPost} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/blog" component={() => <AdminRoute component={AdminBlog} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/parametres" component={() => <AdminRoute component={AdminSettings} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin/audit" component={() => <AdminRoute component={AdminAuditLogs} allowedRoles={["SUPER_ADMIN"]} />} />
 
       {/* Agent Routes */}
-      <Route path="/agent*">
-        <AdminLayout>
-          <Switch>
-            <Route path="/agent" component={() => <ProtectedRoute component={AdminDashboard} allowedRoles={["AGENT"]} />} />
-            <Route path="/agent/voitures" component={() => <ProtectedRoute component={AdminCars} allowedRoles={["AGENT"]} />} />
-            <Route path="/agent/voitures/nouvelle" component={() => <ProtectedRoute component={AdminNewCar} allowedRoles={["AGENT"]} />} />
-            <Route path="/agent/voitures/:id" component={() => <ProtectedRoute component={AdminEditCar} allowedRoles={["AGENT"]} />} />
-            <Route path="/agent/demandes" component={() => <ProtectedRoute component={AdminRequests} allowedRoles={["AGENT"]} />} />
-            <Route path="/agent/demandes/:id" component={() => <ProtectedRoute component={AdminRequestDetail} allowedRoles={["AGENT"]} />} />
-            <Route path="/agent/clients" component={() => <ProtectedRoute component={AdminCustomers} allowedRoles={["AGENT"]} />} />
-            <Route path="/agent/charges" component={() => <ProtectedRoute component={AdminExpenses} allowedRoles={["AGENT"]} />} />
-            <Route component={NotFound} />
-          </Switch>
-        </AdminLayout>
-      </Route>
+      <Route path="/agent" component={() => <AdminRoute component={AdminDashboard} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/voitures/nouvelle" component={() => <AdminRoute component={AdminNewCar} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/voitures/:id" component={() => <AdminRoute component={AdminEditCar} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/voitures" component={() => <AdminRoute component={AdminCars} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/demandes/:id" component={() => <AdminRoute component={AdminRequestDetail} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/demandes" component={() => <AdminRoute component={AdminRequests} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/clients/:id" component={() => <AdminRoute component={AdminCustomerDetail} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/clients" component={() => <AdminRoute component={AdminCustomers} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/charges" component={() => <AdminRoute component={AdminExpenses} allowedRoles={["AGENT"]} />} />
 
       {/* Customer Routes */}
-      <Route path="/dashboard*">
-        <PublicLayout>
-          <Switch>
-            <Route path="/dashboard" component={() => <ProtectedRoute component={CustomerDashboard} allowedRoles={["CUSTOMER"]} />} />
-            <Route path="/dashboard/demandes" component={() => <ProtectedRoute component={CustomerRequests} allowedRoles={["CUSTOMER"]} />} />
-            <Route path="/dashboard/demandes/:id" component={() => <ProtectedRoute component={CustomerRequestDetail} allowedRoles={["CUSTOMER"]} />} />
-            <Route path="/dashboard/profil" component={() => <ProtectedRoute component={CustomerProfile} allowedRoles={["CUSTOMER"]} />} />
-            <Route component={NotFound} />
-          </Switch>
-        </PublicLayout>
-      </Route>
+      <Route path="/dashboard" component={() => <CustomerRoute component={CustomerDashboard} />} />
+      <Route path="/dashboard/demandes/:id" component={() => <CustomerRoute component={CustomerRequestDetail} />} />
+      <Route path="/dashboard/demandes" component={() => <CustomerRoute component={CustomerRequests} />} />
+      <Route path="/dashboard/profil" component={() => <CustomerRoute component={CustomerProfile} />} />
 
       {/* Public Routes */}
-      <Route>
-        <PublicLayout>
-          <Switch>
-            <Route path="/" component={Home} />
-            <Route path="/voitures" component={Cars} />
-            <Route path="/voitures/:id" component={CarDetail} />
-            <Route path="/blog" component={Blog} />
-            <Route path="/blog/:slug" component={BlogDetail} />
-            <Route path="/a-propos" component={About} />
-            <Route path="/contact" component={Contact} />
-            <Route path="/faq" component={Faq} />
-            <Route path="/mentions-legales" component={Legal} />
-            <Route path="/confidentialite" component={Privacy} />
-            <Route path="/connexion" component={Login} />
-            <Route path="/inscription" component={Register} />
-            <Route component={NotFound} />
-          </Switch>
-        </PublicLayout>
-      </Route>
+      <Route path="/" component={() => <PublicLayout><Home /></PublicLayout>} />
+      <Route path="/voitures" component={() => <PublicLayout><Cars /></PublicLayout>} />
+      <Route path="/voitures/:id" component={() => <PublicLayout><CarDetail /></PublicLayout>} />
+      <Route path="/blog" component={() => <PublicLayout><Blog /></PublicLayout>} />
+      <Route path="/blog/:slug" component={() => <PublicLayout><BlogDetail /></PublicLayout>} />
+      <Route path="/a-propos" component={() => <PublicLayout><About /></PublicLayout>} />
+      <Route path="/contact" component={() => <PublicLayout><Contact /></PublicLayout>} />
+      <Route path="/faq" component={() => <PublicLayout><Faq /></PublicLayout>} />
+      <Route path="/mentions-legales" component={() => <PublicLayout><Legal /></PublicLayout>} />
+      <Route path="/confidentialite" component={() => <PublicLayout><Privacy /></PublicLayout>} />
+      <Route path="/connexion" component={() => <PublicLayout><Login /></PublicLayout>} />
+      <Route path="/inscription" component={() => <PublicLayout><Register /></PublicLayout>} />
+
+      {/* 404 */}
+      <Route component={() => <PublicLayout><NotFound /></PublicLayout>} />
     </Switch>
   );
 }

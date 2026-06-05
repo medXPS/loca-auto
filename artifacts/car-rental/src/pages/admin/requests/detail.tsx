@@ -1,11 +1,12 @@
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import {
   useGetRentalRequest,
   getGetRentalRequestQueryKey,
+  getListAuditLogsQueryKey,
   useListAuditLogs,
 } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPrice, formatDateTime, STATUS_TRANSLATIONS } from "@/lib/utils";
+import { formatPrice, formatDateTime } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { RequestActions } from "@/components/request-actions";
@@ -14,8 +15,12 @@ import { User, Phone, Mail, Calendar, FileText, History } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function AdminRequestDetail() {
-  const [, params] = useRoute("/admin/demandes/:id");
+  const [location] = useLocation();
+  const [, adminParams] = useRoute("/admin/demandes/:id");
+  const [, agentParams] = useRoute("/agent/demandes/:id");
+  const params = adminParams ?? agentParams;
   const id = Number(params?.id);
+
   const { data: request, isLoading } = useGetRentalRequest(id, {
     query: { enabled: !!id, queryKey: getGetRentalRequestQueryKey(id) },
   });
@@ -24,6 +29,7 @@ export default function AdminRequestDetail() {
 
   const handleSuccess = () => {
     queryClient.invalidateQueries({ queryKey: getGetRentalRequestQueryKey(id) });
+    queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey() });
   };
 
   if (isLoading) return <div className="p-6"><Skeleton className="h-96 w-full rounded-xl" /></div>;
