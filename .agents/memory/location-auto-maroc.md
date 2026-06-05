@@ -4,7 +4,7 @@ description: Key conventions, gotchas, and architecture decisions for the Locati
 ---
 
 ## Auth pattern
-JWT stored in localStorage. `setAuthTokenGetter(() => localStorage.getItem("jwt_token"))` must be called once in `AuthProvider` (not per-request). The `useGetMe` hook is enabled with `enabled: !!token`.
+JWT stored in localStorage (web) or expo-secure-store (mobile). `setAuthTokenGetter(() => token)` must be called once in `AuthProvider` (not per-request). The `useGetMe` hook is enabled with `enabled: !!token`.
 
 **Why:** `setAuthTokenGetter` configures the Orval custom-fetch interceptor globally; forgetting it means all authenticated API calls fail silently.
 
@@ -32,3 +32,14 @@ Blog PATCH/DELETE use `/api/blog/:id/edit` suffix, not `/api/blog/:id`. GET by s
 - CUSTOMER → `/dashboard/*`
 
 **How to apply:** ProtectedRoute checks `user.role` against `allowedRoles[]`. Login redirect is role-based.
+
+## Mobile app (Expo) — RentalRequest field names
+The `RentalRequest` schema uses `returnDate` (not `endDate`), `pickupLocation` (not `pickupCity`), and `car.brand`/`car.model` (not top-level `carBrand`/`carModel`). `RentalRequestInput` requires `fullName`, `phone`, `email`, and `estimatedTotalPrice` as non-optional fields — auto-populate from `useGetMe` in the booking form.
+
+**Why:** Schema was generated from OpenAPI spec; the field names differ from what the web UI uses internally.
+
+## Mobile app — expo-secure-store version
+Pin to `~15.0.8` (Expo SDK 54 compatible). The latest v56.x causes an SDK mismatch warning and may break on device.
+
+## Mobile app — setBaseUrl
+In `_layout.tsx`: `if (process.env["EXPO_PUBLIC_DOMAIN"]) { setBaseUrl(\`https://\${process.env["EXPO_PUBLIC_DOMAIN"]}\`); }`. The workflow script already passes `EXPO_PUBLIC_DOMAIN=$REPLIT_DEV_DOMAIN`.
