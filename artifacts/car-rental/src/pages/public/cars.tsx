@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useListCars } from "@workspace/api-client-react";
 import { CarCard } from "@/components/car-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,15 +9,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Filter, Search } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
+import { Car } from "lucide-react";
+
+function getSearchParams() {
+  return new URLSearchParams(window.location.search);
+}
 
 export default function Cars() {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>("all");
+  const params = getSearchParams();
+  const [search, setSearch] = useState(params.get("search") || "");
+  const [city, setCity] = useState(params.get("ville") || "");
+  const [category, setCategory] = useState<string>(params.get("categorie") || "all");
   const [transmission, setTransmission] = useState<string>("all");
   const [fuelType, setFuelType] = useState<string>("all");
   const [priceRange, setPriceRange] = useState([0, 2000]);
 
-  // Use debounced search for API calls in a real app, simplified here
+  useEffect(() => {
+    const p = getSearchParams();
+    const villeParam = p.get("ville");
+    const categorieParam = p.get("categorie");
+    if (villeParam) setCity(villeParam);
+    if (categorieParam) setCategory(categorieParam);
+  }, []);
+
   const { data, isLoading } = useListCars({
     search: search || undefined,
     category: category !== "all" ? category : undefined,
@@ -25,8 +40,18 @@ export default function Cars() {
     fuelType: fuelType !== "all" ? fuelType : undefined,
     minPrice: priceRange[0],
     maxPrice: priceRange[1] < 2000 ? priceRange[1] : undefined,
-    limit: 50
+    city: city || undefined,
+    limit: 50,
   });
+
+  const handleReset = () => {
+    setSearch("");
+    setCity("");
+    setCategory("all");
+    setTransmission("all");
+    setFuelType("all");
+    setPriceRange([0, 2000]);
+  };
 
   const FilterContent = () => (
     <div className="space-y-6">
@@ -34,13 +59,22 @@ export default function Cars() {
         <Label>Recherche</Label>
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input 
-            placeholder="Marque, modèle..." 
+          <Input
+            placeholder="Marque, modèle..."
             className="pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Ville</Label>
+        <Input
+          placeholder="Ex: Casablanca"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+        />
       </div>
 
       <div className="space-y-2">
@@ -98,26 +132,16 @@ export default function Cars() {
             {priceRange[0]} - {priceRange[1] >= 2000 ? "2000+" : priceRange[1]}
           </span>
         </div>
-        <Slider 
-          defaultValue={[0, 2000]} 
-          max={2000} 
-          step={50} 
+        <Slider
+          defaultValue={[0, 2000]}
+          max={2000}
+          step={50}
           value={priceRange}
           onValueChange={setPriceRange}
         />
       </div>
 
-      <Button 
-        variant="outline" 
-        className="w-full"
-        onClick={() => {
-          setSearch("");
-          setCategory("all");
-          setTransmission("all");
-          setFuelType("all");
-          setPriceRange([0, 2000]);
-        }}
-      >
+      <Button variant="outline" className="w-full" onClick={handleReset}>
         Réinitialiser les filtres
       </Button>
     </div>
@@ -130,7 +154,8 @@ export default function Cars() {
           Nos Voitures
         </h1>
         <p className="text-muted-foreground max-w-2xl">
-          Découvrez notre flotte de véhicules régulièrement révisés et prêts pour votre aventure au Maroc.
+          Découvrez notre flotte de véhicules régulièrement révisés et prêts pour votre aventure au
+          Maroc.
         </p>
       </div>
 
@@ -170,46 +195,44 @@ export default function Cars() {
         {/* Main Content */}
         <div className="flex-1">
           <div className="hidden md:flex justify-between items-center mb-6">
-            <span className="font-medium text-muted-foreground">{data?.total || 0} véhicules trouvés</span>
+            <span className="font-medium text-muted-foreground">
+              {data?.total || 0} véhicules trouvés
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
-              Array(6).fill(0).map((_, i) => (
-                <div key={i} className="flex flex-col h-[400px]">
-                  <Skeleton className="w-full h-[200px] rounded-t-xl" />
-                  <div className="p-4 space-y-4 border border-t-0 rounded-b-xl flex-1">
-                    <Skeleton className="h-6 w-2/3" />
-                    <Skeleton className="h-4 w-1/3" />
-                    <div className="grid grid-cols-2 gap-4 mt-auto">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-full" />
+              Array(6)
+                .fill(0)
+                .map((_, i) => (
+                  <div key={i} className="flex flex-col h-[400px]">
+                    <Skeleton className="w-full h-[200px] rounded-t-xl" />
+                    <div className="p-4 space-y-4 border border-t-0 rounded-b-xl flex-1">
+                      <Skeleton className="h-6 w-2/3" />
+                      <Skeleton className="h-4 w-1/3" />
+                      <div className="grid grid-cols-2 gap-4 mt-auto">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))
             ) : data?.cars && data.cars.length > 0 ? (
-              data.cars.map((car) => (
-                <CarCard key={car.id} car={car} />
-              ))
+              data.cars.map((car) => <CarCard key={car.id} car={car} />)
             ) : (
-              <div className="col-span-full py-20 text-center bg-card rounded-xl border border-dashed">
-                <CarCard className="w-12 h-12 mx-auto text-muted-foreground mb-4 opacity-50" />
-                <h3 className="text-lg font-medium mb-2">Aucune voiture trouvée</h3>
-                <p className="text-muted-foreground mb-6">
-                  Modifiez vos critères de recherche pour voir plus de résultats.
-                </p>
-                <Button 
-                  onClick={() => {
-                    setCategory("all");
-                    setTransmission("all");
-                    setFuelType("all");
-                    setPriceRange([0, 2000]);
-                    setSearch("");
-                  }}
-                >
-                  Réinitialiser les filtres
-                </Button>
+              <div className="col-span-full">
+                <Empty className="border border-dashed">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                      <Car />
+                    </EmptyMedia>
+                    <EmptyTitle>Aucune voiture trouvée</EmptyTitle>
+                    <EmptyDescription>
+                      Modifiez vos critères de recherche pour voir plus de résultats.
+                    </EmptyDescription>
+                  </EmptyHeader>
+                  <Button onClick={handleReset}>Réinitialiser les filtres</Button>
+                </Empty>
               </div>
             )}
           </div>

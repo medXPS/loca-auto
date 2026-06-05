@@ -2,7 +2,8 @@ import { useListRentalRequests } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Search, Eye, Filter } from "lucide-react";
+import { Search, Eye, Filter, ClipboardList } from "lucide-react";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { StatusBadge } from "@/components/status-badge";
 import { formatPrice, formatDateTime } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -114,8 +115,14 @@ export default function AdminRequests() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
-                    Aucune demande trouvée
+                  <td colSpan={7} className="px-6 py-2">
+                    <Empty className="border-0">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon"><ClipboardList /></EmptyMedia>
+                        <EmptyTitle>Aucune demande trouvée</EmptyTitle>
+                        <EmptyDescription>Il n'y a aucune demande correspondant aux filtres sélectionnés.</EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
                   </td>
                 </tr>
               )}

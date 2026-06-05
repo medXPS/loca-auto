@@ -5,7 +5,8 @@ import { StatusBadge } from "@/components/status-badge";
 import { formatPrice } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Eye, ClipboardList } from "lucide-react";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 
 export default function CustomerRequests() {
   const { data, isLoading } = useListRentalRequests({ limit: 100 });
@@ -70,8 +71,14 @@ export default function CustomerRequests() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                      Aucune demande trouvée
+                    <td colSpan={6} className="px-6 py-2">
+                      <Empty className="border-0">
+                        <EmptyHeader>
+                          <EmptyMedia variant="icon"><ClipboardList /></EmptyMedia>
+                          <EmptyTitle>Aucune demande</EmptyTitle>
+                          <EmptyDescription>Vous n'avez pas encore effectué de demande de location.</EmptyDescription>
+                        </EmptyHeader>
+                      </Empty>
                     </td>
                   </tr>
                 )}

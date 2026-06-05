@@ -1,6 +1,7 @@
 import { useListExpenses, useCreateExpense, useListCars, getListExpensesQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Plus, Receipt } from "lucide-react";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -194,8 +195,14 @@ export default function AdminExpenses() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                    Aucune charge enregistrée
+                  <td colSpan={5} className="px-6 py-2">
+                    <Empty className="border-0">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon"><Receipt /></EmptyMedia>
+                        <EmptyTitle>Aucune charge enregistrée</EmptyTitle>
+                        <EmptyDescription>Enregistrez les charges (maintenance, assurance…) liées à vos véhicules.</EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
                   </td>
                 </tr>
               )}

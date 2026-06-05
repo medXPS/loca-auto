@@ -1,6 +1,7 @@
 import { useListCustomers } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, Users } from "lucide-react";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { Link } from "wouter";
@@ -77,8 +78,16 @@ export default function AdminCustomers() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                    Aucun client trouvé
+                  <td colSpan={5} className="px-6 py-2">
+                    <Empty className="border-0">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon"><Users /></EmptyMedia>
+                        <EmptyTitle>Aucun client trouvé</EmptyTitle>
+                        <EmptyDescription>
+                          {search ? "Aucun client ne correspond à votre recherche." : "Les clients apparaîtront ici après leur première réservation."}
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
                   </td>
                 </tr>
               )}

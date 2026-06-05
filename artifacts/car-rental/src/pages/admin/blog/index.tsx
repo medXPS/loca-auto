@@ -1,7 +1,8 @@
 import { useListBlogPosts } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Plus, Edit } from "lucide-react";
+import { Plus, Edit, FileText } from "lucide-react";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminBlog() {
@@ -63,8 +64,17 @@ export default function AdminBlog() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground">
-                    Aucun article trouvé
+                  <td colSpan={4} className="px-6 py-2">
+                    <Empty className="border-0">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon"><FileText /></EmptyMedia>
+                        <EmptyTitle>Aucun article trouvé</EmptyTitle>
+                        <EmptyDescription>Publiez votre premier article de blog pour informer vos clients.</EmptyDescription>
+                      </EmptyHeader>
+                      <Link href="/admin/blog/nouveau">
+                        <Button size="sm" className="gap-2"><Plus className="w-4 h-4" /> Écrire un article</Button>
+                      </Link>
+                    </Empty>
                   </td>
                 </tr>
               )}

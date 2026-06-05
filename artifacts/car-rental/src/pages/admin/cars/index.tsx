@@ -2,7 +2,8 @@ import { useListCars } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "wouter";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Car } from "lucide-react";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { StatusBadge } from "@/components/status-badge";
 import { formatPrice } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -113,8 +114,21 @@ export default function AdminCars() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                    Aucune voiture trouvée
+                  <td colSpan={6} className="px-6 py-2">
+                    <Empty className="border-0">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon"><Car /></EmptyMedia>
+                        <EmptyTitle>Aucune voiture trouvée</EmptyTitle>
+                        <EmptyDescription>
+                          {search ? "Aucun véhicule ne correspond à votre recherche." : "Commencez par ajouter un véhicule à votre flotte."}
+                        </EmptyDescription>
+                      </EmptyHeader>
+                      {!search && (
+                        <Link href="/admin/voitures/nouvelle">
+                          <Button size="sm" className="gap-2"><Plus className="w-4 h-4" /> Ajouter une voiture</Button>
+                        </Link>
+                      )}
+                    </Empty>
                   </td>
                 </tr>
               )}

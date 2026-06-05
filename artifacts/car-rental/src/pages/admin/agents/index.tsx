@@ -1,7 +1,8 @@
 import { useListAgents } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Plus, UserCheck, Shield } from "lucide-react";
+import { Plus, UserCheck, Shield, Users } from "lucide-react";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime } from "@/lib/utils";
 
@@ -48,8 +49,17 @@ export default function AdminAgents() {
             </div>
           ))
         ) : (
-          <div className="col-span-full py-12 text-center text-muted-foreground border border-dashed rounded-xl">
-            Aucun agent trouvé
+          <div className="col-span-full">
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><Users /></EmptyMedia>
+                <EmptyTitle>Aucun agent trouvé</EmptyTitle>
+                <EmptyDescription>Ajoutez un agent pour lui donner accès au tableau de bord.</EmptyDescription>
+              </EmptyHeader>
+              <Link href="/admin/agents/nouveau">
+                <Button size="sm" className="gap-2"><Plus className="w-4 h-4" /> Ajouter un agent</Button>
+              </Link>
+            </Empty>
           </div>
         )}
       </div>

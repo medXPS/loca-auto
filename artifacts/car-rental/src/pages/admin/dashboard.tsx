@@ -1,8 +1,13 @@
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useGetDashboardStats, useGetRecentRequests } from "@workspace/api-client-react";
-import { formatPrice, formatDateTime } from "@/lib/utils";
+import {
+  useGetDashboardStats,
+  useGetRecentRequests,
+  useGetRevenueChart,
+  useGetRequestsByStatus,
+} from "@workspace/api-client-react";
+import { formatPrice, formatDateTime, STATUS_TRANSLATIONS } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
 import { Users, Car, CreditCard, Banknote, CalendarClock, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,22 +21,41 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from "recharts";
+
+const PIE_COLORS = ["#157550", "#215025", "#409050", "#174045", "#340545", "#d97706", "#dc2626"];
 
 export default function AdminDashboard() {
   const { data: stats, isLoading: isStatsLoading } = useGetDashboardStats();
   const { data: recentRequests, isLoading: isRecentLoading } = useGetRecentRequests({ limit: 5 });
-
-  const PIE_COLORS = ['#157550', '#215025', '#409050', '#174045', '#340545'];
+  const { data: revenueData, isLoading: isRevenueLoading } = useGetRevenueChart();
+  const { data: statusData, isLoading: isStatusLoading } = useGetRequestsByStatus();
 
   if (isStatsLoading) {
-    return <div className="p-6 space-y-6">
-      <Skeleton className="h-10 w-48 mb-6" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)}
+    return (
+      <div className="p-6 space-y-6">
+        <Skeleton className="h-10 w-48 mb-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array(4)
+            .fill(0)
+            .map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
+            ))}
+        </div>
       </div>
-    </div>;
+    );
   }
+
+  const formattedRevenue = (revenueData || []).map((point) => ({
+    ...point,
+    label: point.month,
+  }));
+
+  const formattedStatus = (statusData || []).map((s) => ({
+    name: STATUS_TRANSLATIONS[s.status] || s.status,
+    value: s.count,
+  }));
 
   return (
     <div className="space-y-6">
@@ -47,12 +71,10 @@ export default function AdminDashboard() {
                 <Banknote className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-bold">{formatPrice(stats?.totalRevenue || 0)}</h3>
-            </div>
+            <h3 className="text-2xl font-bold">{formatPrice(stats?.totalRevenue || 0)}</h3>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="p-6 flex flex-col justify-between h-full">
             <div className="flex items-center justify-between mb-4">
@@ -61,9 +83,7 @@ export default function AdminDashboard() {
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-bold">{formatPrice(stats?.netProfit || 0)}</h3>
-            </div>
+            <h3 className="text-2xl font-bold">{formatPrice(stats?.netProfit || 0)}</h3>
           </CardContent>
         </Card>
 
@@ -75,9 +95,7 @@ export default function AdminDashboard() {
                 <CalendarClock className="w-4 h-4" />
               </div>
             </div>
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-2xl font-bold">{stats?.pendingRequests || 0}</h3>
-            </div>
+            <h3 className="text-2xl font-bold">{stats?.pendingRequests || 0}</h3>
           </CardContent>
         </Card>
 
@@ -91,33 +109,120 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-baseline gap-2">
               <h3 className="text-2xl font-bold">{stats?.availableCars || 0}</h3>
-              <p className="text-sm text-muted-foreground">/ {(stats?.availableCars || 0) + (stats?.rentedCars || 0) + (stats?.maintenanceCars || 0)}</p>
+              <p className="text-sm text-muted-foreground">
+                /{" "}
+                {(stats?.availableCars || 0) +
+                  (stats?.rentedCars || 0) +
+                  (stats?.maintenanceCars || 0)}
+              </p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Charts area - placeholder for now */}
+        {/* Revenue Line Chart */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Aperçu des revenus</CardTitle>
+            <CardTitle>Aperçu des revenus (12 derniers mois)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center border border-dashed rounded-lg bg-muted/20 text-muted-foreground">
-              Graphique des revenus (Recharts)
-            </div>
+            {isRevenueLoading ? (
+              <Skeleton className="h-[300px] w-full rounded-lg" />
+            ) : formattedRevenue.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={formattedRevenue}>
+                  <defs>
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#157550" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#157550" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => [formatPrice(value), "Revenus"]}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "1px solid hsl(var(--border))",
+                      background: "hsl(var(--card))",
+                      color: "hsl(var(--foreground))",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#157550"
+                    strokeWidth={2}
+                    fill="url(#colorRevenue)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Aucune donnée de revenus disponible
+              </div>
+            )}
           </CardContent>
         </Card>
 
+        {/* Status Pie Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Statut des demandes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center border border-dashed rounded-lg bg-muted/20 text-muted-foreground">
-              Graphique en secteurs
-            </div>
+            {isStatusLoading ? (
+              <Skeleton className="h-[300px] w-full rounded-lg" />
+            ) : formattedStatus.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={formattedStatus}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="45%"
+                    outerRadius={90}
+                    label={false}
+                  >
+                    {formattedStatus.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number, name: string) => [value, name]}
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "1px solid hsl(var(--border))",
+                      background: "hsl(var(--card))",
+                      color: "hsl(var(--foreground))",
+                    }}
+                  />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    formatter={(value) => (
+                      <span className="text-xs text-foreground">{value}</span>
+                    )}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                Aucune donnée disponible
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -144,28 +249,44 @@ export default function AdminDashboard() {
               </thead>
               <tbody>
                 {isRecentLoading ? (
-                  <tr><td colSpan={5} className="p-4 text-center">Chargement...</td></tr>
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center">
+                      Chargement...
+                    </td>
+                  </tr>
                 ) : recentRequests && recentRequests.length > 0 ? (
                   recentRequests.map((req) => (
                     <tr key={req.id} className="border-b last:border-0 hover:bg-muted/30">
                       <td className="px-4 py-3 font-medium">
-                        <Link href={`/admin/demandes/${req.id}`} className="hover:text-primary hover:underline">
+                        <Link
+                          href={`/admin/demandes/${req.id}`}
+                          className="hover:text-primary hover:underline"
+                        >
                           {req.fullName}
                         </Link>
                         <div className="text-xs text-muted-foreground">{req.phone}</div>
                       </td>
-                      <td className="px-4 py-3">{req.car?.brand} {req.car?.model}</td>
                       <td className="px-4 py-3">
-                        {new Date(req.startDate).toLocaleDateString("fr-MA")} - {new Date(req.returnDate).toLocaleDateString("fr-MA")}
+                        {req.car?.brand} {req.car?.model}
                       </td>
-                      <td className="px-4 py-3 font-medium">{formatPrice(req.finalPrice || req.estimatedTotalPrice)}</td>
+                      <td className="px-4 py-3">
+                        {new Date(req.startDate).toLocaleDateString("fr-MA")} -{" "}
+                        {new Date(req.returnDate).toLocaleDateString("fr-MA")}
+                      </td>
+                      <td className="px-4 py-3 font-medium">
+                        {formatPrice(req.finalPrice || req.estimatedTotalPrice)}
+                      </td>
                       <td className="px-4 py-3">
                         <StatusBadge status={req.status} />
                       </td>
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">Aucune demande récente</td></tr>
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-muted-foreground">
+                      Aucune demande récente
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>

@@ -1,18 +1,25 @@
 import { useRoute } from "wouter";
-import { useGetRentalRequest, getGetRentalRequestQueryKey } from "@workspace/api-client-react";
+import {
+  useGetRentalRequest,
+  getGetRentalRequestQueryKey,
+  useListAuditLogs,
+} from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPrice, formatDateTime } from "@/lib/utils";
+import { formatPrice, formatDateTime, STATUS_TRANSLATIONS } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { RequestActions } from "@/components/request-actions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { User, Phone, Mail, Calendar, MapPin, CreditCard, Clock, FileText } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { User, Phone, Mail, Calendar, FileText, History } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function AdminRequestDetail() {
   const [, params] = useRoute("/admin/demandes/:id");
   const id = Number(params?.id);
-  const { data: request, isLoading } = useGetRentalRequest(id, { query: { enabled: !!id, queryKey: getGetRentalRequestQueryKey(id) } });
+  const { data: request, isLoading } = useGetRentalRequest(id, {
+    query: { enabled: !!id, queryKey: getGetRentalRequestQueryKey(id) },
+  });
+  const { data: auditData, isLoading: isAuditLoading } = useListAuditLogs({ limit: 500 });
   const queryClient = useQueryClient();
 
   const handleSuccess = () => {
@@ -22,7 +29,16 @@ export default function AdminRequestDetail() {
   if (isLoading) return <div className="p-6"><Skeleton className="h-96 w-full rounded-xl" /></div>;
   if (!request) return <div className="p-6 text-center">Demande introuvable</div>;
 
-  const showCountdown = request.paymentDeadline && (request.status === "CALL_CONFIRMED" || request.status === "WAITING_AGENCY_PAYMENT");
+  const showCountdown =
+    request.paymentDeadline &&
+    (request.status === "CALL_CONFIRMED" || request.status === "WAITING_AGENCY_PAYMENT");
+
+  const timelineEntries = (auditData?.logs || [])
+    .filter(
+      (log) =>
+        log.entityType === "rental_request" && String(log.entityId) === String(id)
+    )
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -34,8 +50,7 @@ export default function AdminRequestDetail() {
           </h1>
           <p className="text-muted-foreground mt-1">Créée le {formatDateTime(request.createdAt)}</p>
         </div>
-        
-        {/* Action Buttons */}
+
         <div className="bg-card p-2 rounded-lg border shadow-sm">
           <RequestActions requestId={request.id} status={request.status} onSuccess={handleSuccess} />
         </div>
@@ -96,20 +111,26 @@ export default function AdminRequestDetail() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="p-3 bg-muted/50 rounded-lg flex items-center justify-between mb-4 border">
-              <div className="font-medium">{request.car?.brand} {request.car?.model}</div>
+              <div className="font-medium">
+                {request.car?.brand} {request.car?.model}
+              </div>
               <StatusBadge status={request.car?.status || ""} type="car" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Date de départ</p>
-                <p className="font-medium">{new Date(request.startDate).toLocaleDateString("fr-MA")}</p>
+                <p className="font-medium">
+                  {new Date(request.startDate).toLocaleDateString("fr-MA")}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Date de retour</p>
-                <p className="font-medium">{new Date(request.returnDate).toLocaleDateString("fr-MA")}</p>
+                <p className="font-medium">
+                  {new Date(request.returnDate).toLocaleDateString("fr-MA")}
+                </p>
               </div>
-              
+
               <div className="col-span-2 pt-4 border-t mt-2">
                 <div className="flex justify-between items-center mb-2">
                   <p className="text-muted-foreground">Prix estimé</p>
@@ -124,8 +145,8 @@ export default function AdminRequestDetail() {
           </CardContent>
         </Card>
 
-        {/* Status History & Notes (Placeholder) */}
-        <Card className="md:col-span-2">
+        {/* Notes */}
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary" />
@@ -134,9 +155,68 @@ export default function AdminRequestDetail() {
           </CardHeader>
           <CardContent>
             {request.notes ? (
-              <p className="whitespace-pre-wrap bg-muted/30 p-4 rounded-lg border">{request.notes}</p>
+              <p className="whitespace-pre-wrap bg-muted/30 p-4 rounded-lg border">
+                {request.notes}
+              </p>
             ) : (
               <p className="text-muted-foreground italic">Aucune note pour cette demande.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Status History Timeline */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <History className="w-5 h-5 text-primary" />
+              Historique des statuts
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isAuditLoading ? (
+              <div className="space-y-3">
+                {Array(3).fill(0).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
+                ))}
+              </div>
+            ) : timelineEntries.length > 0 ? (
+              <ol className="relative border-l border-muted-foreground/20 ml-3 space-y-4">
+                {timelineEntries.map((entry, idx) => (
+                  <li key={entry.id} className="ml-6">
+                    <span
+                      className={`absolute flex items-center justify-center w-3 h-3 rounded-full -left-1.5 border border-background ${
+                        idx === timelineEntries.length - 1
+                          ? "bg-primary"
+                          : "bg-muted-foreground/40"
+                      }`}
+                    />
+                    <div className="bg-muted/30 rounded-lg p-3 border">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <span className="text-xs font-mono bg-muted px-2 py-0.5 rounded">
+                          {entry.action}
+                        </span>
+                        <time className="text-xs text-muted-foreground">
+                          {formatDateTime(entry.createdAt)}
+                        </time>
+                      </div>
+                      {entry.userFullName && (
+                        <p className="text-xs text-muted-foreground">
+                          Par : {entry.userFullName}
+                        </p>
+                      )}
+                      {entry.details && (
+                        <p className="text-xs text-muted-foreground italic mt-1">
+                          {entry.details}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-muted-foreground italic text-sm">
+                Aucun historique disponible pour cette demande.
+              </p>
             )}
           </CardContent>
         </Card>
