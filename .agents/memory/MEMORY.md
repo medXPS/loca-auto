@@ -1,0 +1,1 @@
+- [Location Auto Maroc stack](location-auto-maroc.md) — Full-stack Moroccan car rental app; key pitfalls and conventions for this project.

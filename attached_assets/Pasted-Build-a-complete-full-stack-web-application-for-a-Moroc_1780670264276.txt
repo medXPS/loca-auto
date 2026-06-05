@@ -1,0 +1,1362 @@
+Build a complete full-stack web application for a Moroccan car rental agency.
+
+The application must be a professional, modern, secure, SEO-optimized, mobile-first car rental platform designed for the Moroccan market.
+
+The entire application must be 100% in French.
+
+This includes:
+
+* Public website
+* Customer web app / PWA
+* Admin dashboard
+* Agent dashboard
+* Forms
+* Buttons
+* Error messages
+* Success messages
+* Validation messages
+* Emails / notifications
+* SEO titles
+* SEO descriptions
+* Blog articles
+* Terms and conditions
+* Privacy policy
+* FAQ
+* Rental request statuses shown to users
+
+Use French adapted to Morocco, for example:
+
+* Voiture
+* Location de voiture
+* Demande de location
+* Date de départ
+* Date de retour
+* CIN
+* Permis de conduire
+* Caution
+* Assurance
+* Taxe / Dariba
+* Réparations / Islahat
+* Paiement à l’agence
+* Confirmation par téléphone
+* Demande abandonnée
+* Tableau de bord
+* Revenus
+* Charges
+* Bénéfice net
+
+The application must be highly customizable using a large JSON configuration file. The goal is to create a reusable website template that can be sold to different car rental agencies in Morocco. Each agency should be able to customize colors, branding, homepage content, SEO metadata, contact information, layout style, and website sections by editing the JSON file.
+
+Tech stack:
+
+* Frontend: Next.js with React
+* Backend: Next.js API routes or Node.js/Express
+* Database: PostgreSQL
+* ORM: Prisma or Drizzle
+* Authentication: secure authentication with roles
+* Styling: Tailwind CSS
+* File uploads: images, videos, and 360-degree images
+* Charts: Recharts or Chart.js
+* Deployment-ready architecture
+* Environment variables for secrets
+
+Main goal:
+Create a car rental website template for Moroccan rental agencies. The public website must attract customers from Google search, show available cars, allow customers to create an account, submit rental requests, and track their requests. The admin side must allow the agency owner to manage cars, requests, customers, agents, expenses, revenues, profits, and business performance.
+
+Important payment model:
+The application must use COD only.
+
+COD means “Cash on Delivery / Paiement à l’agence”.
+
+There is no online payment in the first version.
+
+The customer submits a rental request online, then the agency calls the customer to confirm. If the customer confirms by phone, the customer has 12 hours to come physically to the agency and pay the required amount or deposit. If the customer does not come and pay within 12 hours, the request becomes abandoned and the selected car becomes available again.
+
+Payment workflow:
+
+1. Customer submits a rental request online.
+2. Request status becomes PENDING.
+3. Admin or agent receives the request.
+4. Admin or agent calls the customer.
+5. If the customer does not answer, status can become CALL_ATTEMPTED or UNDER_REVIEW.
+6. If the customer confirms by phone, status becomes CALL_CONFIRMED.
+7. When status becomes CALL_CONFIRMED, a 12-hour payment deadline starts.
+8. During these 12 hours, the car is temporarily held.
+9. The customer must come to the agency and pay physically.
+10. If the customer comes and pays, admin or agent marks the payment as PAID_AT_AGENCY.
+11. The request status becomes RESERVED.
+12. The car status becomes RESERVED.
+13. If the customer does not come within 12 hours, the request status becomes ABANDONED.
+14. The car becomes AVAILABLE again.
+15. If the rental period starts and the car is delivered, status becomes CAR_DELIVERED.
+16. When the car is returned, status becomes CAR_RETURNED.
+17. When the rental is closed, status becomes COMPLETED.
+
+Rental request statuses in database:
+
+* PENDING
+* UNDER_REVIEW
+* CALL_ATTEMPTED
+* CALL_CONFIRMED
+* WAITING_AGENCY_PAYMENT
+* RESERVED
+* REJECTED
+* WAITING_DOCUMENTS
+* CAR_DELIVERED
+* CAR_RETURNED
+* CANCELLED
+* ABANDONED
+* COMPLETED
+
+Rental request statuses displayed in French:
+
+* En attente
+* En cours de vérification
+* Appel effectué
+* Confirmée par téléphone
+* En attente de paiement à l’agence
+* Réservée
+* Refusée
+* Documents demandés
+* Voiture livrée
+* Voiture retournée
+* Annulée
+* Abandonnée
+* Terminée
+
+Important reservation logic:
+
+* A car can receive a rental request while available.
+* When a customer submits a request, the car should not be permanently reserved yet.
+* After the admin or agent confirms the customer by phone, the car becomes temporarily held for 12 hours.
+* During the 12-hour hold, the car should not be confirmed for another customer for the same date range.
+* If the customer pays at the agency within 12 hours, the request becomes RESERVED.
+* If the customer does not pay within 12 hours, the request becomes ABANDONED and the car becomes available again.
+* Only RESERVED, CAR_DELIVERED, CAR_RETURNED, and COMPLETED rentals should block the car calendar.
+* ABANDONED, CANCELLED, and REJECTED requests should not block availability.
+* Only COMPLETED rentals should count as final revenue.
+* RESERVED rentals can be shown as expected revenue, but not final revenue.
+
+Payment statuses:
+
+* UNPAID
+* WAITING_AGENCY_PAYMENT
+* PAID_AT_AGENCY
+* CANCELLED
+* REFUNDED
+
+Payment statuses displayed in French:
+
+* Non payé
+* En attente de paiement à l’agence
+* Payé à l’agence
+* Annulé
+* Remboursé
+
+Payment fields:
+
+* Rental request ID
+* Rental ID optional
+* Customer ID
+* Car ID
+* Amount
+* Payment method
+* Payment status
+* Paid at
+* Payment deadline
+* Confirmed by user ID
+* Notes
+
+Payment method:
+
+* CASH_AT_AGENCY
+* CARD_AT_AGENCY optional
+* BANK_TRANSFER optional for future use
+
+In the first version, only CASH_AT_AGENCY must be active.
+
+User roles:
+
+1. Public visitor
+2. Customer
+3. Super admin
+4. Agent
+
+Public visitor can:
+
+* Visit the homepage
+* Browse available cars
+* Search cars
+* Filter cars
+* View car details
+* View images, videos, and 360-degree images
+* Read SEO blog articles
+* Contact the agency via WhatsApp or phone
+* Create an account
+* Submit a rental request
+
+Customer can:
+
+* Register
+* Login
+* Manage personal profile
+* Submit rental requests
+* Track rental request status
+* View rental history
+* Upload documents if required
+* Receive notifications about request status
+* See the 12-hour payment deadline after phone confirmation
+* See instructions to come to the agency and pay
+* Cancel a request before payment if allowed
+
+Super admin can:
+
+* Login securely
+* View BI dashboard
+* Manage cars
+* Add cars
+* Edit cars
+* Delete cars
+* Enable or disable cars
+* Upload car images
+* Upload car videos
+* Upload 360-degree images
+* Manage car availability
+* Set daily, weekly, and monthly prices
+* Manage stock/status of cars
+* Manage rental requests
+* Approve rental requests
+* Reject rental requests
+* Mark customer as called
+* Mark request as confirmed by phone
+* Start the 12-hour payment deadline
+* Mark payment as paid at agency
+* Mark request as abandoned
+* Ask for more documents
+* Confirm rental
+* Mark car as delivered
+* Mark car as returned
+* Complete rental
+* Manage customers
+* View customer rental history
+* Manage agents
+* Create agents
+* Edit agents
+* Disable agents
+* Manage car expenses
+* Manage company settings
+* Manage website theme settings
+* Manage SEO metadata
+* Manage blog articles
+* View audit logs
+* View revenue
+* View expenses
+* View net profit
+* View profit per car
+* View most demanded cars
+* View least profitable cars
+* View global business performance
+
+Agent can:
+
+* Login securely
+* Manage cars
+* Add cars
+* Edit cars
+* Upload car images/videos/360-degree images
+* Manage rental requests
+* Call customers
+* Mark request as CALL_ATTEMPTED
+* Mark request as CALL_CONFIRMED
+* Mark payment as PAID_AT_AGENCY
+* Mark request as ABANDONED
+* Manage customers
+* Add expenses per car
+* Update car availability
+* Update rental status
+
+Agent cannot:
+
+* Create agents
+* Edit agents
+* Delete agents
+* Access global BI dashboard
+* Change sensitive company settings
+* Change theme settings
+* Manage super admin account
+* View full global profit dashboard unless permission is granted
+
+Public website pages:
+
+* Homepage
+* Car catalog page
+* Car details page
+* Rental request page
+* Customer login page
+* Customer register page
+* Customer dashboard
+* Customer profile page
+* Customer rental history page
+* About page
+* Contact page
+* FAQ page
+* Blog page
+* Blog article details page
+* Terms and conditions page
+* Privacy policy page
+
+Admin pages:
+
+* Admin login
+* Admin dashboard
+* Cars management
+* Add car
+* Edit car
+* Rental requests management
+* Request details
+* Payment confirmation page
+* Customers management
+* Customer details
+* Agents management
+* Add agent
+* Edit agent
+* Expenses management
+* Car profitability page
+* SEO pages management
+* Blog management
+* Website settings
+* Theme settings
+* Audit logs
+
+Agent pages:
+
+* Agent login
+* Cars management
+* Rental requests management
+* Request details
+* Payment confirmation page
+* Customer management
+* Expenses management
+* Profile page
+
+Homepage sections:
+
+* Hero section
+* Search box
+* Featured cars
+* Car categories
+* Why choose us
+* Rental steps
+* Testimonials
+* FAQ
+* Blog articles
+* Contact CTA
+* WhatsApp CTA
+* Footer with agency information
+
+The homepage must be optimized for conversion and SEO.
+
+Example French homepage content:
+
+* Title: “Location de voitures au Maroc”
+* Subtitle: “Réservez votre voiture rapidement avec les meilleurs prix.”
+* CTA: “Voir les voitures”
+* CTA 2: “Demander une réservation”
+* Section: “Pourquoi nous choisir ?”
+* Section: “Comment réserver votre voiture ?”
+* Section: “Nos voitures disponibles”
+* Section: “Questions fréquentes”
+
+Reservation steps displayed to customer:
+
+1. Choisissez votre voiture
+2. Envoyez votre demande
+3. Notre agent vous appelle pour confirmer
+4. Vous avez 12 heures pour passer à l’agence et payer
+5. Votre voiture est réservée après paiement
+6. Récupérez votre voiture à la date confirmée
+
+Car catalog requirements:
+
+* Display car cards
+* Search by keyword
+* Filter by brand
+* Filter by model
+* Filter by category
+* Filter by city
+* Filter by price
+* Filter by transmission
+* Filter by fuel type
+* Filter by number of seats
+* Filter by availability
+* Sort by price ascending
+* Sort by price descending
+* Sort by newest
+* Sort by most popular
+* Show available/unavailable badge
+* Show temporarily held badge if needed
+* Show reserved badge if reserved
+* Show daily price
+* Show main image
+* Show CTA button “Voir détails”
+* Show CTA button “Demander une location”
+
+Car details page requirements:
+
+* SEO-friendly URL
+* Car title
+* Main image
+* Gallery
+* Video
+* 360-degree image viewer
+* Price per day
+* Price per week
+* Price per month
+* Deposit/caution
+* Technical details
+* Description in French
+* Features
+* Insurance info
+* Required documents
+* Availability status
+* Rental request form
+* Related cars
+* WhatsApp contact button
+
+Car fields:
+
+* Brand
+* Model
+* Year
+* Category
+* Fuel type
+* Transmission
+* Seats
+* Doors
+* Air conditioning
+* Daily price
+* Weekly price
+* Monthly price
+* Deposit amount
+* Mileage limit
+* Availability status
+* Main image
+* Gallery images
+* Videos
+* 360-degree images
+* Description in French
+* SEO title
+* SEO description
+* SEO slug
+* Features
+* Required documents
+* Insurance included
+* City
+* Internal reference
+* License plate
+* Status
+
+Car statuses:
+
+* ACTIVE
+* INACTIVE
+* AVAILABLE
+* TEMPORARILY_HELD
+* RESERVED
+* RENTED
+* MAINTENANCE
+
+Car statuses displayed in French:
+
+* Active
+* Inactive
+* Disponible
+* En attente de paiement
+* Réservée
+* Louée
+* En maintenance
+
+Rental request workflow:
+
+1. Visitor opens the website.
+2. Visitor searches for a car.
+3. Visitor opens the car details page.
+4. Visitor selects rental start date and return date.
+5. System calculates estimated price.
+6. Visitor creates a customer account or logs in.
+7. Customer fills rental request form.
+8. Customer submits request.
+9. Request status becomes PENDING.
+10. Admin or agent receives notification.
+11. Admin or agent calls the customer.
+12. If call is attempted, status becomes CALL_ATTEMPTED.
+13. If customer confirms by phone, status becomes CALL_CONFIRMED and WAITING_AGENCY_PAYMENT.
+14. System sets payment_deadline = current time + 12 hours.
+15. Customer sees message: “Votre demande est confirmée par téléphone. Merci de passer à l’agence dans les 12 heures pour confirmer votre réservation par paiement.”
+16. If customer comes to agency and pays, admin or agent marks payment as PAID_AT_AGENCY.
+17. Request status becomes RESERVED.
+18. Car status becomes RESERVED for selected dates.
+19. If customer does not pay before deadline, system automatically marks request as ABANDONED.
+20. Car becomes available again.
+21. At rental start, admin or agent marks car as CAR_DELIVERED.
+22. At return, admin or agent marks car as CAR_RETURNED.
+23. After closing, status becomes COMPLETED.
+24. Completed rental revenue is counted in BI dashboard.
+
+Rental request fields:
+
+* Customer ID
+* Car ID
+* Full name
+* Phone number
+* Email
+* CIN or passport number
+* Driving license number
+* Rental start date
+* Rental return date
+* Pickup location
+* Return location
+* Estimated total price
+* Final agreed price
+* Notes
+* Uploaded documents
+* Status
+* Payment status
+* Payment method
+* Payment deadline
+* Call confirmed at
+* Call confirmed by user ID
+* Paid at agency at
+* Payment confirmed by user ID
+* Abandoned at
+* Created date
+* Updated date
+
+Customer profile fields:
+
+* Full name
+* Phone number
+* Email
+* CIN
+* Passport number optional
+* Driving license number
+* Address
+* City
+* Date of birth optional
+* Uploaded CIN document optional
+* Uploaded driving license document optional
+
+Customer dashboard:
+
+* Profile
+* Current requests
+* Request status
+* Payment deadline countdown
+* Instructions to come to agency
+* Rental history
+* Uploaded documents
+* Notifications
+
+Customer messages:
+When request is pending:
+“Votre demande a été envoyée. Notre agent vous appellera prochainement pour confirmer.”
+
+When call is confirmed:
+“Votre demande est confirmée par téléphone. Vous avez 12 heures pour passer à l’agence et effectuer le paiement afin de réserver la voiture.”
+
+When payment is completed:
+“Votre paiement a été confirmé à l’agence. Votre voiture est maintenant réservée.”
+
+When abandoned:
+“Votre demande a été abandonnée car le paiement n’a pas été effectué dans le délai de 12 heures.”
+
+Car expenses:
+The admin or agent should be able to add expenses for each car.
+
+Expense fields:
+
+* Car ID
+* Expense type
+* Amount
+* Date
+* Description
+* Optional invoice file/image
+* Created by user ID
+
+Expense types:
+
+* Taxe / Dariba
+* Assurance
+* Réparation / Islahat
+* Vidange
+* Pneus
+* Nettoyage
+* Maintenance
+* Visite technique
+* Parking
+* Autre
+
+Profit formulas:
+
+* Car profit = total completed rental revenue of the car - total expenses of the car
+* Global profit = total completed rental revenue of all cars - total expenses of all cars
+* Expected revenue = sum of reserved rentals not yet completed
+* Pending revenue = sum of requests waiting for agency payment
+
+BI dashboard for super admin:
+Show cards and charts for:
+
+* Total completed revenue
+* Expected revenue from reserved rentals
+* Pending revenue waiting for agency payment
+* Total expenses
+* Net profit
+* Number of rental requests
+* Number of pending requests
+* Number of call-confirmed requests
+* Number of abandoned requests
+* Number of active rentals
+* Number of available cars
+* Number of temporarily held cars
+* Number of reserved cars
+* Number of rented cars
+* Number of cars under maintenance
+* Number of customers
+* Number of agents
+* Most demanded cars
+* Best performing cars
+* Least profitable cars
+* Revenue per car
+* Expenses per car
+* Profit per car
+* Requests by status
+* Monthly revenue chart
+* Monthly expenses chart
+* Monthly profit chart
+* Rentals by city
+* Rentals by car category
+* Latest rental requests
+* Latest customers
+* Cars needing maintenance
+
+Admin dashboard UX:
+
+* Clean dashboard layout
+* Sidebar navigation
+* Top bar
+* Search
+* Filters
+* Tables with pagination
+* Charts
+* Date interval filter
+* Export buttons if possible
+* Empty states
+* Loading states
+* Error states
+* Toast notifications
+* Confirmation modals
+* Countdown display for 12-hour payment deadlines
+* Highlight requests close to expiration
+
+Date interval filters:
+The super admin must be able to filter revenue, expenses, and profit by:
+
+* Today
+* This week
+* This month
+* This year
+* Custom date range
+
+Automatic expiration job:
+Implement a scheduled job or server-side check that regularly finds requests with:
+
+* status = WAITING_AGENCY_PAYMENT or CALL_CONFIRMED
+* payment_status = WAITING_AGENCY_PAYMENT
+* payment_deadline < current time
+
+For each expired request:
+
+* Set request status to ABANDONED
+* Set payment status to CANCELLED
+* Set abandoned_at timestamp
+* Release the car availability for the selected dates
+* Create audit log entry
+* Notify customer if possible
+
+If a real cron job is not available in the deployment environment, implement expiration checks:
+
+* On admin dashboard load
+* On rental requests page load
+* On car availability check
+* Via an API endpoint that can be called periodically
+
+JSON theme configuration:
+Create a config file named site.config.json.
+
+The website should use this JSON file to customize branding, theme, layout, SEO, homepage content, contact info, social links, and enabled sections.
+
+Example:
+
+{
+"brand": {
+"name": "Location Auto Casablanca",
+"logo": "/logo.png",
+"slogan": "Louez votre voiture facilement au Maroc"
+},
+"theme": {
+"colors": {
+"primary": "#0F172A",
+"secondary": "#F59E0B",
+"accent": "#2563EB",
+"background": "#FFFFFF",
+"text": "#111827",
+"muted": "#6B7280"
+},
+"fonts": {
+"heading": "Inter",
+"body": "Inter"
+},
+"borderRadius": "16px",
+"buttonStyle": "rounded",
+"layout": "modern"
+},
+"seo": {
+"defaultTitle": "Location voiture au Maroc",
+"defaultDescription": "Agence de location de voitures au Maroc. Réservez votre voiture rapidement.",
+"keywords": [
+"location voiture Casablanca",
+"location voiture Maroc",
+"louer voiture pas cher",
+"location voiture automatique",
+"location voiture Marrakech",
+"location voiture aéroport Mohammed V"
+]
+},
+"homepage": {
+"hero": {
+"title": "Location de voitures au Maroc",
+"subtitle": "Réservez votre voiture rapidement avec les meilleurs prix.",
+"ctaText": "Voir les voitures",
+"secondaryCtaText": "Demander une réservation",
+"backgroundImage": "/hero-car.jpg"
+},
+"sections": {
+"featuredCars": true,
+"categories": true,
+"rentalSteps": true,
+"testimonials": true,
+"faq": true,
+"blog": true,
+"contactCta": true
+}
+},
+"contact": {
+"phone": "+212600000000",
+"whatsapp": "+212600000000",
+"email": "[contact@example.com](mailto:contact@example.com)",
+"city": "Casablanca",
+"address": "Casablanca, Maroc"
+},
+"reservation": {
+"paymentMode": "CASH_AT_AGENCY",
+"paymentDeadlineHours": 12,
+"enableOnlinePayment": false,
+"instructions": "Après confirmation par téléphone, le client doit passer à l’agence dans un délai de 12 heures pour confirmer la réservation par paiement."
+},
+"social": {
+"facebook": "",
+"instagram": "",
+"tiktok": "",
+"linkedin": ""
+},
+"features": {
+"enableBlog": true,
+"enableCustomerAccounts": true,
+"enableWhatsappButton": true,
+"enable360Images": true,
+"enableVideos": true,
+"enablePaymentDeadline": true
+}
+}
+
+SEO requirements:
+The public website must be highly optimized for Google search.
+
+Implement:
+
+* Server-side rendering or static generation for public pages
+* SEO-friendly URLs
+* Dynamic meta titles
+* Dynamic meta descriptions
+* Open Graph tags
+* Twitter cards
+* JSON-LD structured data
+* Sitemap.xml generation
+* Robots.txt
+* Canonical URLs
+* Fast loading pages
+* Optimized images
+* Lazy loading
+* Semantic HTML
+* Clean heading structure H1/H2/H3
+* Internal linking
+* Blog system for SEO
+* Local SEO city pages
+* French SEO content for Morocco
+
+Create local SEO pages for:
+
+* Location voiture Casablanca
+* Location voiture Marrakech
+* Location voiture Rabat
+* Location voiture Tanger
+* Location voiture Agadir
+* Location voiture Fès
+* Location voiture aéroport Mohammed V
+
+SEO keywords to use naturally:
+
+* location voiture Maroc
+* location voiture Casablanca
+* location voiture Marrakech
+* louer voiture pas cher Maroc
+* location voiture automatique Casablanca
+* location voiture avec assurance
+* location voiture aéroport Mohammed V
+* location voiture longue durée Maroc
+* agence location voiture Maroc
+* réservation voiture Maroc
+
+Structured data:
+Add JSON-LD for:
+
+* LocalBusiness
+* CarRental
+* Product/Vehicle
+* FAQPage
+* BreadcrumbList
+* BlogPosting
+
+Security requirements:
+The application stores sensitive customer data, so security is very important.
+
+Implement:
+
+* Secure password hashing
+* Role-based access control
+* Input validation
+* Server-side validation
+* SQL injection protection using ORM
+* XSS protection
+* CSRF protection if cookies are used
+* Rate limiting on login
+* Rate limiting on rental request form
+* Rate limiting on customer registration
+* Secure file upload validation
+* File type validation
+* File size limits
+* Image/video upload restrictions
+* Store secrets only in environment variables
+* No secrets in frontend code
+* Secure headers
+* Audit logs for admin actions
+* HTTPS-ready deployment
+* Customer data privacy protection
+* Consent checkbox before submitting personal data
+* Prevent agents from accessing super admin features
+* Protect admin routes
+* Protect API routes
+* Sanitize user input
+* Validate uploaded files
+* Prevent path traversal
+* Prevent unauthorized access to documents
+
+Authentication:
+
+* Use email and password login
+* Use secure sessions or JWT
+* Passwords must be hashed
+* Add forgot password flow if possible
+* Add role-based redirects:
+
+  * Super admin goes to admin dashboard
+  * Agent goes to agent workspace
+  * Customer goes to customer dashboard
+
+Authorization:
+
+* Super admin has full access
+* Agent has limited access
+* Customer has access only to their own data
+* Public visitor has access only to public pages
+
+Audit logs:
+Record important actions:
+
+* Login
+* Failed login
+* Car created
+* Car updated
+* Car deleted
+* Rental request created
+* Customer called
+* Request confirmed by phone
+* Payment deadline started
+* Payment confirmed at agency
+* Request abandoned
+* Rental request rejected
+* Agent created
+* Expense added
+* Settings changed
+
+Database:
+Use PostgreSQL.
+
+Create tables/models for:
+
+* users
+* roles
+* customers
+* agents
+* cars
+* car_images
+* car_videos
+* car_360_images
+* rental_requests
+* rentals
+* car_expenses
+* payments
+* company_settings
+* theme_settings
+* seo_pages
+* blog_posts
+* audit_logs
+* notifications
+* documents
+* car_availability_blocks
+
+Suggested database model details:
+
+users:
+
+* id
+* full_name
+* email
+* phone
+* password_hash
+* role
+* status
+* created_at
+* updated_at
+
+customers:
+
+* id
+* user_id
+* cin
+* passport_number
+* driving_license_number
+* address
+* city
+* created_at
+* updated_at
+
+agents:
+
+* id
+* user_id
+* created_by
+* status
+* created_at
+* updated_at
+
+cars:
+
+* id
+* brand
+* model
+* year
+* category
+* fuel_type
+* transmission
+* seats
+* doors
+* air_conditioning
+* daily_price
+* weekly_price
+* monthly_price
+* deposit_amount
+* mileage_limit
+* city
+* internal_reference
+* license_plate
+* description
+* seo_title
+* seo_description
+* seo_slug
+* insurance_included
+* required_documents
+* status
+* created_at
+* updated_at
+
+car_images:
+
+* id
+* car_id
+* url
+* alt_text
+* is_main
+* sort_order
+* created_at
+
+car_videos:
+
+* id
+* car_id
+* url
+* title
+* created_at
+
+car_360_images:
+
+* id
+* car_id
+* url
+* title
+* sort_order
+* created_at
+
+rental_requests:
+
+* id
+* customer_id
+* car_id
+* full_name
+* phone
+* email
+* cin_or_passport
+* driving_license_number
+* start_date
+* return_date
+* pickup_location
+* return_location
+* estimated_total_price
+* final_price
+* notes
+* status
+* payment_status
+* payment_method
+* payment_deadline
+* call_confirmed_at
+* call_confirmed_by
+* paid_at_agency_at
+* payment_confirmed_by
+* abandoned_at
+* created_at
+* updated_at
+
+rentals:
+
+* id
+* rental_request_id
+* customer_id
+* car_id
+* start_date
+* return_date
+* final_price
+* payment_status
+* status
+* created_at
+* updated_at
+
+payments:
+
+* id
+* rental_request_id
+* rental_id
+* customer_id
+* car_id
+* amount
+* method
+* status
+* payment_deadline
+* paid_at
+* confirmed_by
+* notes
+* created_at
+* updated_at
+
+car_availability_blocks:
+
+* id
+* car_id
+* rental_request_id
+* rental_id
+* start_date
+* end_date
+* type
+* status
+* expires_at
+* created_at
+* updated_at
+
+car_expenses:
+
+* id
+* car_id
+* type
+* amount
+* date
+* description
+* invoice_file_url
+* created_by
+* created_at
+
+blog_posts:
+
+* id
+* title
+* slug
+* excerpt
+* content
+* cover_image
+* seo_title
+* seo_description
+* status
+* created_at
+* updated_at
+
+seo_pages:
+
+* id
+* page_name
+* slug
+* title
+* description
+* keywords
+* content
+* created_at
+* updated_at
+
+audit_logs:
+
+* id
+* user_id
+* action
+* entity_type
+* entity_id
+* details
+* created_at
+
+documents:
+
+* id
+* customer_id
+* rental_request_id
+* type
+* file_url
+* status
+* uploaded_at
+
+notifications:
+
+* id
+* user_id
+* title
+* message
+* read
+* created_at
+
+UX/UI requirements:
+
+* Modern premium design
+* Mobile-first
+* Responsive
+* Fast navigation
+* Clean car cards
+* Strong call-to-action buttons
+* WhatsApp floating button
+* Sticky mobile search bar
+* Clean admin dashboard
+* Beautiful charts
+* Responsive tables
+* Empty states
+* Loading states
+* Error states
+* Toast notifications
+* Confirmation modals
+* Accessible forms
+* Clear icons
+* Professional French copywriting
+* Moroccan market feeling
+
+Public website design style:
+
+* Premium but simple
+* Trustworthy
+* Fast
+* Clean
+* Modern cards
+* High-quality car visuals
+* Clear prices
+* Clear reservation CTA
+* Clear explanation that payment is done at the agency
+* Strong local SEO sections
+
+Admin design style:
+
+* Professional SaaS dashboard
+* Sidebar navigation
+* Dashboard cards
+* Charts
+* Data tables
+* Filters
+* Date range selector
+* Status badges
+* Action buttons
+* Modal forms
+* Countdown timer for payment deadlines
+* Alerts for requests close to abandonment
+
+Customer web app / PWA:
+Create a customer-facing web app that customers can use on mobile.
+
+The customer web app should allow:
+
+* Login
+* Register
+* Browse cars
+* View car details
+* Submit rental request
+* Track request status
+* View payment deadline countdown
+* View rental history
+* Update profile
+* Contact agency via WhatsApp
+* Receive notifications
+
+Make it installable as a PWA if possible:
+
+* manifest.json
+* app icon
+* mobile-friendly layout
+* offline fallback page if possible
+
+File upload requirements:
+
+* Upload car images
+* Upload car videos
+* Upload 360-degree images
+* Upload customer documents
+* Validate file type
+* Validate file size
+* Store file URLs in database
+* Show previews
+* Allow delete/reorder images
+
+Notifications:
+
+* Notify admin when new request is created
+* Notify customer when request status changes
+* Notify customer after phone confirmation with 12-hour payment deadline
+* Notify admin when request is close to expiration
+* Notify customer if request is abandoned
+* Show notifications inside dashboard
+* Optional email notification structure
+
+Rental price calculation:
+Calculate estimated price based on:
+
+* Daily price
+* Number of rental days
+* Optional weekly price
+* Optional monthly price
+
+Example:
+If rental period is less than 7 days, use daily price.
+If rental period is 7 days or more, optionally use weekly price.
+If rental period is 30 days or more, optionally use monthly price.
+
+Also allow admin to override final price before confirming payment at agency.
+
+Business logic:
+
+* A car cannot be reserved twice for overlapping dates.
+* Temporary holds expire after 12 hours if payment is not completed.
+* If a car is in MAINTENANCE, it cannot be requested.
+* If a request is confirmed by phone, create a temporary hold.
+* If payment is completed at the agency, convert temporary hold to reserved block.
+* If request is abandoned, release the temporary hold.
+* If rental is completed, car becomes available again unless marked maintenance.
+* Expenses must reduce profit.
+* Only completed rentals count as final revenue.
+* Reserved rentals count as expected revenue.
+* Pending and waiting payment requests count as pipeline/pending revenue only.
+* Abandoned, rejected, and cancelled requests do not count as revenue.
+
+Seed data:
+Create sample demo data:
+
+* 1 super admin
+* 3 agents
+* 5 customers
+* 10 cars
+* 20 rental requests
+* Some pending requests
+* Some call-confirmed requests
+* Some abandoned requests
+* Some reserved requests
+* 10 completed rentals
+* Payments at agency
+* Expenses for each car
+* 5 blog articles
+* SEO pages for major Moroccan cities
+
+Sample cars:
+
+* Dacia Logan
+* Dacia Sandero
+* Renault Clio
+* Renault Megane
+* Peugeot 208
+* Hyundai i10
+* Hyundai Tucson
+* Kia Picanto
+* Volkswagen Golf
+* Range Rover Evoque
+
+Sample blog articles in French:
+
+* Comment choisir une voiture de location au Maroc ?
+* Location de voiture à Casablanca : guide complet
+* Les documents nécessaires pour louer une voiture au Maroc
+* Location voiture automatique ou manuelle : que choisir ?
+* Conseils pour louer une voiture pas chère au Maroc
+
+Required output:
+Generate:
+
+* Complete project structure
+* Database schema
+* ORM models
+* Authentication system
+* Authorization middleware
+* Public website pages
+* Customer web app pages
+* Admin dashboard pages
+* Agent dashboard pages
+* API routes
+* Reusable UI components
+* JSON theme loader
+* SEO utilities
+* Sitemap generation
+* Robots.txt
+* Seed data
+* Environment variable example
+* README with installation steps
+
+The app must be clean, production-ready, secure, optimized, easy to customize, and fully in French.
+
+Very important:
+Do not implement online payment in the first version. The payment system must be based on physical payment at the agency after phone confirmation, with a 12-hour deadline before the request is automatically abandoned.

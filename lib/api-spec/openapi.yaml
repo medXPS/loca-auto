@@ -1,22 +1,32 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Location Auto Maroc API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: auth
+  - name: cars
+  - name: rental-requests
+  - name: customers
+  - name: agents
+  - name: expenses
+  - name: payments
+  - name: blog
+  - name: notifications
+  - name: dashboard
+  - name: documents
+  - name: settings
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +34,1689 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── AUTH ────────────────────────────────────────────────────────────────────
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new customer account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateMe
+      tags: [auth]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ─── CARS ────────────────────────────────────────────────────────────────────
+  /cars:
+    get:
+      operationId: listCars
+      tags: [cars]
+      summary: List cars (public, with filters)
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: brand
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: city
+          in: query
+          schema: { type: string }
+        - name: transmission
+          in: query
+          schema: { type: string }
+        - name: fuelType
+          in: query
+          schema: { type: string }
+        - name: minPrice
+          in: query
+          schema: { type: number }
+        - name: maxPrice
+          in: query
+          schema: { type: number }
+        - name: seats
+          in: query
+          schema: { type: integer }
+        - name: available
+          in: query
+          schema: { type: boolean }
+        - name: sortBy
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: List of cars
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CarListResponse"
+    post:
+      operationId: createCar
+      tags: [cars]
+      summary: Create a car (admin/agent)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CarInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Car"
+
+  /cars/{id}:
+    get:
+      operationId: getCar
+      tags: [cars]
+      summary: Get car details (public)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Car details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CarDetail"
+    patch:
+      operationId: updateCar
+      tags: [cars]
+      summary: Update a car (admin/agent)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CarUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Car"
+    delete:
+      operationId: deleteCar
+      tags: [cars]
+      summary: Delete a car (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  /cars/{id}/images:
+    post:
+      operationId: uploadCarImage
+      tags: [cars]
+      summary: Upload car image URL
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CarImageInput"
+      responses:
+        "201":
+          description: Image added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CarImage"
+
+  /cars/{id}/availability:
+    get:
+      operationId: getCarAvailability
+      tags: [cars]
+      summary: Get car availability blocks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Availability blocks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailabilityBlock"
+
+  # ─── RENTAL REQUESTS ─────────────────────────────────────────────────────────
+  /rental-requests:
+    get:
+      operationId: listRentalRequests
+      tags: [rental-requests]
+      summary: List rental requests
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: customerId
+          in: query
+          schema: { type: integer }
+        - name: carId
+          in: query
+          schema: { type: integer }
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: List of rental requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalRequestListResponse"
+    post:
+      operationId: createRentalRequest
+      tags: [rental-requests]
+      summary: Submit a rental request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RentalRequestInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalRequest"
+
+  /rental-requests/{id}:
+    get:
+      operationId: getRentalRequest
+      tags: [rental-requests]
+      summary: Get rental request details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Rental request details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalRequest"
+    patch:
+      operationId: updateRentalRequest
+      tags: [rental-requests]
+      summary: Update rental request (admin/agent)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RentalRequestUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalRequest"
+
+  /rental-requests/{id}/status:
+    patch:
+      operationId: updateRentalRequestStatus
+      tags: [rental-requests]
+      summary: Update rental request status (admin/agent)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalRequest"
+
+  /rental-requests/{id}/confirm-call:
+    patch:
+      operationId: confirmCall
+      tags: [rental-requests]
+      summary: Mark as call confirmed — starts 12h payment deadline
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmCallInput"
+      responses:
+        "200":
+          description: Call confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalRequest"
+
+  /rental-requests/{id}/confirm-payment:
+    patch:
+      operationId: confirmPayment
+      tags: [rental-requests]
+      summary: Confirm payment at agency
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmPaymentInput"
+      responses:
+        "200":
+          description: Payment confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalRequest"
+
+  /rental-requests/{id}/cancel:
+    patch:
+      operationId: cancelRentalRequest
+      tags: [rental-requests]
+      summary: Cancel a rental request
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalRequest"
+
+  /rental-requests/check-expired:
+    post:
+      operationId: checkExpiredRequests
+      tags: [rental-requests]
+      summary: Process expired payment deadlines
+      responses:
+        "200":
+          description: Expired requests processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ─── CUSTOMERS ───────────────────────────────────────────────────────────────
+  /customers:
+    get:
+      operationId: listCustomers
+      tags: [customers]
+      summary: List customers (admin/agent)
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerListResponse"
+
+  /customers/{id}:
+    get:
+      operationId: getCustomer
+      tags: [customers]
+      summary: Get customer details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDetail"
+    patch:
+      operationId: updateCustomer
+      tags: [customers]
+      summary: Update customer profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDetail"
+
+  /customers/me/profile:
+    get:
+      operationId: getMyCustomerProfile
+      tags: [customers]
+      summary: Get current customer's own profile
+      responses:
+        "200":
+          description: My customer profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDetail"
+    patch:
+      operationId: updateMyCustomerProfile
+      tags: [customers]
+      summary: Update current customer's profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDetail"
+
+  # ─── AGENTS ──────────────────────────────────────────────────────────────────
+  /agents:
+    get:
+      operationId: listAgents
+      tags: [agents]
+      summary: List agents (admin)
+      responses:
+        "200":
+          description: List of agents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Agent"
+    post:
+      operationId: createAgent
+      tags: [agents]
+      summary: Create agent (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+
+  /agents/{id}:
+    get:
+      operationId: getAgent
+      tags: [agents]
+      summary: Get agent details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Agent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+    patch:
+      operationId: updateAgent
+      tags: [agents]
+      summary: Update agent (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AgentUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Agent"
+    delete:
+      operationId: deleteAgent
+      tags: [agents]
+      summary: Delete agent (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── EXPENSES ────────────────────────────────────────────────────────────────
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List expenses
+      parameters:
+        - name: carId
+          in: query
+          schema: { type: integer }
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: from
+          in: query
+          schema: { type: string }
+        - name: to
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseListResponse"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Add car expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExpenseInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Expense"
+
+  /expenses/{id}:
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      summary: Delete expense (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── BLOG ────────────────────────────────────────────────────────────────────
+  /blog:
+    get:
+      operationId: listBlogPosts
+      tags: [blog]
+      summary: List blog posts (public)
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Blog posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogListResponse"
+    post:
+      operationId: createBlogPost
+      tags: [blog]
+      summary: Create blog post (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlogPostInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogPost"
+
+  /blog/{slug}:
+    get:
+      operationId: getBlogPost
+      tags: [blog]
+      summary: Get blog post by slug (public)
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Blog post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogPost"
+
+  /blog/{id}/edit:
+    patch:
+      operationId: updateBlogPost
+      tags: [blog]
+      summary: Update blog post (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlogPostUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogPost"
+    delete:
+      operationId: deleteBlogPost
+      tags: [blog]
+      summary: Delete blog post (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: Get current user notifications
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Marked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    patch:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All marked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  # ─── DASHBOARD / BI ──────────────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get admin BI dashboard summary
+      parameters:
+        - name: from
+          in: query
+          schema: { type: string }
+        - name: to
+          in: query
+          schema: { type: string }
+        - name: period
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/revenue-chart:
+    get:
+      operationId: getRevenueChart
+      tags: [dashboard]
+      summary: Monthly revenue/expenses/profit chart data
+      parameters:
+        - name: months
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Chart data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MonthlyChartPoint"
+
+  /dashboard/car-performance:
+    get:
+      operationId: getCarPerformance
+      tags: [dashboard]
+      summary: Per-car revenue, expenses, profit
+      responses:
+        "200":
+          description: Car performance list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CarPerformance"
+
+  /dashboard/requests-by-status:
+    get:
+      operationId: getRequestsByStatus
+      tags: [dashboard]
+      summary: Request counts grouped by status
+      responses:
+        "200":
+          description: Requests by status
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StatusCount"
+
+  /dashboard/recent-requests:
+    get:
+      operationId: getRecentRequests
+      tags: [dashboard]
+      summary: Latest rental requests for dashboard feed
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Recent requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RentalRequest"
+
+  /dashboard/expiring-requests:
+    get:
+      operationId: getExpiringRequests
+      tags: [dashboard]
+      summary: Requests close to 12h payment deadline expiration
+      responses:
+        "200":
+          description: Expiring requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RentalRequest"
+
+  /dashboard/audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [dashboard]
+      summary: List audit log entries (admin)
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer }
+        - name: limit
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditLogListResponse"
+
+  # ─── SETTINGS ────────────────────────────────────────────────────────────────
+  /settings/company:
+    get:
+      operationId: getCompanySettings
+      tags: [settings]
+      summary: Get company/site settings
+      responses:
+        "200":
+          description: Company settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanySettings"
+    patch:
+      operationId: updateCompanySettings
+      tags: [settings]
+      summary: Update company settings (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanySettingsUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompanySettings"
+
+  # ─── DOCUMENTS (upload) ──────────────────────────────────────────────────────
+  /documents:
+    post:
+      operationId: uploadDocument
+      tags: [documents]
+      summary: Upload a document (customer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DocumentInput"
+      responses:
+        "201":
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+
+  /documents/{rentalRequestId}:
+    get:
+      operationId: listDocuments
+      tags: [documents]
+      summary: List documents for a rental request
+      parameters:
+        - name: rentalRequestId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+
+  /upload/presign:
+    post:
+      operationId: getUploadUrl
+      tags: [documents]
+      summary: Get presigned upload URL or direct upload endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadRequest"
+      responses:
+        "200":
+          description: Upload info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadResponse"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
 
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+
+    # ── Auth ──────────────────────────────────────────────────────────────────
+    RegisterInput:
+      type: object
+      required: [fullName, email, password, phone]
+      properties:
+        fullName: { type: string }
+        email: { type: string }
+        password: { type: string }
+        phone: { type: string }
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token: { type: string }
+
+    User:
+      type: object
+      required: [id, fullName, email, phone, role, status]
+      properties:
+        id: { type: integer }
+        fullName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        role: { type: string }
+        status: { type: string }
+        createdAt: { type: string }
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        fullName: { type: string }
+        phone: { type: string }
+
+    # ── Cars ──────────────────────────────────────────────────────────────────
+    Car:
+      type: object
+      required: [id, brand, model, year, category, fuelType, transmission, seats, doors, dailyPrice, status]
+      properties:
+        id: { type: integer }
+        brand: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        category: { type: string }
+        fuelType: { type: string }
+        transmission: { type: string }
+        seats: { type: integer }
+        doors: { type: integer }
+        airConditioning: { type: boolean }
+        dailyPrice: { type: number }
+        weeklyPrice: { type: ["number", "null"] }
+        monthlyPrice: { type: ["number", "null"] }
+        depositAmount: { type: ["number", "null"] }
+        mileageLimit: { type: ["integer", "null"] }
+        city: { type: string }
+        internalReference: { type: ["string", "null"] }
+        licensePlate: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        seoTitle: { type: ["string", "null"] }
+        seoDescription: { type: ["string", "null"] }
+        seoSlug: { type: ["string", "null"] }
+        insuranceIncluded: { type: boolean }
+        requiredDocuments: { type: ["string", "null"] }
+        status: { type: string }
+        mainImageUrl: { type: ["string", "null"] }
+        createdAt: { type: string }
+
+    CarDetail:
+      type: object
+      required: [id, brand, model, year, category, fuelType, transmission, seats, doors, dailyPrice, status]
+      properties:
+        id: { type: integer }
+        brand: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        category: { type: string }
+        fuelType: { type: string }
+        transmission: { type: string }
+        seats: { type: integer }
+        doors: { type: integer }
+        airConditioning: { type: boolean }
+        dailyPrice: { type: number }
+        weeklyPrice: { type: ["number", "null"] }
+        monthlyPrice: { type: ["number", "null"] }
+        depositAmount: { type: ["number", "null"] }
+        mileageLimit: { type: ["integer", "null"] }
+        city: { type: string }
+        internalReference: { type: ["string", "null"] }
+        licensePlate: { type: ["string", "null"] }
+        description: { type: ["string", "null"] }
+        seoTitle: { type: ["string", "null"] }
+        seoDescription: { type: ["string", "null"] }
+        seoSlug: { type: ["string", "null"] }
+        insuranceIncluded: { type: boolean }
+        requiredDocuments: { type: ["string", "null"] }
+        status: { type: string }
+        mainImageUrl: { type: ["string", "null"] }
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/CarImage"
+        createdAt: { type: string }
+
+    CarListResponse:
+      type: object
+      required: [cars, total, page, limit]
+      properties:
+        cars:
+          type: array
+          items:
+            $ref: "#/components/schemas/Car"
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+
+    CarInput:
+      type: object
+      required: [brand, model, year, category, fuelType, transmission, seats, doors, dailyPrice, city]
+      properties:
+        brand: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        category: { type: string }
+        fuelType: { type: string }
+        transmission: { type: string }
+        seats: { type: integer }
+        doors: { type: integer }
+        airConditioning: { type: boolean }
+        dailyPrice: { type: number }
+        weeklyPrice: { type: number }
+        monthlyPrice: { type: number }
+        depositAmount: { type: number }
+        mileageLimit: { type: integer }
+        city: { type: string }
+        internalReference: { type: string }
+        licensePlate: { type: string }
+        description: { type: string }
+        seoTitle: { type: string }
+        seoDescription: { type: string }
+        seoSlug: { type: string }
+        insuranceIncluded: { type: boolean }
+        requiredDocuments: { type: string }
+        status: { type: string }
+        mainImageUrl: { type: string }
+
+    CarUpdate:
+      type: object
+      properties:
+        brand: { type: string }
+        model: { type: string }
+        year: { type: integer }
+        category: { type: string }
+        fuelType: { type: string }
+        transmission: { type: string }
+        seats: { type: integer }
+        doors: { type: integer }
+        airConditioning: { type: boolean }
+        dailyPrice: { type: number }
+        weeklyPrice: { type: number }
+        monthlyPrice: { type: number }
+        depositAmount: { type: number }
+        mileageLimit: { type: integer }
+        city: { type: string }
+        internalReference: { type: string }
+        licensePlate: { type: string }
+        description: { type: string }
+        seoTitle: { type: string }
+        seoDescription: { type: string }
+        seoSlug: { type: string }
+        insuranceIncluded: { type: boolean }
+        requiredDocuments: { type: string }
+        status: { type: string }
+        mainImageUrl: { type: string }
+
+    CarImage:
+      type: object
+      required: [id, carId, url]
+      properties:
+        id: { type: integer }
+        carId: { type: integer }
+        url: { type: string }
+        altText: { type: ["string", "null"] }
+        isMain: { type: boolean }
+        sortOrder: { type: integer }
+
+    CarImageInput:
+      type: object
+      required: [url]
+      properties:
+        url: { type: string }
+        altText: { type: string }
+        isMain: { type: boolean }
+        sortOrder: { type: integer }
+
+    AvailabilityBlock:
+      type: object
+      required: [id, carId, startDate, endDate, type, status]
+      properties:
+        id: { type: integer }
+        carId: { type: integer }
+        rentalRequestId: { type: ["integer", "null"] }
+        startDate: { type: string }
+        endDate: { type: string }
+        type: { type: string }
+        status: { type: string }
+        expiresAt: { type: ["string", "null"] }
+
+    # ── Rental Requests ───────────────────────────────────────────────────────
+    RentalRequest:
+      type: object
+      required: [id, carId, fullName, phone, email, startDate, returnDate, estimatedTotalPrice, status, paymentStatus, createdAt]
+      properties:
+        id: { type: integer }
+        customerId: { type: ["integer", "null"] }
+        carId: { type: integer }
+        fullName: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        cinOrPassport: { type: ["string", "null"] }
+        drivingLicenseNumber: { type: ["string", "null"] }
+        startDate: { type: string }
+        returnDate: { type: string }
+        pickupLocation: { type: ["string", "null"] }
+        returnLocation: { type: ["string", "null"] }
+        estimatedTotalPrice: { type: number }
+        finalPrice: { type: ["number", "null"] }
+        notes: { type: ["string", "null"] }
+        status: { type: string }
+        paymentStatus: { type: string }
+        paymentMethod: { type: string }
+        paymentDeadline: { type: ["string", "null"] }
+        callConfirmedAt: { type: ["string", "null"] }
+        paidAtAgencyAt: { type: ["string", "null"] }
+        abandonedAt: { type: ["string", "null"] }
+        car:
+          $ref: "#/components/schemas/Car"
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    RentalRequestListResponse:
+      type: object
+      required: [requests, total, page, limit]
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: "#/components/schemas/RentalRequest"
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+
+    RentalRequestInput:
+      type: object
+      required: [carId, fullName, phone, email, startDate, returnDate, estimatedTotalPrice]
+      properties:
+        carId: { type: integer }
+        fullName: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        cinOrPassport: { type: string }
+        drivingLicenseNumber: { type: string }
+        startDate: { type: string }
+        returnDate: { type: string }
+        pickupLocation: { type: string }
+        returnLocation: { type: string }
+        estimatedTotalPrice: { type: number }
+        notes: { type: string }
+
+    RentalRequestUpdate:
+      type: object
+      properties:
+        fullName: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        cinOrPassport: { type: string }
+        drivingLicenseNumber: { type: string }
+        startDate: { type: string }
+        returnDate: { type: string }
+        pickupLocation: { type: string }
+        returnLocation: { type: string }
+        finalPrice: { type: number }
+        notes: { type: string }
+
+    StatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string }
+        notes: { type: string }
+
+    ConfirmCallInput:
+      type: object
+      properties:
+        notes: { type: string }
+        finalPrice: { type: number }
+
+    ConfirmPaymentInput:
+      type: object
+      properties:
+        amount: { type: number }
+        notes: { type: string }
+
+    # ── Customers ─────────────────────────────────────────────────────────────
+    CustomerDetail:
+      type: object
+      required: [id, userId, user]
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        cin: { type: ["string", "null"] }
+        passportNumber: { type: ["string", "null"] }
+        drivingLicenseNumber: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        city: { type: ["string", "null"] }
+        user:
+          $ref: "#/components/schemas/User"
+        rentalRequests:
+          type: array
+          items:
+            $ref: "#/components/schemas/RentalRequest"
+
+    CustomerListResponse:
+      type: object
+      required: [customers, total, page, limit]
+      properties:
+        customers:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomerDetail"
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+
+    CustomerUpdate:
+      type: object
+      properties:
+        cin: { type: string }
+        passportNumber: { type: string }
+        drivingLicenseNumber: { type: string }
+        address: { type: string }
+        city: { type: string }
+
+    # ── Agents ────────────────────────────────────────────────────────────────
+    Agent:
+      type: object
+      required: [id, userId, status, user]
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        status: { type: string }
+        user:
+          $ref: "#/components/schemas/User"
+        createdAt: { type: string }
+
+    AgentInput:
+      type: object
+      required: [fullName, email, password, phone]
+      properties:
+        fullName: { type: string }
+        email: { type: string }
+        password: { type: string }
+        phone: { type: string }
+
+    AgentUpdate:
+      type: object
+      properties:
+        fullName: { type: string }
+        phone: { type: string }
+        status: { type: string }
+
+    # ── Expenses ──────────────────────────────────────────────────────────────
+    Expense:
+      type: object
+      required: [id, carId, type, amount, date]
+      properties:
+        id: { type: integer }
+        carId: { type: integer }
+        type: { type: string }
+        amount: { type: number }
+        date: { type: string }
+        description: { type: ["string", "null"] }
+        invoiceFileUrl: { type: ["string", "null"] }
+        createdAt: { type: string }
+
+    ExpenseListResponse:
+      type: object
+      required: [expenses, total]
+      properties:
+        expenses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Expense"
+        total: { type: integer }
+        totalAmount: { type: number }
+
+    ExpenseInput:
+      type: object
+      required: [carId, type, amount, date]
+      properties:
+        carId: { type: integer }
+        type: { type: string }
+        amount: { type: number }
+        date: { type: string }
+        description: { type: string }
+        invoiceFileUrl: { type: string }
+
+    # ── Blog ──────────────────────────────────────────────────────────────────
+    BlogPost:
+      type: object
+      required: [id, title, slug, status, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        slug: { type: string }
+        excerpt: { type: ["string", "null"] }
+        content: { type: ["string", "null"] }
+        coverImage: { type: ["string", "null"] }
+        seoTitle: { type: ["string", "null"] }
+        seoDescription: { type: ["string", "null"] }
+        status: { type: string }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+
+    BlogListResponse:
+      type: object
+      required: [posts, total, page, limit]
+      properties:
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/BlogPost"
+        total: { type: integer }
+        page: { type: integer }
+        limit: { type: integer }
+
+    BlogPostInput:
+      type: object
+      required: [title, slug, content]
+      properties:
+        title: { type: string }
+        slug: { type: string }
+        excerpt: { type: string }
+        content: { type: string }
+        coverImage: { type: string }
+        seoTitle: { type: string }
+        seoDescription: { type: string }
+        status: { type: string }
+
+    BlogPostUpdate:
+      type: object
+      properties:
+        title: { type: string }
+        slug: { type: string }
+        excerpt: { type: string }
+        content: { type: string }
+        coverImage: { type: string }
+        seoTitle: { type: string }
+        seoDescription: { type: string }
+        status: { type: string }
+
+    # ── Notifications ─────────────────────────────────────────────────────────
+    Notification:
+      type: object
+      required: [id, userId, title, message, read, createdAt]
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        title: { type: string }
+        message: { type: string }
+        read: { type: boolean }
+        createdAt: { type: string }
+
+    # ── Dashboard ─────────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required: [totalRevenue, expectedRevenue, pendingRevenue, totalExpenses, netProfit,
+                 totalRequests, pendingRequests, callConfirmedRequests, abandonedRequests,
+                 activeRentals, availableCars, reservedCars, totalCustomers, totalAgents]
+      properties:
+        totalRevenue: { type: number }
+        expectedRevenue: { type: number }
+        pendingRevenue: { type: number }
+        totalExpenses: { type: number }
+        netProfit: { type: number }
+        totalRequests: { type: integer }
+        pendingRequests: { type: integer }
+        callConfirmedRequests: { type: integer }
+        abandonedRequests: { type: integer }
+        activeRentals: { type: integer }
+        availableCars: { type: integer }
+        temporarilyHeldCars: { type: integer }
+        reservedCars: { type: integer }
+        rentedCars: { type: integer }
+        maintenanceCars: { type: integer }
+        totalCustomers: { type: integer }
+        totalAgents: { type: integer }
+
+    MonthlyChartPoint:
+      type: object
+      required: [month, revenue, expenses, profit]
+      properties:
+        month: { type: string }
+        revenue: { type: number }
+        expenses: { type: number }
+        profit: { type: number }
+
+    CarPerformance:
+      type: object
+      required: [carId, brand, model, revenue, expenses, profit, rentals]
+      properties:
+        carId: { type: integer }
+        brand: { type: string }
+        model: { type: string }
+        mainImageUrl: { type: ["string", "null"] }
+        revenue: { type: number }
+        expenses: { type: number }
+        profit: { type: number }
+        rentals: { type: integer }
+
+    StatusCount:
+      type: object
+      required: [status, count]
+      properties:
+        status: { type: string }
+        label: { type: string }
+        count: { type: integer }
+
+    AuditLog:
+      type: object
+      required: [id, action, entityType, createdAt]
+      properties:
+        id: { type: integer }
+        userId: { type: ["integer", "null"] }
+        userFullName: { type: ["string", "null"] }
+        action: { type: string }
+        entityType: { type: string }
+        entityId: { type: ["integer", "null"] }
+        details: { type: ["string", "null"] }
+        createdAt: { type: string }
+
+    AuditLogListResponse:
+      type: object
+      required: [logs, total]
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuditLog"
+        total: { type: integer }
+
+    # ── Settings ──────────────────────────────────────────────────────────────
+    CompanySettings:
+      type: object
+      required: [id]
+      properties:
+        id: { type: integer }
+        brandName: { type: ["string", "null"] }
+        slogan: { type: ["string", "null"] }
+        logoUrl: { type: ["string", "null"] }
+        phone: { type: ["string", "null"] }
+        whatsapp: { type: ["string", "null"] }
+        email: { type: ["string", "null"] }
+        address: { type: ["string", "null"] }
+        city: { type: ["string", "null"] }
+        facebook: { type: ["string", "null"] }
+        instagram: { type: ["string", "null"] }
+        primaryColor: { type: ["string", "null"] }
+        secondaryColor: { type: ["string", "null"] }
+        paymentDeadlineHours: { type: integer }
+        updatedAt: { type: string }
+
+    CompanySettingsUpdate:
+      type: object
+      properties:
+        brandName: { type: string }
+        slogan: { type: string }
+        logoUrl: { type: string }
+        phone: { type: string }
+        whatsapp: { type: string }
+        email: { type: string }
+        address: { type: string }
+        city: { type: string }
+        facebook: { type: string }
+        instagram: { type: string }
+        primaryColor: { type: string }
+        secondaryColor: { type: string }
+        paymentDeadlineHours: { type: integer }
+
+    # ── Documents ─────────────────────────────────────────────────────────────
+    Document:
+      type: object
+      required: [id, customerId, type, fileUrl, uploadedAt]
+      properties:
+        id: { type: integer }
+        customerId: { type: integer }
+        rentalRequestId: { type: ["integer", "null"] }
+        type: { type: string }
+        fileUrl: { type: string }
+        status: { type: string }
+        uploadedAt: { type: string }
+
+    DocumentInput:
+      type: object
+      required: [type, fileUrl]
+      properties:
+        rentalRequestId: { type: integer }
+        type: { type: string }
+        fileUrl: { type: string }
+
+    UploadRequest:
+      type: object
+      required: [fileType, fileName]
+      properties:
+        fileType: { type: string }
+        fileName: { type: string }
+        context: { type: string }
+
+    UploadResponse:
+      type: object
+      required: [uploadUrl, fileUrl]
+      properties:
+        uploadUrl: { type: string }
+        fileUrl: { type: string }
+        fields: { type: object }
