@@ -1,7 +1,7 @@
 import { useListRentalRequests } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Search, Eye, Filter, ClipboardList } from "lucide-react";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { StatusBadge } from "@/components/status-badge";
@@ -9,14 +9,16 @@ import { formatPrice, formatDateTime } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RequestActions } from "@/components/request-actions";
 
 export default function AdminRequests() {
+  const [location] = useLocation();
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  
-  const { data, isLoading } = useListRentalRequests({ 
+  const { data, isLoading, refetch } = useListRentalRequests({ 
     limit: 100,
     status: statusFilter !== "all" ? statusFilter : undefined
   });
+  const basePath = location.startsWith("/agent") ? "/agent" : "/admin";
 
   return (
     <div className="space-y-6">
@@ -105,11 +107,19 @@ export default function AdminRequests() {
                       <StatusBadge status={req.status} />
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Link href={`/admin/demandes/${req.id}`}>
-                        <Button variant="ghost" size="icon" className="hover:bg-primary/10 hover:text-primary">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                      </Link>
+                      <div className="flex flex-col items-end gap-2">
+                        <RequestActions
+                          requestId={req.id}
+                          status={req.status}
+                          estimatedPrice={req.estimatedTotalPrice}
+                          onSuccess={() => refetch()}
+                        />
+                        <Link href={`${basePath}/demandes/${req.id}`}>
+                          <Button variant="ghost" size="icon" className="hover:bg-primary/10 hover:text-primary">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))

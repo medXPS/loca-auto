@@ -47,7 +47,7 @@ function ProtectedRoute({ component: Component, allowedRoles }: { component: any
   if (!isAuthenticated) return <Redirect to="/connexion" />;
 
   if (user && !allowedRoles.includes(user.role)) {
-    if (user.role === "SUPER_ADMIN") return <Redirect to="/admin" />;
+    if (user.role === "ADMIN") return <Redirect to="/admin" />;
     if (user.role === "AGENT") return <Redirect to="/agent" />;
     return <Redirect to="/dashboard" />;
   }
@@ -75,21 +75,21 @@ export default function AppRouter() {
   return (
     <Switch>
       {/* Admin Routes */}
-      <Route path="/admin" component={() => <AdminRoute component={AdminDashboard} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/voitures/nouvelle" component={() => <AdminRoute component={AdminNewCar} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/voitures/:id" component={() => <AdminRoute component={AdminEditCar} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/voitures" component={() => <AdminRoute component={AdminCars} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/demandes/:id" component={() => <AdminRoute component={AdminRequestDetail} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/demandes" component={() => <AdminRoute component={AdminRequests} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/clients/:id" component={() => <AdminRoute component={AdminCustomerDetail} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/clients" component={() => <AdminRoute component={AdminCustomers} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/agents/nouveau" component={() => <AdminRoute component={AdminNewAgent} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/agents" component={() => <AdminRoute component={AdminAgents} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/charges" component={() => <AdminRoute component={AdminExpenses} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/blog/nouveau" component={() => <AdminRoute component={AdminNewBlogPost} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/blog" component={() => <AdminRoute component={AdminBlog} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/parametres" component={() => <AdminRoute component={AdminSettings} allowedRoles={["SUPER_ADMIN"]} />} />
-      <Route path="/admin/audit" component={() => <AdminRoute component={AdminAuditLogs} allowedRoles={["SUPER_ADMIN"]} />} />
+      <Route path="/admin" component={() => <AdminRoute component={AdminDashboard} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/voitures/nouvelle" component={() => <AdminRoute component={AdminNewCar} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/voitures/:id" component={() => <AdminRoute component={AdminEditCar} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/voitures" component={() => <AdminRoute component={AdminCars} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/demandes/:id" component={() => <AdminRoute component={AdminRequestDetail} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/demandes" component={() => <AdminRoute component={AdminRequests} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/clients/:id" component={() => <AdminRoute component={AdminCustomerDetail} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/clients" component={() => <AdminRoute component={AdminCustomers} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/agents/nouveau" component={() => <AdminRoute component={AdminNewAgent} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/agents" component={() => <AdminRoute component={AdminAgents} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/charges" component={() => <AdminRoute component={AdminExpenses} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/blog/nouveau" component={() => <AdminRoute component={AdminNewBlogPost} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/blog" component={() => <AdminRoute component={AdminBlog} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/parametres" component={() => <AdminRoute component={AdminSettings} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/audit" component={() => <AdminRoute component={AdminAuditLogs} allowedRoles={["ADMIN"]} />} />
 
       {/* Agent Routes */}
       <Route path="/agent" component={() => <AdminRoute component={AdminDashboard} allowedRoles={["AGENT"]} />} />

@@ -38,7 +38,7 @@ Application web complète de location de voitures au Maroc — site public, espa
 
 - **COD-only payments**: No online payment. Admin confirms call → customer pays at agency within 12h deadline.
 - **JWT auth**: Token stored in localStorage, `setAuthTokenGetter()` configured once in `AuthProvider`.
-- **Role-based routing**: SUPER_ADMIN → `/admin/*`, AGENT → `/agent/*`, CUSTOMER → `/dashboard/*`.
+- **Role-based routing**: ADMIN (super admin) → `/admin/*`, AGENT → `/agent/*`, CUSTOMER → `/dashboard/*`.
 - **Shared admin/agent UI**: Agents reuse the same admin pages, role restrictions enforced at backend.
 - **Contract-first API**: OpenAPI spec → codegen → typed React Query hooks + Zod schemas. Never hand-write API calls.
 
@@ -51,7 +51,7 @@ Application web complète de location de voitures au Maroc — site public, espa
 
 ## Seed credentials
 
-- Admin: `admin@locationauto.ma` / `admin123`
+- Super admin: `admin@demo.com` / `demo-admin@$` (MFA disabled)
 - Agent: `khalid@locationauto.ma` / `agent123`
 - Client: `mohammed@example.ma` / `client123`
 

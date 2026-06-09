@@ -3,7 +3,7 @@ import { useLocation, Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useLogin, setAuthTokenGetter } from "@workspace/api-client-react";
+import { customFetch, useLogin, setAuthTokenGetter } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +30,10 @@ export default function Login() {
   const [_, setLocation] = useLocation();
   const { login: setAuthToken } = useAuth();
   const { toast } = useToast();
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaEmail, setMfaEmail] = useState("");
+  const [isVerifyingMfa, setIsVerifyingMfa] = useState(false);
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -41,9 +45,39 @@ export default function Login() {
 
   const loginMutation = useLogin();
 
+  const completeLogin = (res: any) => {
+    setAuthToken(res.token);
+    setAuthTokenGetter(() => res.token);
+
+    toast({
+      title: "Connexion réussie",
+      description: "Bienvenue sur Location Auto Maroc",
+    });
+
+    if (res.user.role === "ADMIN") {
+      setLocation("/admin");
+    } else if (res.user.role === "AGENT") {
+      setLocation("/agent");
+    } else {
+      setLocation("/dashboard");
+    }
+  };
+
   const onSubmit = (data: LoginFormValues) => {
     loginMutation.mutate({ data }, {
       onSuccess: (res) => {
+        const response = res as any;
+        if (response.mfaRequired) {
+          setMfaToken(response.mfaToken);
+          setMfaEmail(response.user?.email ?? data.email);
+          toast({
+            title: "Code de securite envoye",
+            description: "Entrez le code recu par email pour terminer la connexion.",
+          });
+          return;
+        }
+        completeLogin(response);
+        return;
         setAuthToken(res.token);
         setAuthTokenGetter(() => res.token);
         
@@ -53,7 +87,7 @@ export default function Login() {
         });
 
         // Redirect based on role
-        if (res.user.role === "SUPER_ADMIN") {
+        if (res.user.role === "ADMIN") {
           setLocation("/admin");
         } else if (res.user.role === "AGENT") {
           setLocation("/agent");
@@ -64,11 +98,32 @@ export default function Login() {
       onError: (error: any) => {
         toast({
           title: "Erreur de connexion",
-          description: error?.message || "Email ou mot de passe incorrect",
+          description: error?.data?.error || error?.message || "Email ou mot de passe incorrect",
           variant: "destructive",
         });
       }
     });
+  };
+
+  const verifyMfa = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!mfaToken || !mfaCode) return;
+    setIsVerifyingMfa(true);
+    try {
+      const res = await customFetch<any>("/api/auth/verify-mfa", {
+        method: "POST",
+        body: JSON.stringify({ mfaToken, code: mfaCode }),
+      });
+      completeLogin(res);
+    } catch (error: any) {
+      toast({
+        title: "Code invalide",
+        description: error?.message || "Verifiez le code recu par email.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingMfa(false);
+    }
   };
 
   return (
@@ -85,13 +140,36 @@ export default function Login() {
 
         <Card className="border-border/50 shadow-xl">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold tracking-tight">Bon retour</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              {mfaToken ? "Verification MFA" : "Bon retour"}
+            </CardTitle>
             <CardDescription>
               Entrez vos identifiants pour accéder à votre compte
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Form {...form}>
+            {mfaToken ? (
+              <form onSubmit={verifyMfa} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Code a 6 chiffres</label>
+                  <Input
+                    value={mfaCode}
+                    onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="123456"
+                    className="h-12 text-center text-xl tracking-[0.35em]"
+                  />
+                </div>
+                <Button type="submit" className="w-full h-11" disabled={isVerifyingMfa || mfaCode.length !== 6}>
+                  {isVerifyingMfa ? "Verification..." : "Valider le code"}
+                </Button>
+                <Button type="button" variant="ghost" className="w-full" onClick={() => setMfaToken(null)}>
+                  Revenir a la connexion
+                </Button>
+              </form>
+            ) : (
+              <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
@@ -129,7 +207,8 @@ export default function Login() {
                   {loginMutation.isPending ? "Connexion..." : "Se connecter"}
                 </Button>
               </form>
-            </Form>
+              </Form>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-sm text-center text-muted-foreground">

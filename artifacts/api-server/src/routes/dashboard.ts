@@ -6,7 +6,7 @@ import { authMiddleware, requireRole } from "../lib/auth";
 const router = Router();
 
 // GET /api/dashboard/stats
-router.get("/stats", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.get("/stats", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     // Revenue: sum of finalPrice for COMPLETED requests
     const [revenueRow] = await db.select({ total: sql<number>`COALESCE(SUM(final_price::numeric), 0)::float` })
@@ -72,7 +72,7 @@ router.get("/stats", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async 
 });
 
 // GET /api/dashboard/revenue-chart
-router.get("/revenue-chart", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.get("/revenue-chart", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const months = parseInt((req.query.months as string) ?? "12");
     const rows = await db.execute(sql`
@@ -112,7 +112,7 @@ router.get("/revenue-chart", authMiddleware, requireRole("SUPER_ADMIN", "AGENT")
 });
 
 // GET /api/dashboard/car-performance
-router.get("/car-performance", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.get("/car-performance", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const rows = await db.execute(sql`
       SELECT
@@ -140,7 +140,7 @@ router.get("/car-performance", authMiddleware, requireRole("SUPER_ADMIN", "AGENT
 });
 
 // GET /api/dashboard/requests-by-status
-router.get("/requests-by-status", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.get("/requests-by-status", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const rows = await db.execute(sql`
       SELECT status, count(*)::int AS count
@@ -163,7 +163,7 @@ router.get("/requests-by-status", authMiddleware, requireRole("SUPER_ADMIN", "AG
 });
 
 // GET /api/dashboard/recent-requests
-router.get("/recent-requests", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.get("/recent-requests", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const limit = parseInt((req.query.limit as string) ?? "10");
     const requests = await db.select().from(schema.rentalRequestsTable).orderBy(desc(schema.rentalRequestsTable.createdAt)).limit(limit);
@@ -186,7 +186,7 @@ router.get("/recent-requests", authMiddleware, requireRole("SUPER_ADMIN", "AGENT
 });
 
 // GET /api/dashboard/expiring-requests
-router.get("/expiring-requests", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.get("/expiring-requests", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
     const requests = await db.select().from(schema.rentalRequestsTable)
@@ -208,7 +208,7 @@ router.get("/expiring-requests", authMiddleware, requireRole("SUPER_ADMIN", "AGE
 });
 
 // GET /api/dashboard/audit-logs
-router.get("/audit-logs", authMiddleware, requireRole("SUPER_ADMIN"), async (req, res) => {
+router.get("/audit-logs", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     const { page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));

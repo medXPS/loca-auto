@@ -21,7 +21,7 @@ router.get("/", async (req, res) => {
 });
 
 // POST /api/blog
-router.post("/", authMiddleware, requireRole("SUPER_ADMIN"), async (req, res) => {
+router.post("/", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     const [post] = await db.insert(schema.blogPostsTable).values(req.body).returning();
     res.status(201).json(post);
@@ -44,9 +44,9 @@ router.get("/:slug", async (req, res) => {
 });
 
 // PATCH /api/blog/:id/edit
-router.patch("/:id/edit", authMiddleware, requireRole("SUPER_ADMIN"), async (req, res) => {
+router.patch("/:id/edit", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
-    const [post] = await db.update(schema.blogPostsTable).set(req.body).where(eq(schema.blogPostsTable.id, parseInt(req.params.id))).returning();
+    const [post] = await db.update(schema.blogPostsTable).set(req.body).where(eq(schema.blogPostsTable.id, parseInt(String(req.params.id), 10))).returning();
     if (!post) { res.status(404).json({ error: "Article non trouvé" }); return; }
     res.json(post);
   } catch (err) {
@@ -56,9 +56,9 @@ router.patch("/:id/edit", authMiddleware, requireRole("SUPER_ADMIN"), async (req
 });
 
 // DELETE /api/blog/:id/edit
-router.delete("/:id/edit", authMiddleware, requireRole("SUPER_ADMIN"), async (req, res) => {
+router.delete("/:id/edit", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
-    await db.delete(schema.blogPostsTable).where(eq(schema.blogPostsTable.id, parseInt(req.params.id)));
+    await db.delete(schema.blogPostsTable).where(eq(schema.blogPostsTable.id, parseInt(String(req.params.id), 10)));
     res.status(204).send();
   } catch (err) {
     req.log.error(err);

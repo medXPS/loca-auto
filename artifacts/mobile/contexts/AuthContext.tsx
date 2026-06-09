@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import { useRouter, useSegments } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import React, {
   createContext,
   useCallback,
@@ -8,10 +8,34 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import { Platform } from "react-native";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
 import type { User } from "@workspace/api-client-react";
 
 const TOKEN_KEY = "auth_token";
+
+async function readToken(): Promise<string | null> {
+  if (Platform.OS === "web") {
+    return typeof window !== "undefined" ? window.localStorage.getItem(TOKEN_KEY) : null;
+  }
+  return SecureStore.getItemAsync(TOKEN_KEY);
+}
+
+async function writeToken(token: string): Promise<void> {
+  if (Platform.OS === "web") {
+    if (typeof window !== "undefined") window.localStorage.setItem(TOKEN_KEY, token);
+    return;
+  }
+  await SecureStore.setItemAsync(TOKEN_KEY, token);
+}
+
+async function clearToken(): Promise<void> {
+  if (Platform.OS === "web") {
+    if (typeof window !== "undefined") window.localStorage.removeItem(TOKEN_KEY);
+    return;
+  }
+  await SecureStore.deleteItemAsync(TOKEN_KEY);
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -37,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function loadToken() {
       try {
-        const stored = await SecureStore.getItemAsync(TOKEN_KEY);
+        const stored = await readToken();
         if (stored) {
           setToken(stored);
           setAuthTokenGetter(() => stored);
@@ -51,14 +75,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    await SecureStore.deleteItemAsync(TOKEN_KEY);
+    await clearToken();
     setToken(null);
     setUser(null);
     setAuthTokenGetter(null);
   }, []);
 
   const login = useCallback(async (newToken: string, newUser: User) => {
-    await SecureStore.setItemAsync(TOKEN_KEY, newToken);
+    await writeToken(newToken);
     setToken(newToken);
     setUser(newUser);
     setAuthTokenGetter(() => newToken);
@@ -87,16 +111,16 @@ export function useAuth(): AuthContextValue {
 
 export function useProtectedRoute() {
   const { token, isLoading } = useAuth();
-  const segments = useSegments();
+  const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
     if (isLoading) return;
-    const inAuthGroup = segments[0] === "(auth)";
-    if (!token && !inAuthGroup) {
-      router.replace("/(auth)/login");
-    } else if (token && inAuthGroup) {
-      router.replace("/(tabs)");
+    const inAuthRoute = pathname === "/login" || pathname === "/register";
+    if (!token && !inAuthRoute) {
+      router.replace("/login");
+    } else if (token && inAuthRoute) {
+      router.replace("/");
     }
-  }, [token, isLoading, segments, router]);
+  }, [token, isLoading, pathname, router]);
 }

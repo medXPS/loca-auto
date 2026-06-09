@@ -19,6 +19,7 @@ import { useColors } from "@/hooks/useColors";
 import { CarCard } from "@/components/CarCard";
 import { useListCars } from "@workspace/api-client-react";
 import type { Car } from "@workspace/api-client-react";
+import { AvailabilityRangePicker } from "@/components/AvailabilityRangePicker";
 
 const CATEGORIES = ["CITADINE", "BERLINE", "SUV", "MONOSPACE", "LUXE", "SPORT", "4X4"];
 const CAT_LABELS: Record<string, string> = {
@@ -45,19 +46,28 @@ export default function CarsScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ city?: string }>();
+  const params = useLocalSearchParams<{ city?: string; startDate?: string; returnDate?: string }>();
 
   const [search, setSearch] = useState("");
   const [city, setCity] = useState(params.city ?? "");
+  const [startDate, setStartDate] = useState(params.startDate ?? "");
+  const [returnDate, setReturnDate] = useState(params.returnDate ?? "");
   const [category, setCategory] = useState("");
   const [minSeats, setMinSeats] = useState(0);
   const [priceRange, setPriceRange] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data, isLoading, refetch } = useListCars(undefined, {
-    query: { queryKey: ["/api/cars", "list"] },
-  });
+  const { data, isLoading, refetch } = useListCars(
+    {
+      city: city || undefined,
+      startDate: startDate || undefined,
+      returnDate: returnDate || undefined,
+    },
+    {
+      query: { queryKey: ["/api/cars", "list", city, startDate, returnDate] },
+    }
+  );
 
   const allCars: Car[] = data?.cars ?? [];
   const selectedPriceRange = PRICE_RANGES[priceRange] ?? PRICE_RANGES[0];
@@ -77,8 +87,16 @@ export default function CarsScreen() {
     return matchSearch && matchCity && matchCat && matchSeats && matchPrice;
   });
 
-  const hasActiveFilters = category !== "" || minSeats !== 0 || priceRange !== 0 || city !== "";
-  const activeFilterCount = [category !== "", minSeats !== 0, priceRange !== 0, city !== ""].filter(Boolean).length;
+  const hasActiveFilters =
+    category !== "" || minSeats !== 0 || priceRange !== 0 || city !== "" || startDate !== "" || returnDate !== "";
+  const activeFilterCount = [
+    category !== "",
+    minSeats !== 0,
+    priceRange !== 0,
+    city !== "",
+    startDate !== "",
+    returnDate !== "",
+  ].filter(Boolean).length;
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -91,6 +109,8 @@ export default function CarsScreen() {
     setMinSeats(0);
     setPriceRange(0);
     setCity("");
+    setStartDate("");
+    setReturnDate("");
     Haptics.selectionAsync();
   }
 
@@ -256,6 +276,19 @@ export default function CarsScreen() {
                     </Pressable>
                   )}
                 </View>
+              </View>
+
+              <View style={styles.filterSection}>
+                <AvailabilityRangePicker
+                  label="Période"
+                  startDate={startDate}
+                  returnDate={returnDate}
+                  blocks={[]}
+                  onChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+                    setStartDate(nextStartDate);
+                    setReturnDate(nextReturnDate);
+                  }}
+                />
               </View>
 
               <View style={styles.filterSection}>

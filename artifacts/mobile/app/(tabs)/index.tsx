@@ -16,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { CarCard } from "@/components/CarCard";
-import { DatePicker } from "@/components/DatePicker";
+import { AvailabilityRangePicker } from "@/components/AvailabilityRangePicker";
 import { useListCars } from "@workspace/api-client-react";
 import type { Car } from "@workspace/api-client-react";
 
@@ -25,6 +25,7 @@ const CITIES = ["Casablanca", "Marrakech", "Rabat", "Agadir", "Fès", "Tanger"];
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
 }
+
 function tomorrowStr(): string {
   const d = new Date();
   d.setDate(d.getDate() + 1);
@@ -56,7 +57,7 @@ export default function HomeScreen() {
   function handleSearch() {
     router.push({
       pathname: "/(tabs)/cars",
-      params: { city: searchCity },
+      params: { city: searchCity, startDate, returnDate },
     });
   }
 
@@ -136,31 +137,16 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View style={styles.dateRow}>
-          <View style={styles.dateField}>
-            <DatePicker
-              label="Date de début"
-              value={startDate}
-              onChange={(d) => {
-                setStartDate(d);
-                if (returnDate && d >= returnDate) {
-                  const next = new Date(d);
-                  next.setDate(next.getDate() + 1);
-                  setReturnDate(next.toISOString().slice(0, 10));
-                }
-              }}
-              minDate={todayStr()}
-            />
-          </View>
-          <View style={styles.dateField}>
-            <DatePicker
-              label="Date de retour"
-              value={returnDate}
-              onChange={setReturnDate}
-              minDate={startDate || todayStr()}
-            />
-          </View>
-        </View>
+        <AvailabilityRangePicker
+          label="Période"
+          startDate={startDate}
+          returnDate={returnDate}
+          blocks={[]}
+          onChange={({ startDate: nextStart, returnDate: nextReturn }) => {
+            setStartDate(nextStart);
+            setReturnDate(nextReturn);
+          }}
+        />
 
         <Pressable
           onPress={handleSearch}
@@ -211,9 +197,7 @@ export default function HomeScreen() {
             Véhicules disponibles
           </Text>
           <Pressable onPress={() => router.push("/(tabs)/cars")}>
-            <Text style={[styles.seeAll, { color: colors.primary }]}>
-              Voir tout
-            </Text>
+            <Text style={[styles.seeAll, { color: colors.primary }]}>Voir tout</Text>
           </Pressable>
         </View>
 
@@ -221,7 +205,7 @@ export default function HomeScreen() {
           <View style={[styles.emptyBox, { backgroundColor: colors.muted }]}>
             <Ionicons name="car-outline" size={32} color={colors.mutedForeground} />
             <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              Chargement…
+              Chargement...
             </Text>
           </View>
         ) : featuredCars.length === 0 ? (
@@ -314,8 +298,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "Inter_400Regular",
   },
-  dateRow: { flexDirection: "row", gap: 12 },
-  dateField: { flex: 1 },
   searchBtn: {
     height: 50,
     borderRadius: 14,

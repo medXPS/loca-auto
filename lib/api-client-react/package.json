@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./availability": "./src/availability.ts",
+    "./calendar": "./src/calendar.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "catalog:"

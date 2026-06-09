@@ -7,7 +7,7 @@ import { logAudit } from "../lib/audit";
 const router = Router();
 
 // GET /api/expenses
-router.get("/", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.get("/", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const { carId, type, from, to, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
@@ -40,7 +40,7 @@ router.get("/", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req,
 });
 
 // POST /api/expenses
-router.post("/", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.post("/", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const { carId, type, amount, date, description, invoiceFileUrl } = req.body;
     const [expense] = await db.insert(schema.carExpensesTable).values({
@@ -55,9 +55,9 @@ router.post("/", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req
 });
 
 // DELETE /api/expenses/:id
-router.delete("/:id", authMiddleware, requireRole("SUPER_ADMIN"), async (req, res) => {
+router.delete("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
-    await db.delete(schema.carExpensesTable).where(eq(schema.carExpensesTable.id, parseInt(req.params.id)));
+    await db.delete(schema.carExpensesTable).where(eq(schema.carExpensesTable.id, parseInt(String(req.params.id), 10)));
     res.status(204).send();
   } catch (err) {
     req.log.error(err);

@@ -20,7 +20,7 @@ router.get("/company", async (req, res) => {
 });
 
 // PATCH /api/settings/company
-router.patch("/company", authMiddleware, requireRole("SUPER_ADMIN"), async (req, res) => {
+router.patch("/company", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     let [existing] = await db.select().from(schema.companySettingsTable).limit(1);
     if (!existing) {

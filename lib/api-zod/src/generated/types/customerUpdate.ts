@@ -7,6 +7,8 @@
  */
 
 export interface CustomerUpdate {
+  fullName?: string;
+  phone?: string;
   cin?: string;
   passportNumber?: string;
   drivingLicenseNumber?: string;

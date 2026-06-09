@@ -2,7 +2,7 @@ import { useLocation, useRoute } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useUpdateCar, useGetCar, getListCarsQueryKey, getGetCarQueryKey } from "@workspace/api-client-react";
+import { customFetch, useUpdateCar, useGetCar, useUploadCarImage, getListCarsQueryKey, getGetCarQueryKey } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,12 +16,12 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ImagePlus, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const carSchema = z.object({
   brand: z.string().min(1, "Requis"),
@@ -50,7 +50,14 @@ export default function AdminEditCar() {
   
   const { data: car, isLoading } = useGetCar(id, { query: { enabled: !!id, queryKey: getGetCarQueryKey(id) } });
   const updateCar = useUpdateCar();
+  const uploadMedia = useUploadCarImage();
   const queryClient = useQueryClient();
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaAlt, setMediaAlt] = useState("");
+  const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO" | "IMAGE_360">("IMAGE");
+  const [sourceType, setSourceType] = useState<"URL" | "UPLOAD">("URL");
+  const [mediaFileData, setMediaFileData] = useState("");
+  const [isMainMedia, setIsMainMedia] = useState(false);
 
   const form = useForm<CarFormValues>({
     resolver: zodResolver(carSchema),
@@ -58,9 +65,9 @@ export default function AdminEditCar() {
       brand: "",
       model: "",
       year: new Date().getFullYear(),
-      category: "ECONOMY",
-      fuelType: "PETROL",
-      transmission: "MANUAL",
+      category: "CITADINE",
+      fuelType: "ESSENCE",
+      transmission: "MANUELLE",
       seats: 5,
       doors: 4,
       dailyPrice: 200,
@@ -105,6 +112,62 @@ export default function AdminEditCar() {
         toast({ title: "Erreur", description: error.message, variant: "destructive" });
       }
     });
+  };
+
+  const refreshCar = () => {
+    queryClient.invalidateQueries({ queryKey: getGetCarQueryKey(id) });
+    queryClient.invalidateQueries({ queryKey: getListCarsQueryKey() });
+  };
+
+  const handleFileChange = (file?: File) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setMediaFileData(String(reader.result));
+      setMediaUrl("");
+      setSourceType("UPLOAD");
+      if (file.type.startsWith("video/")) setMediaType("VIDEO");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddMedia = () => {
+    const url = sourceType === "UPLOAD" ? mediaFileData : mediaUrl.trim();
+    if (!url) {
+      toast({ title: "Media requis", description: "Ajoutez une URL ou choisissez un fichier.", variant: "destructive" });
+      return;
+    }
+
+    uploadMedia.mutate({
+      id,
+      data: {
+        url,
+        altText: mediaAlt || `${car?.brand ?? ""} ${car?.model ?? ""}`.trim(),
+        isMain: isMainMedia && mediaType === "IMAGE",
+        mediaType,
+        sourceType,
+        sortOrder: (car?.images?.length ?? 0) + 1,
+      } as any,
+    }, {
+      onSuccess: () => {
+        toast({ title: "Media ajoute" });
+        setMediaUrl("");
+        setMediaAlt("");
+        setMediaFileData("");
+        setIsMainMedia(false);
+        setSourceType("URL");
+        refreshCar();
+      },
+      onError: (error: any) => {
+        toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      },
+    });
+  };
+
+  const handleDeleteMedia = async (imageId: number) => {
+    await customFetch(`/api/cars/${id}/images/${imageId}`, { method: "DELETE" });
+    toast({ title: "Media supprime" });
+    refreshCar();
   };
 
   if (isLoading) return <div className="p-6"><Skeleton className="h-[600px] w-full max-w-4xl mx-auto rounded-xl" /></div>;
@@ -170,12 +233,14 @@ export default function AdminEditCar() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="ECONOMY">Économique</SelectItem>
-                        <SelectItem value="COMPACT">Compacte</SelectItem>
-                        <SelectItem value="SEDAN">Berline</SelectItem>
+                        <SelectItem value="CITADINE">Citadine</SelectItem>
+                        <SelectItem value="BERLINE">Berline</SelectItem>
                         <SelectItem value="SUV">SUV</SelectItem>
-                        <SelectItem value="LUXURY">Luxe</SelectItem>
-                        <SelectItem value="VAN">Van</SelectItem>
+                        <SelectItem value="MONOSPACE">Monospace</SelectItem>
+                        <SelectItem value="UTILITAIRE">Utilitaire</SelectItem>
+                        <SelectItem value="LUXE">Luxe</SelectItem>
+                        <SelectItem value="SPORT">Sport</SelectItem>
+                        <SelectItem value="4X4">4x4</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -188,10 +253,11 @@ export default function AdminEditCar() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="PETROL">Essence</SelectItem>
+                        <SelectItem value="ESSENCE">Essence</SelectItem>
                         <SelectItem value="DIESEL">Diesel</SelectItem>
-                        <SelectItem value="HYBRID">Hybride</SelectItem>
-                        <SelectItem value="ELECTRIC">Électrique</SelectItem>
+                        <SelectItem value="HYBRIDE">Hybride</SelectItem>
+                        <SelectItem value="ELECTRIQUE">Électrique</SelectItem>
+                        <SelectItem value="GPL">GPL</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -204,8 +270,8 @@ export default function AdminEditCar() {
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="MANUAL">Manuelle</SelectItem>
-                        <SelectItem value="AUTOMATIC">Automatique</SelectItem>
+                        <SelectItem value="MANUELLE">Manuelle</SelectItem>
+                        <SelectItem value="AUTOMATIQUE">Automatique</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -225,6 +291,91 @@ export default function AdminEditCar() {
               <FormField control={form.control} name="mainImageUrl" render={({ field }) => (
                 <FormItem><FormLabel>URL de l'image principale</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
               )} />
+
+              <Card className="border-primary/10 bg-muted/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <ImagePlus className="h-5 w-5 text-primary" />
+                    Images, videos et vues 360
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <FormLabel>Type</FormLabel>
+                      <Select value={mediaType} onValueChange={(value) => setMediaType(value as typeof mediaType)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="IMAGE">Image</SelectItem>
+                          <SelectItem value="VIDEO">Video</SelectItem>
+                          <SelectItem value="IMAGE_360">Image 360</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <FormLabel>Source</FormLabel>
+                      <Select value={sourceType} onValueChange={(value) => setSourceType(value as typeof sourceType)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="URL">URL</SelectItem>
+                          <SelectItem value="UPLOAD">Fichier local</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <FormLabel>Texte alternatif</FormLabel>
+                      <Input value={mediaAlt} onChange={(event) => setMediaAlt(event.target.value)} placeholder="Ex: interieur, profil..." />
+                    </div>
+                  </div>
+
+                  {sourceType === "URL" ? (
+                    <Input value={mediaUrl} onChange={(event) => setMediaUrl(event.target.value)} placeholder="https://..." />
+                  ) : (
+                    <Input type="file" accept="image/*,video/*" onChange={(event) => handleFileChange(event.target.files?.[0])} />
+                  )}
+
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={isMainMedia}
+                      onChange={(event) => setIsMainMedia(event.target.checked)}
+                      disabled={mediaType !== "IMAGE"}
+                    />
+                    Utiliser comme image principale
+                  </label>
+
+                  <div className="flex justify-end">
+                    <Button type="button" onClick={handleAddMedia} disabled={uploadMedia.isPending}>
+                      {uploadMedia.isPending ? "Ajout..." : "Ajouter le media"}
+                    </Button>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {(car?.images ?? []).map((media: any) => (
+                      <div key={media.id} className="flex gap-3 rounded-xl border bg-background p-3">
+                        <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-muted">
+                          {media.mediaType === "VIDEO" ? (
+                            <video src={media.url} className="h-full w-full object-cover" muted />
+                          ) : (
+                            <img src={media.url} alt={media.altText || "media"} className="h-full w-full object-cover" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-primary">
+                            <span>{media.mediaType || "IMAGE"}</span>
+                            <span>{media.sourceType || "URL"}</span>
+                            {media.isMain && <span>Principal</span>}
+                          </div>
+                          <p className="mt-1 truncate text-sm text-muted-foreground">{media.altText || media.url}</p>
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => handleDeleteMedia(media.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
               <FormField control={form.control} name="description" render={({ field }) => (
                 <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea className="h-32" {...field} /></FormControl><FormMessage /></FormItem>

@@ -1,17 +1,95 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware } from "../lib/auth";
+import { expireStaleAvailabilityLocks } from "../lib/availability";
 
 const router = Router();
+
+async function getCurrentCustomerId(userId: number) {
+  const [customer] = await db.select().from(schema.customersTable).where(eq(schema.customersTable.userId, userId)).limit(1);
+  return customer?.id ?? null;
+}
+
+async function getRentalRequestById(rentalRequestId: number) {
+  const [request] = await db.select().from(schema.rentalRequestsTable).where(eq(schema.rentalRequestsTable.id, rentalRequestId)).limit(1);
+  return request ?? null;
+}
 
 // POST /api/documents
 router.post("/", authMiddleware, async (req, res) => {
   try {
+    await expireStaleAvailabilityLocks();
+
     const { rentalRequestId, type, fileUrl } = req.body;
-    const [customer] = await db.select().from(schema.customersTable).where(eq(schema.customersTable.userId, req.user!.userId)).limit(1);
-    if (!customer) { res.status(404).json({ error: "Profil client non trouvé" }); return; }
-    const [doc] = await db.insert(schema.documentsTable).values({ customerId: customer.id, rentalRequestId, type, fileUrl }).returning();
+    const customerId = await getCurrentCustomerId(req.user!.userId);
+    if (!customerId) {
+      res.status(404).json({ error: "Profil client non trouve" });
+      return;
+    }
+
+    const requestId = rentalRequestId ? Number(rentalRequestId) : null;
+    let request = null;
+    if (requestId) {
+      request = await getRentalRequestById(requestId);
+      if (!request) {
+        res.status(404).json({ error: "Demande non trouvee" });
+        return;
+      }
+
+      if (req.user!.role === "CUSTOMER" && request.customerId !== customerId) {
+        res.status(403).json({ error: "Non autorise" });
+        return;
+      }
+    }
+
+    const existingConditions = [
+      eq(schema.documentsTable.customerId, customerId),
+      eq(schema.documentsTable.type, type),
+      requestId
+        ? eq(schema.documentsTable.rentalRequestId, requestId)
+        : sql`${schema.documentsTable.rentalRequestId} IS NULL`,
+    ];
+
+    const [existing] = await db.select().from(schema.documentsTable)
+      .where(and(...existingConditions))
+      .limit(1);
+
+    let doc;
+    if (existing) {
+      [doc] = await db.update(schema.documentsTable)
+        .set({
+          fileUrl,
+          status: "PENDING",
+          uploadedAt: new Date(),
+        })
+        .where(eq(schema.documentsTable.id, existing.id))
+        .returning();
+    } else {
+      [doc] = await db.insert(schema.documentsTable).values({
+        customerId,
+        rentalRequestId: requestId,
+        type,
+        fileUrl,
+        status: "PENDING",
+      }).returning();
+    }
+
+    if (requestId) {
+      const docs = await db.select().from(schema.documentsTable)
+        .where(eq(schema.documentsTable.rentalRequestId, requestId));
+      const hasCin = docs.some((item) => item.type === "CIN" || item.type === "PASSPORT");
+      const hasDrivingLicense = docs.some((item) => item.type === "PERMIS_CONDUIRE");
+      if (hasCin && hasDrivingLicense) {
+        await db.update(schema.rentalRequestsTable)
+          .set({ status: "UNDER_REVIEW" })
+          .where(and(
+            eq(schema.rentalRequestsTable.id, requestId),
+            eq(schema.rentalRequestsTable.status, "WAITING_DOCUMENTS"),
+          ));
+      }
+    }
+
     res.status(201).json(doc);
   } catch (err) {
     req.log.error(err);
@@ -22,8 +100,23 @@ router.post("/", authMiddleware, async (req, res) => {
 // GET /api/documents/:rentalRequestId
 router.get("/:rentalRequestId", authMiddleware, async (req, res) => {
   try {
+    const rentalRequestId = parseInt(String(req.params.rentalRequestId), 10);
+    const request = await getRentalRequestById(rentalRequestId);
+    if (!request) {
+      res.status(404).json({ error: "Demande non trouvee" });
+      return;
+    }
+
+    if (req.user!.role === "CUSTOMER") {
+      const customerId = await getCurrentCustomerId(req.user!.userId);
+      if (!customerId || request.customerId !== customerId) {
+        res.status(403).json({ error: "Non autorise" });
+        return;
+      }
+    }
+
     const docs = await db.select().from(schema.documentsTable)
-      .where(eq(schema.documentsTable.rentalRequestId, parseInt(req.params.rentalRequestId)));
+      .where(eq(schema.documentsTable.rentalRequestId, rentalRequestId));
     res.json(docs);
   } catch (err) {
     req.log.error(err);
@@ -31,11 +124,12 @@ router.get("/:rentalRequestId", authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/upload/presign — simple stub for direct URL upload
+// POST /api/upload/presign - simple stub for direct URL upload
 export const uploadRouter = Router();
 uploadRouter.post("/presign", authMiddleware, (req, res) => {
-  const { fileName, fileType } = req.body;
-  const fileUrl = `/uploads/${Date.now()}-${fileName}`;
+  const { fileName } = req.body;
+  const safeName = String(fileName ?? "upload").replace(/[^a-zA-Z0-9._-]/g, "_");
+  const fileUrl = `/uploads/${Date.now()}-${safeName}`;
   res.json({ uploadUrl: fileUrl, fileUrl });
 });
 

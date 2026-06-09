@@ -28,6 +28,41 @@ export const RegisterBody = zod.object({
 
 
 /**
+ * @summary Resend verification code
+ */
+export const ResendVerificationBody = zod.object({
+  "email": zod.string()
+})
+
+export const ResendVerificationResponse = zod.object({
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Verify email address
+ */
+export const VerifyEmailBody = zod.object({
+  "email": zod.string(),
+  "code": zod.string()
+})
+
+export const VerifyEmailResponse = zod.object({
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}),
+  "token": zod.string()
+})
+
+
+/**
  * @summary Login
  */
 export const LoginBody = zod.object({
@@ -43,6 +78,7 @@ export const LoginResponse = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 }),
   "token": zod.string()
@@ -67,6 +103,7 @@ export const GetMeResponse = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 })
 
@@ -86,6 +123,7 @@ export const UpdateMeResponse = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 })
 
@@ -870,8 +908,18 @@ export const ListCustomersResponse = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 }),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})).optional(),
   "rentalRequests": zod.array(zod.object({
   "id": zod.number(),
   "customerId": zod.number().nullish(),
@@ -956,8 +1004,18 @@ export const GetCustomerResponse = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 }),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})).optional(),
   "rentalRequests": zod.array(zod.object({
   "id": zod.number(),
   "customerId": zod.number().nullish(),
@@ -1024,6 +1082,8 @@ export const UpdateCustomerParams = zod.object({
 })
 
 export const UpdateCustomerBody = zod.object({
+  "fullName": zod.string().optional(),
+  "phone": zod.string().optional(),
   "cin": zod.string().optional(),
   "passportNumber": zod.string().optional(),
   "drivingLicenseNumber": zod.string().optional(),
@@ -1046,8 +1106,18 @@ export const UpdateCustomerResponse = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 }),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})).optional(),
   "rentalRequests": zod.array(zod.object({
   "id": zod.number(),
   "customerId": zod.number().nullish(),
@@ -1124,8 +1194,18 @@ export const GetMyCustomerProfileResponse = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 }),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})).optional(),
   "rentalRequests": zod.array(zod.object({
   "id": zod.number(),
   "customerId": zod.number().nullish(),
@@ -1188,6 +1268,8 @@ export const GetMyCustomerProfileResponse = zod.object({
  * @summary Update current customer's profile
  */
 export const UpdateMyCustomerProfileBody = zod.object({
+  "fullName": zod.string().optional(),
+  "phone": zod.string().optional(),
   "cin": zod.string().optional(),
   "passportNumber": zod.string().optional(),
   "drivingLicenseNumber": zod.string().optional(),
@@ -1210,8 +1292,18 @@ export const UpdateMyCustomerProfileResponse = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 }),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})).optional(),
   "rentalRequests": zod.array(zod.object({
   "id": zod.number(),
   "customerId": zod.number().nullish(),
@@ -1284,6 +1376,7 @@ export const ListAgentsResponseItem = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 }),
   "createdAt": zod.string().optional()
@@ -1320,6 +1413,7 @@ export const GetAgentResponse = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 }),
   "createdAt": zod.string().optional()
@@ -1350,6 +1444,7 @@ export const UpdateAgentResponse = zod.object({
   "phone": zod.string(),
   "role": zod.string(),
   "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
   "createdAt": zod.string().optional()
 }),
   "createdAt": zod.string().optional()

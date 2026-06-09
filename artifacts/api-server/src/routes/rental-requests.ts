@@ -4,6 +4,14 @@ import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { logAudit } from "../lib/audit";
 import { createNotification } from "../lib/notify";
+import {
+  createTemporaryHold,
+  expireStaleAvailabilityLocks,
+  getPaymentDeadlineHours,
+  hasActiveAvailabilityOverlap,
+  markRequestReserved,
+  releaseRequestAvailabilityBlocks,
+} from "../lib/availability";
 
 const router = Router();
 
@@ -43,6 +51,7 @@ async function fetchRequestWithCar(id: number) {
 // GET /api/rental-requests
 router.get("/", authMiddleware, async (req, res) => {
   try {
+    await expireStaleAvailabilityLocks();
     const { status, customerId, carId, page = "1", limit = "20" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
@@ -89,7 +98,13 @@ router.get("/", authMiddleware, async (req, res) => {
 // POST /api/rental-requests
 router.post("/", authMiddleware, async (req, res) => {
   try {
+    await expireStaleAvailabilityLocks();
     const { carId, fullName, phone, email, cinOrPassport, drivingLicenseNumber, startDate, returnDate, pickupLocation, returnLocation, estimatedTotalPrice, notes } = req.body;
+
+    if (await hasActiveAvailabilityOverlap(Number(carId), startDate, returnDate)) {
+      res.status(409).json({ error: "Cette voiture est deja reservee ou bloquee sur cette periode." });
+      return;
+    }
 
     let customerId = null;
     if (req.user!.role === "CUSTOMER") {
@@ -100,7 +115,9 @@ router.post("/", authMiddleware, async (req, res) => {
     const [request] = await db.insert(schema.rentalRequestsTable).values({
       customerId, carId, fullName, phone, email, cinOrPassport, drivingLicenseNumber,
       startDate, returnDate, pickupLocation, returnLocation, estimatedTotalPrice: String(estimatedTotalPrice), notes,
+      status: "WAITING_DOCUMENTS",
     }).returning();
+    await createTemporaryHold(request);
 
     await logAudit({ userId: req.user!.userId, action: "CREATE_RENTAL_REQUEST", entityType: "rental_request", entityId: request.id });
 
@@ -113,8 +130,9 @@ router.post("/", authMiddleware, async (req, res) => {
 });
 
 // POST /api/rental-requests/check-expired
-router.post("/check-expired", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.post("/check-expired", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
+    await expireStaleAvailabilityLocks();
     const now = new Date();
     const expired = await db.select().from(schema.rentalRequestsTable).where(
       and(
@@ -126,6 +144,7 @@ router.post("/check-expired", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"
       await db.update(schema.rentalRequestsTable)
         .set({ status: "ABANDONED", abandonedAt: now })
         .where(eq(schema.rentalRequestsTable.id, r.id));
+      await releaseRequestAvailabilityBlocks(r.id, "EXPIRED");
       if (r.customerId) {
         const [customer] = await db.select().from(schema.customersTable).where(eq(schema.customersTable.id, r.customerId)).limit(1);
         if (customer) {
@@ -147,7 +166,7 @@ router.post("/check-expired", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"
 // GET /api/rental-requests/:id
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
-    const result = await fetchRequestWithCar(parseInt(req.params.id));
+    const result = await fetchRequestWithCar(parseInt(String(req.params.id), 10));
     if (!result) { res.status(404).json({ error: "Demande non trouvée" }); return; }
     res.json(result);
   } catch (err) {
@@ -157,12 +176,12 @@ router.get("/:id", authMiddleware, async (req, res) => {
 });
 
 // PATCH /api/rental-requests/:id
-router.patch("/:id", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.patch("/:id", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const { fullName, phone, email, cinOrPassport, drivingLicenseNumber, startDate, returnDate, pickupLocation, returnLocation, finalPrice, notes } = req.body;
     const [updated] = await db.update(schema.rentalRequestsTable)
       .set({ fullName, phone, email, cinOrPassport, drivingLicenseNumber, startDate, returnDate, pickupLocation, returnLocation, ...(finalPrice && { finalPrice: String(finalPrice) }), notes })
-      .where(eq(schema.rentalRequestsTable.id, parseInt(req.params.id)))
+      .where(eq(schema.rentalRequestsTable.id, parseInt(String(req.params.id), 10)))
       .returning();
     if (!updated) { res.status(404).json({ error: "Demande non trouvée" }); return; }
     const result = await fetchRequestWithCar(updated.id);
@@ -174,12 +193,12 @@ router.patch("/:id", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async 
 });
 
 // PATCH /api/rental-requests/:id/status
-router.patch("/:id/status", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.patch("/:id/status", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const { status, notes } = req.body;
     const [updated] = await db.update(schema.rentalRequestsTable)
       .set({ status, ...(notes && { notes }) })
-      .where(eq(schema.rentalRequestsTable.id, parseInt(req.params.id)))
+      .where(eq(schema.rentalRequestsTable.id, parseInt(String(req.params.id), 10)))
       .returning();
     if (!updated) { res.status(404).json({ error: "Demande non trouvée" }); return; }
     await logAudit({ userId: req.user!.userId, action: `STATUS_CHANGE_${status}`, entityType: "rental_request", entityId: updated.id, details: notes });
@@ -192,14 +211,14 @@ router.patch("/:id/status", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"),
 });
 
 // PATCH /api/rental-requests/:id/confirm-call
-router.patch("/:id/confirm-call", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.patch("/:id/confirm-call", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const { notes, finalPrice } = req.body;
     const now = new Date();
 
     // Get deadline hours from settings
     const [settings] = await db.select().from(schema.companySettingsTable).limit(1);
-    const deadlineHours = settings?.paymentDeadlineHours ?? 12;
+    const deadlineHours = getPaymentDeadlineHours(settings?.paymentDeadlineHours ?? 24);
     const paymentDeadline = new Date(now.getTime() + deadlineHours * 60 * 60 * 1000);
 
     const [updated] = await db.update(schema.rentalRequestsTable)
@@ -211,7 +230,7 @@ router.patch("/:id/confirm-call", authMiddleware, requireRole("SUPER_ADMIN", "AG
         ...(notes && { notes }),
         ...(finalPrice && { finalPrice: String(finalPrice) }),
       })
-      .where(eq(schema.rentalRequestsTable.id, parseInt(req.params.id)))
+      .where(eq(schema.rentalRequestsTable.id, parseInt(String(req.params.id), 10)))
       .returning();
     if (!updated) { res.status(404).json({ error: "Demande non trouvée" }); return; }
 
@@ -237,7 +256,7 @@ router.patch("/:id/confirm-call", authMiddleware, requireRole("SUPER_ADMIN", "AG
 });
 
 // PATCH /api/rental-requests/:id/confirm-payment
-router.patch("/:id/confirm-payment", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.patch("/:id/confirm-payment", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const { amount, notes } = req.body;
     const now = new Date();
@@ -250,19 +269,11 @@ router.patch("/:id/confirm-payment", authMiddleware, requireRole("SUPER_ADMIN", 
         ...(amount && { finalPrice: String(amount) }),
         ...(notes && { notes }),
       })
-      .where(eq(schema.rentalRequestsTable.id, parseInt(req.params.id)))
+      .where(eq(schema.rentalRequestsTable.id, parseInt(String(req.params.id), 10)))
       .returning();
     if (!updated) { res.status(404).json({ error: "Demande non trouvée" }); return; }
 
-    // Block availability
-    await db.insert(schema.carAvailabilityBlocksTable).values({
-      carId: updated.carId,
-      rentalRequestId: updated.id,
-      startDate: updated.startDate,
-      endDate: updated.returnDate,
-      type: "RESERVED",
-      status: "ACTIVE",
-    });
+    await markRequestReserved(updated);
 
     // Update car status
     await db.update(schema.carsTable).set({ status: "RESERVED" }).where(eq(schema.carsTable.id, updated.carId));
@@ -290,7 +301,7 @@ router.patch("/:id/confirm-payment", authMiddleware, requireRole("SUPER_ADMIN", 
 // PATCH /api/rental-requests/:id/cancel
 router.patch("/:id/cancel", authMiddleware, async (req, res) => {
   try {
-    const [existing] = await db.select().from(schema.rentalRequestsTable).where(eq(schema.rentalRequestsTable.id, parseInt(req.params.id))).limit(1);
+    const [existing] = await db.select().from(schema.rentalRequestsTable).where(eq(schema.rentalRequestsTable.id, parseInt(String(req.params.id), 10))).limit(1);
     if (!existing) { res.status(404).json({ error: "Demande non trouvée" }); return; }
 
     // Customers can only cancel their own
@@ -302,8 +313,9 @@ router.patch("/:id/cancel", authMiddleware, async (req, res) => {
 
     const [updated] = await db.update(schema.rentalRequestsTable)
       .set({ status: "CANCELLED" })
-      .where(eq(schema.rentalRequestsTable.id, parseInt(req.params.id)))
+      .where(eq(schema.rentalRequestsTable.id, parseInt(String(req.params.id), 10)))
       .returning();
+    await releaseRequestAvailabilityBlocks(updated.id);
 
     await logAudit({ userId: req.user!.userId, action: "CANCEL_RENTAL_REQUEST", entityType: "rental_request", entityId: updated.id });
     const result = await fetchRequestWithCar(updated.id);

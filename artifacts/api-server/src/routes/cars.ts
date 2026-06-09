@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { eq, and, ilike, gte, lte, sql, asc, desc } from "drizzle-orm";
+import { eq, and, ilike, gte, lte, sql, asc, desc, notInArray } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { logAudit } from "../lib/audit";
+import { expireStaleAvailabilityLocks } from "../lib/availability";
 
 const router = Router();
 
@@ -19,7 +20,8 @@ function formatCar(car: typeof schema.carsTable.$inferSelect) {
 // GET /api/cars
 router.get("/", async (req, res) => {
   try {
-    const { search, brand, category, city, transmission, fuelType, minPrice, maxPrice, seats, available, sortBy, page = "1", limit = "12" } = req.query as Record<string, string>;
+    await expireStaleAvailabilityLocks();
+    const { search, brand, category, city, transmission, fuelType, minPrice, maxPrice, seats, available, startDate, returnDate, sortBy, page = "1", limit = "12" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
 
@@ -38,6 +40,21 @@ router.get("/", async (req, res) => {
     if (maxPrice) conditions.push(lte(schema.carsTable.dailyPrice, maxPrice));
     if (seats) conditions.push(eq(schema.carsTable.seats, parseInt(seats)));
     if (available === "true") conditions.push(eq(schema.carsTable.status, "AVAILABLE"));
+    if (startDate && returnDate) {
+      const now = new Date();
+      const blockedRows = await db.selectDistinct({ carId: schema.carAvailabilityBlocksTable.carId })
+        .from(schema.carAvailabilityBlocksTable)
+        .where(and(
+          eq(schema.carAvailabilityBlocksTable.status, "ACTIVE"),
+          lte(schema.carAvailabilityBlocksTable.startDate, returnDate),
+          gte(schema.carAvailabilityBlocksTable.endDate, startDate),
+          sql`(${schema.carAvailabilityBlocksTable.expiresAt} IS NULL OR ${schema.carAvailabilityBlocksTable.expiresAt} > ${now})`,
+        ));
+      const blockedCarIds = blockedRows.map((row) => row.carId);
+      if (blockedCarIds.length > 0) {
+        conditions.push(notInArray(schema.carsTable.id, blockedCarIds));
+      }
+    }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -61,7 +78,7 @@ router.get("/", async (req, res) => {
 });
 
 // POST /api/cars
-router.post("/", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.post("/", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
     const [car] = await db.insert(schema.carsTable).values(req.body).returning();
     await logAudit({ userId: req.user!.userId, action: "CREATE_CAR", entityType: "car", entityId: car.id });
@@ -75,7 +92,7 @@ router.post("/", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req
 // GET /api/cars/:id
 router.get("/:id", async (req, res) => {
   try {
-    const [car] = await db.select().from(schema.carsTable).where(eq(schema.carsTable.id, parseInt(req.params.id))).limit(1);
+    const [car] = await db.select().from(schema.carsTable).where(eq(schema.carsTable.id, parseInt(String(req.params.id), 10))).limit(1);
     if (!car) { res.status(404).json({ error: "Voiture non trouvée" }); return; }
     const images = await db.select().from(schema.carImagesTable).where(eq(schema.carImagesTable.carId, car.id));
     res.json({ ...formatCar(car), images });
@@ -86,9 +103,9 @@ router.get("/:id", async (req, res) => {
 });
 
 // PATCH /api/cars/:id
-router.patch("/:id", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.patch("/:id", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
-    const [car] = await db.update(schema.carsTable).set(req.body).where(eq(schema.carsTable.id, parseInt(req.params.id))).returning();
+    const [car] = await db.update(schema.carsTable).set(req.body).where(eq(schema.carsTable.id, parseInt(String(req.params.id), 10))).returning();
     if (!car) { res.status(404).json({ error: "Voiture non trouvée" }); return; }
     await logAudit({ userId: req.user!.userId, action: "UPDATE_CAR", entityType: "car", entityId: car.id });
     res.json(formatCar(car));
@@ -99,10 +116,10 @@ router.patch("/:id", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async 
 });
 
 // DELETE /api/cars/:id
-router.delete("/:id", authMiddleware, requireRole("SUPER_ADMIN"), async (req, res) => {
+router.delete("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
-    await db.delete(schema.carsTable).where(eq(schema.carsTable.id, parseInt(req.params.id)));
-    await logAudit({ userId: req.user!.userId, action: "DELETE_CAR", entityType: "car", entityId: parseInt(req.params.id) });
+    await db.delete(schema.carsTable).where(eq(schema.carsTable.id, parseInt(String(req.params.id), 10)));
+    await logAudit({ userId: req.user!.userId, action: "DELETE_CAR", entityType: "car", entityId: parseInt(String(req.params.id), 10) });
     res.status(204).send();
   } catch (err) {
     req.log.error(err);
@@ -111,14 +128,42 @@ router.delete("/:id", authMiddleware, requireRole("SUPER_ADMIN"), async (req, re
 });
 
 // POST /api/cars/:id/images
-router.post("/:id/images", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), async (req, res) => {
+router.post("/:id/images", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
-    const carId = parseInt(req.params.id);
-    const [image] = await db.insert(schema.carImagesTable).values({ carId, ...req.body }).returning();
-    if (req.body.isMain) {
-      await db.update(schema.carsTable).set({ mainImageUrl: req.body.url }).where(eq(schema.carsTable.id, carId));
+    const carId = parseInt(String(req.params.id), 10);
+    const { url, altText, isMain, sortOrder, mediaType = "IMAGE", sourceType = "URL" } = req.body;
+    if (!url) {
+      res.status(400).json({ error: "URL ou fichier requis" });
+      return;
     }
-    res.status(201).json(image);
+    const [media] = await db.insert(schema.carImagesTable).values({
+      carId,
+      url,
+      altText,
+      isMain: Boolean(isMain),
+      sortOrder: Number(sortOrder ?? 0),
+      mediaType,
+      sourceType,
+    }).returning();
+    if (media.isMain && media.mediaType === "IMAGE") {
+      await db.update(schema.carsTable).set({ mainImageUrl: media.url }).where(eq(schema.carsTable.id, carId));
+    }
+    res.status(201).json(media);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// DELETE /api/cars/:id/images/:imageId
+router.delete("/:id/images/:imageId", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
+  try {
+    await db.delete(schema.carImagesTable)
+      .where(and(
+        eq(schema.carImagesTable.carId, parseInt(String(req.params.id), 10)),
+        eq(schema.carImagesTable.id, parseInt(String(req.params.imageId), 10)),
+      ));
+    res.status(204).send();
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Erreur serveur" });
@@ -128,8 +173,13 @@ router.post("/:id/images", authMiddleware, requireRole("SUPER_ADMIN", "AGENT"), 
 // GET /api/cars/:id/availability
 router.get("/:id/availability", async (req, res) => {
   try {
+    await expireStaleAvailabilityLocks();
     const blocks = await db.select().from(schema.carAvailabilityBlocksTable)
-      .where(and(eq(schema.carAvailabilityBlocksTable.carId, parseInt(req.params.id)), eq(schema.carAvailabilityBlocksTable.status, "ACTIVE")));
+      .where(and(
+        eq(schema.carAvailabilityBlocksTable.carId, parseInt(String(req.params.id), 10)),
+        eq(schema.carAvailabilityBlocksTable.status, "ACTIVE"),
+        sql`(${schema.carAvailabilityBlocksTable.expiresAt} IS NULL OR ${schema.carAvailabilityBlocksTable.expiresAt} > ${new Date()})`,
+      ));
     res.json(blocks);
   } catch (err) {
     req.log.error(err);

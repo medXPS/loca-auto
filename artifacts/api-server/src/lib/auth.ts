@@ -17,10 +17,15 @@ export interface JwtPayload {
   userId: number;
   role: string;
   email: string;
+  purpose?: "auth" | "mfa";
 }
 
 export function signToken(payload: JwtPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+}
+
+export function signMfaToken(payload: Omit<JwtPayload, "purpose">): string {
+  return jwt.sign({ ...payload, purpose: "mfa" }, JWT_SECRET, { expiresIn: "10m" });
 }
 
 export function verifyToken(token: string): JwtPayload {

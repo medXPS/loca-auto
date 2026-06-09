@@ -5,6 +5,7 @@
  * Location Auto Maroc API
  * OpenAPI spec version: 0.1.0
  */
+import type { Document } from './document';
 import type { RentalRequest } from './rentalRequest';
 import type { User } from './user';
 
@@ -22,5 +23,6 @@ export interface CustomerDetail {
   /** @nullable */
   city?: string | null;
   user: User;
+  documents?: Document[];
   rentalRequests?: RentalRequest[];
 }

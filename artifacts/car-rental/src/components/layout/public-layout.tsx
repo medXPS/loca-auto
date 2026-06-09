@@ -1,159 +1,300 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { MessageCircle, Menu, X, User } from "lucide-react";
-import { useState } from "react";
+import {
+  ArrowRight,
+  CarFront,
+  CircleHelp,
+  House,
+  LogOut,
+  Menu,
+  MessageCircle,
+  Newspaper,
+  PhoneCall,
+  Pin,
+  UserRound,
+  X,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+function getDashboardHref(role?: string) {
+  if (role === "ADMIN") return "/admin";
+  if (role === "AGENT") return "/agent";
+  return "/dashboard";
+}
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, logout } = useAuth();
   const [location] = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const navLinks = [
-    { href: "/", label: "Accueil" },
-    { href: "/voitures", label: "Nos Voitures" },
-    { href: "/blog", label: "Blog" },
-    { href: "/a-propos", label: "À propos" },
-    { href: "/contact", label: "Contact" },
+  const dashboardHref = useMemo(() => getDashboardHref(user?.role), [user?.role]);
+
+  const navLinks: NavItem[] = [
+    { href: "/", label: "Accueil", icon: House },
+    { href: "/voitures", label: "Voitures", icon: CarFront },
+    { href: "/blog", label: "Blog", icon: Newspaper },
+    { href: "/faq", label: "Aide", icon: CircleHelp },
+    { href: "/contact", label: "Contact", icon: PhoneCall },
   ];
 
+  const isActive = (href: string) => {
+    if (href === "/") return location === href;
+    return location === href || location.startsWith(`${href}/`);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setIsMenuOpen(false);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-serif font-bold text-primary">Location Auto</span>
-            <span className="text-xl font-serif font-bold text-foreground">Maroc</span>
-          </Link>
+    <div className="min-h-screen overflow-x-hidden bg-background text-foreground">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-[linear-gradient(180deg,rgba(22,114,216,0.99),rgba(11,91,194,0.96))] text-white shadow-[0_18px_50px_-30px_rgba(2,18,45,0.75)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.08),transparent_24%)]" />
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className={`text-sm font-medium transition-colors hover:text-primary ${location === link.href ? "text-primary" : "text-muted-foreground"}`}>
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+        <div className="relative border-b border-white/10">
+          <div className="container mx-auto flex h-20 items-center justify-between px-4">
+            <Link href="/" className="group flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/20 bg-white/12 shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-transform group-hover:-translate-y-0.5">
+                <CarFront className="h-5 w-5" />
+              </span>
+              <span className="leading-tight">
+                <span className="block text-[1.05rem] font-extrabold tracking-tight md:text-[1.2rem]">Location Auto Maroc</span>
+                <span className="block text-[0.7rem] uppercase tracking-[0.32em] text-white/72">
+                  Comparez. Réservez. Roulez.
+                </span>
+              </span>
+            </Link>
 
-          <div className="hidden md:flex items-center gap-4">
-            {isAuthenticated ? (
-              <div className="flex items-center gap-4">
-                <Link href={user?.role === "SUPER_ADMIN" ? "/admin" : user?.role === "AGENT" ? "/agent" : "/dashboard"}>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <User className="h-4 w-4" />
-                    Tableau de bord
-                  </Button>
-                </Link>
-                <Button variant="ghost" size="sm" onClick={logout}>Déconnexion</Button>
-              </div>
-            ) : (
-              <>
-                <Link href="/connexion">
-                  <Button variant="ghost" size="sm">Connexion</Button>
-                </Link>
-                <Link href="/inscription">
-                  <Button size="sm">S'inscrire</Button>
-                </Link>
-              </>
-            )}
+            <div className="hidden items-center gap-3 md:flex">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold tracking-[0.12em]">
+                MAD
+              </span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/12 text-[11px] font-bold">
+                FR
+              </span>
+              <Button asChild className="rounded-full border border-white/15 bg-white px-4 text-primary shadow-[0_16px_30px_-20px_rgba(255,255,255,0.55)] hover:bg-white/95">
+                <Link href={dashboardHref}>Gérer ma réservation</Link>
+              </Button>
+            </div>
+
+            <button
+              type="button"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition-colors hover:bg-white/18 md:hidden"
+              onClick={() => setIsMenuOpen((value) => !value)}
+              aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            >
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
           </div>
-
-          {/* Mobile menu toggle */}
-          <button className="md:hidden p-2" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
         </div>
 
-        {/* Mobile Nav */}
-        {isMenuOpen && (
-          <div className="md:hidden border-t bg-background px-4 py-4 space-y-4">
-            <nav className="flex flex-col gap-4">
-              {navLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="text-sm font-medium" onClick={() => setIsMenuOpen(false)}>
-                  {link.label}
-                </Link>
-              ))}
+        <div className="relative hidden border-b border-white/10 lg:block">
+          <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
+            <nav className="flex flex-wrap items-center gap-2">
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const active = isActive(link.href);
+
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all",
+                      active
+                        ? "border-white/25 bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]"
+                        : "border-transparent text-white/82 hover:border-white/18 hover:bg-white/8 hover:text-white",
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
-            <div className="pt-4 border-t flex flex-col gap-2">
-              {isAuthenticated ? (
-                <>
-                  <Link href={user?.role === "SUPER_ADMIN" ? "/admin" : user?.role === "AGENT" ? "/agent" : "/dashboard"} onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full justify-start gap-2">
-                      <User className="h-4 w-4" />
-                      Tableau de bord
-                    </Button>
+
+            <div className="flex items-center gap-4 text-xs text-white/82">
+              <span className="inline-flex items-center gap-2">
+                <Pin className="h-4 w-4" />
+                Agences au Maroc
+              </span>
+              <span className="h-1 w-1 rounded-full bg-white/35" />
+              <span>Annulation flexible</span>
+            </div>
+          </div>
+        </div>
+
+        {isMenuOpen && (
+          <div className="relative border-b border-white/10 bg-white/96 text-foreground shadow-[0_20px_40px_-24px_rgba(2,18,45,0.35)] lg:hidden">
+            <div className="container mx-auto px-4 py-4">
+              <nav className="grid gap-2">
+                {navLinks.map((link) => {
+                  const Icon = link.icon;
+                  const active = isActive(link.href);
+
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={cn(
+                        "flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition-colors",
+                        active
+                          ? "border-primary/20 bg-primary/10 text-primary"
+                          : "border-border/80 bg-white text-foreground hover:border-primary/20 hover:bg-primary/5",
+                      )}
+                    >
+                      <span className="flex items-center gap-3">
+                        <Icon className="h-4 w-4" />
+                        {link.label}
+                      </span>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              <div className="mt-4 grid gap-2 border-t border-border/70 pt-4">
+                <Button asChild className="w-full rounded-2xl">
+                  <Link href={dashboardHref} onClick={() => setIsMenuOpen(false)}>
+                    <UserRound className="h-4 w-4" />
+                    Gérer ma réservation
                   </Link>
-                  <Button variant="ghost" className="w-full justify-start" onClick={() => { logout(); setIsMenuOpen(false); }}>Déconnexion</Button>
-                </>
-              ) : (
-                <>
-                  <Link href="/connexion" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">Connexion</Button>
-                  </Link>
-                  <Link href="/inscription" onClick={() => setIsMenuOpen(false)}>
-                    <Button className="w-full">S'inscrire</Button>
-                  </Link>
-                </>
-              )}
+                </Button>
+
+                {isAuthenticated ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full rounded-2xl border-border/70 bg-white text-foreground"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Déconnexion
+                  </Button>
+                ) : (
+                  <Button asChild variant="outline" className="w-full rounded-2xl border-border/70 bg-white text-foreground">
+                    <Link href="/connexion" onClick={() => setIsMenuOpen(false)}>
+                      Connexion
+                    </Link>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         )}
       </header>
 
-      <main className="flex-1 flex flex-col">
-        {children}
-      </main>
+      <main className="flex-1">{children}</main>
 
-      <footer className="bg-secondary text-secondary-foreground py-12 mt-auto">
-        <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="text-xl font-serif font-bold text-primary mb-4">Location Auto Maroc</h3>
-            <p className="text-sm text-secondary-foreground/70">
-              Votre partenaire de confiance pour la location de voitures au Maroc. Service premium, prix transparents.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-medium mb-4">Liens rapides</h4>
-            <ul className="space-y-2 text-sm text-secondary-foreground/70">
-              <li><Link href="/voitures" className="hover:text-primary transition-colors">Nos Voitures</Link></li>
-              <li><Link href="/a-propos" className="hover:text-primary transition-colors">À propos</Link></li>
-              <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
-              <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium mb-4">Informations légales</h4>
-            <ul className="space-y-2 text-sm text-secondary-foreground/70">
-              <li><Link href="/mentions-legales" className="hover:text-primary transition-colors">Mentions légales</Link></li>
-              <li><Link href="/confidentialite" className="hover:text-primary transition-colors">Politique de confidentialité</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium mb-4">Contact</h4>
-            <ul className="space-y-2 text-sm text-secondary-foreground/70">
-              <li>Casablanca, Maroc</li>
-              <li>+212 6 00 00 00 00</li>
-              <li>contact@locationautomaroc.ma</li>
-            </ul>
+      <footer className="mt-auto">
+        <div className="bg-[linear-gradient(180deg,rgba(11,91,194,1),rgba(9,73,161,1))] text-white">
+          <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-4 py-3 text-sm">
+            <Link href="/confidentialite" className="transition-colors hover:text-white/85">
+              Charte de confidentialité
+            </Link>
+            <Link href="/mentions-legales" className="transition-colors hover:text-white/85">
+              Mentions légales
+            </Link>
+            <Link href="/faq" className="transition-colors hover:text-white/85">
+              Aide
+            </Link>
+            <Link href="/contact" className="transition-colors hover:text-white/85">
+              Nous contacter
+            </Link>
           </div>
         </div>
-        <div className="container mx-auto px-4 mt-8 pt-8 border-t border-secondary-foreground/10 text-center text-sm text-secondary-foreground/50">
-          © {new Date().getFullYear()} Location Auto Maroc. Tous droits réservés.
+
+        <div className="border-t border-border/70 bg-[linear-gradient(180deg,hsl(216_55%_99%),hsl(216_45%_96%))]">
+          <div className="container mx-auto grid gap-10 px-4 py-12 lg:grid-cols-[1.1fr_0.9fr_0.9fr]">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-[0_16px_30px_-18px_hsl(var(--primary)/0.8)]">
+                  <CarFront className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-lg font-extrabold tracking-tight text-foreground">Location Auto Maroc</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Voyagez avec confiance</p>
+                </div>
+              </div>
+
+              <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+                Une plateforme pensée comme un vrai comparateur de location: recherche rapide, filtres lisibles,
+                offres claires et parcours de réservation rassurant du premier clic jusqu’à la remise des clés.
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                {["Paiement à l'agence", "Assistance locale", "Annulation flexible"].map((item) => (
+                  <span
+                    key={item}
+                    className="inline-flex items-center rounded-full border border-border/70 bg-white/85 px-3 py-1 text-xs font-semibold text-foreground shadow-sm"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-foreground">Navigation</p>
+              <div className="grid gap-2 text-sm">
+                <Link href="/voitures" className="transition-colors hover:text-primary">
+                  Toutes les voitures
+                </Link>
+                <Link href="/blog" className="transition-colors hover:text-primary">
+                  Blog et conseils
+                </Link>
+                <Link href="/faq" className="transition-colors hover:text-primary">
+                  Questions fréquentes
+                </Link>
+                <Link href="/a-propos" className="transition-colors hover:text-primary">
+                  À propos
+                </Link>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-muted-foreground">Contact</p>
+              <div className="grid gap-3 text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-border/70 bg-white/80 px-4 py-3 shadow-sm">
+                  Casablanca, Maroc
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-white/80 px-4 py-3 shadow-sm">
+                  +212 6 00 00 00 00
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-white/80 px-4 py-3 shadow-sm">
+                  contact@locationautomaroc.ma
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-border/70 py-4">
+            <div className="container mx-auto px-4 text-center text-xs text-muted-foreground">
+              © {new Date().getFullYear()} Location Auto Maroc. Tous droits réservés.
+            </div>
+          </div>
         </div>
       </footer>
 
-      {/* WhatsApp FAB */}
-      <a 
-        href="https://wa.me/212600000000" 
-        target="_blank" 
+      <a
+        href="https://wa.me/212600000000"
+        target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group"
+        className="group fixed bottom-5 right-5 z-50 inline-flex items-center gap-3 rounded-full bg-[#25D366] px-4 py-3 text-white shadow-[0_24px_50px_-24px_rgba(37,211,102,0.75)] transition-transform hover:-translate-y-1"
         title="Contactez-nous sur WhatsApp"
       >
-        <MessageCircle className="w-6 h-6" />
-        <span className="absolute right-full mr-4 top-1/2 -translate-y-1/2 bg-white text-gray-800 text-sm py-1 px-3 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none font-medium">
-          Contactez-nous sur WhatsApp
-        </span>
+        <MessageCircle className="h-5 w-5" />
+        <span className="hidden text-sm font-semibold sm:inline">WhatsApp</span>
       </a>
     </div>
   );

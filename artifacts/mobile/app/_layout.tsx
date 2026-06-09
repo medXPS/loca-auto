@@ -20,8 +20,14 @@ import { useColors } from "@/hooks/useColors";
 
 SplashScreen.preventAutoHideAsync();
 
-if (process.env["EXPO_PUBLIC_DOMAIN"]) {
-  setBaseUrl(`https://${process.env["EXPO_PUBLIC_DOMAIN"]}`);
+const apiBaseUrl =
+  process.env["EXPO_PUBLIC_API_BASE_URL"] ??
+  (process.env["EXPO_PUBLIC_DOMAIN"]
+    ? `https://${process.env["EXPO_PUBLIC_DOMAIN"]}`
+    : null);
+
+if (apiBaseUrl) {
+  setBaseUrl(apiBaseUrl);
 }
 
 const queryClient = new QueryClient({

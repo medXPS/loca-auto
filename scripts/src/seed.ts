@@ -1,27 +1,18 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import pg from "pg";
-import * as schema from "../../lib/db/src/schema/index.js";
 import bcrypt from "bcryptjs";
+import { createDatabase } from "./lib/database.js";
+import { ensureSuperAdmin, getDefaultSuperAdmin } from "./lib/super-admin.js";
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
-const db = drizzle(pool, { schema });
+const { db, pool, schema } = createDatabase();
 
 async function seed() {
   console.log("🌱 Seeding database...");
+  const verifiedAt = new Date();
 
   // ── 1. Users ─────────────────────────────────────────────────────────────
-  const adminHash = await bcrypt.hash("admin123", 10);
   const agentHash = await bcrypt.hash("agent123", 10);
   const customerHash = await bcrypt.hash("client123", 10);
 
-  const [admin] = await db.insert(schema.usersTable).values({
-    fullName: "Administrateur Principal",
-    email: "admin@locationauto.ma",
-    phone: "+212661000001",
-    passwordHash: adminHash,
-    role: "SUPER_ADMIN",
-    status: "ACTIVE",
-  }).onConflictDoNothing().returning();
+  await ensureSuperAdmin({ db, schema }, getDefaultSuperAdmin());
 
   const agentData = [
     { fullName: "Khalid Benali", email: "khalid@locationauto.ma", phone: "+212661000002" },
@@ -33,6 +24,7 @@ async function seed() {
   for (const a of agentData) {
     const [user] = await db.insert(schema.usersTable).values({
       ...a, passwordHash: agentHash, role: "AGENT", status: "ACTIVE",
+      emailVerifiedAt: verifiedAt,
     }).onConflictDoNothing().returning();
     if (user) {
       const [agent] = await db.insert(schema.agentsTable).values({ userId: user.id, status: "ACTIVE" }).returning();
@@ -52,6 +44,7 @@ async function seed() {
   for (const c of customerData) {
     const [user] = await db.insert(schema.usersTable).values({
       ...c, passwordHash: customerHash, role: "CUSTOMER", status: "ACTIVE",
+      emailVerifiedAt: verifiedAt,
     }).onConflictDoNothing().returning();
     if (user) {
       const [customer] = await db.insert(schema.customersTable).values({ userId: user.id, cin: `AB${Math.floor(100000 + Math.random() * 900000)}` }).returning();
@@ -70,7 +63,7 @@ async function seed() {
     city: "Casablanca",
     primaryColor: "#B45309",
     secondaryColor: "#0F172A",
-    paymentDeadlineHours: 12,
+    paymentDeadlineHours: 24,
   }).onConflictDoNothing();
 
   // ── 3. Cars ───────────────────────────────────────────────────────────────
@@ -97,7 +90,7 @@ async function seed() {
       brand: "Renault", model: "Clio", year: 2023, category: "CITADINE" as const, fuelType: "ESSENCE" as const,
       transmission: "MANUELLE" as const, seats: 5, doors: 4, airConditioning: true,
       dailyPrice: "280", weeklyPrice: "1700", monthlyPrice: "6000", depositAmount: "2000",
-      city: "Marrakech", licensePlate: "28763-C-1", internalReference: "CLO-01",
+      city: "Casablanca", licensePlate: "28763-C-1", internalReference: "CLO-01",
       description: "La Renault Clio allie style moderne et efficacité. Un choix populaire pour les touristes.",
       status: "AVAILABLE" as const, insuranceIncluded: true,
       mainImageUrl: "https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=800&q=80",
@@ -115,7 +108,7 @@ async function seed() {
       brand: "Peugeot", model: "208", year: 2023, category: "CITADINE" as const, fuelType: "ESSENCE" as const,
       transmission: "AUTOMATIQUE" as const, seats: 5, doors: 4, airConditioning: true,
       dailyPrice: "300", weeklyPrice: "1800", monthlyPrice: "6500", depositAmount: "2000",
-      city: "Rabat", licensePlate: "48291-E-1", internalReference: "208-01",
+      city: "Casablanca", licensePlate: "48291-E-1", internalReference: "208-01",
       description: "La Peugeot 208 offre un design percutant et une conduite agréable en ville comme sur autoroute.",
       status: "AVAILABLE" as const, insuranceIncluded: false,
       mainImageUrl: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80",
@@ -124,7 +117,7 @@ async function seed() {
       brand: "Hyundai", model: "i10", year: 2023, category: "CITADINE" as const, fuelType: "ESSENCE" as const,
       transmission: "MANUELLE" as const, seats: 5, doors: 4, airConditioning: true,
       dailyPrice: "200", weeklyPrice: "1200", monthlyPrice: "4500", depositAmount: "1500",
-      city: "Agadir", licensePlate: "17534-F-1", internalReference: "I10-01",
+      city: "Casablanca", licensePlate: "17534-F-1", internalReference: "I10-01",
       description: "La Hyundai i10 est une petite citadine économique, idéale pour les courtes distances.",
       status: "AVAILABLE" as const, insuranceIncluded: false,
       mainImageUrl: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&q=80",
@@ -133,7 +126,7 @@ async function seed() {
       brand: "Hyundai", model: "Tucson", year: 2022, category: "SUV" as const, fuelType: "DIESEL" as const,
       transmission: "AUTOMATIQUE" as const, seats: 5, doors: 4, airConditioning: true,
       dailyPrice: "500", weeklyPrice: "3000", monthlyPrice: "11000", depositAmount: "4000",
-      city: "Marrakech", licensePlate: "86452-G-1", internalReference: "TUC-01",
+      city: "Casablanca", licensePlate: "86452-G-1", internalReference: "TUC-01",
       description: "Le Hyundai Tucson est un SUV robuste et confortable, parfait pour les voyages au Maroc.",
       status: "AVAILABLE" as const, insuranceIncluded: true,
       mainImageUrl: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&q=80",
@@ -142,7 +135,7 @@ async function seed() {
       brand: "Kia", model: "Picanto", year: 2023, category: "CITADINE" as const, fuelType: "ESSENCE" as const,
       transmission: "MANUELLE" as const, seats: 5, doors: 4, airConditioning: true,
       dailyPrice: "210", weeklyPrice: "1250", monthlyPrice: "4600", depositAmount: "1500",
-      city: "Fès", licensePlate: "39821-H-1", internalReference: "PIC-01",
+      city: "Casablanca", licensePlate: "39821-H-1", internalReference: "PIC-01",
       description: "La Kia Picanto est une citadine compacte et économique, très maniable en ville.",
       status: "AVAILABLE" as const, insuranceIncluded: false,
       mainImageUrl: "https://images.unsplash.com/photo-1580274455191-1c62238fa333?w=800&q=80",
@@ -160,7 +153,7 @@ async function seed() {
       brand: "Land Rover", model: "Range Rover Evoque", year: 2022, category: "LUXE" as const, fuelType: "DIESEL" as const,
       transmission: "AUTOMATIQUE" as const, seats: 5, doors: 4, airConditioning: true,
       dailyPrice: "1200", weeklyPrice: "7000", monthlyPrice: "25000", depositAmount: "8000",
-      city: "Marrakech", licensePlate: "22184-J-1", internalReference: "EVQ-01",
+      city: "Casablanca", licensePlate: "22184-J-1", internalReference: "EVQ-01",
       description: "Le Range Rover Evoque incarne le luxe à la britannique. Parfait pour les occasions spéciales.",
       status: "AVAILABLE" as const, insuranceIncluded: true,
       mainImageUrl: "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&q=80",
@@ -218,6 +211,17 @@ async function seed() {
       callConfirmedAt: ["WAITING_AGENCY_PAYMENT", "RESERVED", "CAR_DELIVERED", "COMPLETED"].includes(status) ? new Date() : null,
       paidAtAgencyAt: ["RESERVED", "CAR_DELIVERED", "COMPLETED"].includes(status) ? new Date() : null,
     }).returning();
+
+    if (["RESERVED", "CAR_DELIVERED", "COMPLETED"].includes(status)) {
+      await db.insert(schema.carAvailabilityBlocksTable).values({
+        carId: rr.carId,
+        rentalRequestId: rr.id,
+        startDate: rr.startDate,
+        endDate: rr.returnDate,
+        type: "RESERVED",
+        status: "ACTIVE",
+      });
+    }
   }
 
   // ── 6. Blog Posts ─────────────────────────────────────────────────────────
@@ -280,7 +284,7 @@ async function seed() {
 
   console.log("✅ Seeding complete!");
   console.log("\n🔑 Login credentials:");
-  console.log("  Admin:  admin@locationauto.ma / admin123");
+  console.log("  Super admin: admin@demo.com / demo-admin@$ (MFA disabled)");
   console.log("  Agent:  khalid@locationauto.ma / agent123");
   console.log("  Client: mohammed@example.ma / client123");
   await pool.end();

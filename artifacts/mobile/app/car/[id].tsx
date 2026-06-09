@@ -17,9 +17,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/contexts/AuthContext";
-import { DatePicker } from "@/components/DatePicker";
-import { useGetCar, useGetMe, createRentalRequest } from "@workspace/api-client-react";
+import { AvailabilityRangePicker } from "@/components/AvailabilityRangePicker";
+import {
+  useGetCar,
+  useGetMe,
+  useGetCarAvailability,
+  createRentalRequest,
+} from "@workspace/api-client-react";
 import type { CarDetail } from "@workspace/api-client-react";
+import {
+  calculateRentalDays,
+  doesIsoRangeOverlapBlocked,
+} from "@workspace/api-client-react/availability";
 
 const FUEL_LABELS: Record<string, string> = {
   ESSENCE: "Essence",
@@ -51,23 +60,6 @@ function formatPrice(p: unknown): string {
   return new Intl.NumberFormat("fr-MA").format(n) + " MAD/j";
 }
 
-function computeDays(start: string, end: string): number {
-  const s = new Date(start);
-  const e = new Date(end);
-  const diff = e.getTime() - s.getTime();
-  return Math.max(1, Math.ceil(diff / 86400000));
-}
-
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function tomorrowStr(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
-}
-
 export default function CarDetailScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -77,14 +69,18 @@ export default function CarDetailScreen() {
 
   const { data: car, isLoading, isError } = useGetCar(Number(id));
   const { data: meData } = useGetMe({ query: { queryKey: ["/api/me"], enabled: !!token } });
+  const { data: availabilityBlocks = [] } = useGetCarAvailability(Number(id), {
+    query: { queryKey: ["/api/cars", Number(id), "availability"], enabled: !!id },
+  });
 
   const [imgIndex, setImgIndex] = useState(0);
-  const [startDate, setStartDate] = useState(todayStr());
-  const [returnDate, setReturnDate] = useState(tomorrowStr());
+  const [startDate, setStartDate] = useState("");
+  const [returnDate, setReturnDate] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [booking, setBooking] = useState(false);
   const [cityFocus, setCityFocus] = useState(false);
+  const [failedImageUrls, setFailedImageUrls] = useState<Set<string>>(new Set());
 
   const carDetail = car as CarDetail;
   const images = carDetail?.images ?? [];
@@ -94,17 +90,23 @@ export default function CarDetailScreen() {
       : carDetail?.mainImageUrl
         ? [carDetail.mainImageUrl]
         : [];
+  const visibleImages = allImages.filter((url) => !failedImageUrls.has(url));
+  const safeImgIndex = Math.min(imgIndex, Math.max(visibleImages.length - 1, 0));
 
-  const days = startDate && returnDate ? computeDays(startDate, returnDate) : 0;
+  const days = startDate && returnDate ? calculateRentalDays(startDate, returnDate) : 0;
   const total = days > 0 ? days * Number(car?.dailyPrice ?? 0) : 0;
 
   async function handleBook() {
     if (!startDate || !returnDate) {
-      Alert.alert("Erreur", "Veuillez sélectionner les dates de début et de retour.");
+      Alert.alert("Erreur", "Veuillez sélectionner une période de location.");
       return;
     }
-    if (new Date(returnDate) <= new Date(startDate)) {
+    if (returnDate <= startDate) {
       Alert.alert("Erreur", "La date de retour doit être après la date de début.");
+      return;
+    }
+    if (doesIsoRangeOverlapBlocked({ startDate, endDate: returnDate }, availabilityBlocks)) {
+      Alert.alert("Dates indisponibles", "La période sélectionnée contient des dates déjà réservées.");
       return;
     }
     if (!pickupLocation.trim()) {
@@ -210,10 +212,10 @@ export default function CarDetailScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.galleryWrap}>
-        {allImages.length > 0 ? (
+        {visibleImages.length > 0 ? (
           <>
             <FlatList
-              data={allImages}
+              data={visibleImages}
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
@@ -229,19 +231,20 @@ export default function CarDetailScreen() {
                   source={{ uri: item }}
                   style={styles.galleryImage}
                   resizeMode="cover"
+                  onError={() => setFailedImageUrls((prev) => new Set(prev).add(item))}
                 />
               )}
             />
-            {allImages.length > 1 && (
+            {visibleImages.length > 1 && (
               <View style={styles.dots}>
-                {allImages.map((_, i) => (
+                {visibleImages.map((_, i) => (
                   <View
                     key={i}
                     style={[
                       styles.dot,
                       {
                         backgroundColor:
-                          i === imgIndex ? "#fff" : "rgba(255,255,255,0.5)",
+                          i === safeImgIndex ? "#fff" : "rgba(255,255,255,0.5)",
                       },
                     ]}
                   />
@@ -343,22 +346,28 @@ export default function CarDetailScreen() {
               Faire une demande
             </Text>
 
-            <View style={styles.dateRow}>
-              <View style={styles.dateField}>
-                <DatePicker
-                  label="Date de début"
-                  value={startDate}
-                  onChange={setStartDate}
-                  minDate={todayStr()}
-                />
+            <AvailabilityRangePicker
+              label="Dates de location"
+              startDate={startDate}
+              returnDate={returnDate}
+              blocks={availabilityBlocks}
+              onChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+                setStartDate(nextStartDate);
+                setReturnDate(nextReturnDate);
+              }}
+            />
+            <View style={styles.dateSummaryRow}>
+              <View style={styles.dateSummaryCard}>
+                <Text style={[styles.dateSummaryLabel, { color: colors.mutedForeground }]}>Départ</Text>
+                <Text style={[styles.dateSummaryValue, { color: colors.foreground }]}>
+                  {startDate || "À choisir"}
+                </Text>
               </View>
-              <View style={styles.dateField}>
-                <DatePicker
-                  label="Date de retour"
-                  value={returnDate}
-                  onChange={setReturnDate}
-                  minDate={startDate || todayStr()}
-                />
+              <View style={styles.dateSummaryCard}>
+                <Text style={[styles.dateSummaryLabel, { color: colors.mutedForeground }]}>Retour</Text>
+                <Text style={[styles.dateSummaryValue, { color: colors.foreground }]}>
+                  {returnDate || "À choisir"}
+                </Text>
               </View>
             </View>
 
@@ -529,8 +538,27 @@ const styles = StyleSheet.create({
   },
   descText: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 21 },
   bookingCard: { borderRadius: 20, borderWidth: 1, padding: 20, gap: 14 },
-  dateRow: { flexDirection: "row", gap: 12 },
-  dateField: { flex: 1 },
+  dateSummaryRow: { flexDirection: "row", gap: 12 },
+  dateSummaryCard: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+    gap: 4,
+  },
+  dateSummaryLabel: {
+    fontSize: 11,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500" as const,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  dateSummaryValue: {
+    fontSize: 14,
+    fontFamily: "Inter_600SemiBold",
+    fontWeight: "600" as const,
+  },
   inputField: { gap: 6 },
   inputLabel: {
     fontSize: 12,

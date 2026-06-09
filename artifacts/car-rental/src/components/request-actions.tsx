@@ -9,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,10 +17,11 @@ import { useState } from "react";
 interface RequestActionsProps {
   requestId: number;
   status: string;
+  estimatedPrice?: number | null;
   onSuccess: () => void;
 }
 
-export function RequestActions({ requestId, status, onSuccess }: RequestActionsProps) {
+export function RequestActions({ requestId, status, estimatedPrice, onSuccess }: RequestActionsProps) {
   const { toast } = useToast();
   const updateStatus = useUpdateRentalRequestStatus();
   const confirmCall = useConfirmCall();
@@ -29,6 +29,7 @@ export function RequestActions({ requestId, status, onSuccess }: RequestActionsP
 
   const [notes, setNotes] = useState("");
   const [amount, setAmount] = useState("");
+  const [finalPrice, setFinalPrice] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
@@ -39,6 +40,7 @@ export function RequestActions({ requestId, status, onSuccess }: RequestActionsP
         onSuccess: () => {
           toast({ title: "Statut mis à jour avec succès" });
           setIsDialogOpen(false);
+          setFinalPrice("");
           setNotes("");
           onSuccess();
         },
@@ -50,12 +52,20 @@ export function RequestActions({ requestId, status, onSuccess }: RequestActionsP
   };
 
   const handleConfirmCall = () => {
+    const parsedFinalPrice = Number(finalPrice);
     confirmCall.mutate(
-      { id: requestId, data: { notes } },
+      {
+        id: requestId,
+        data: {
+          notes,
+          ...(parsedFinalPrice > 0 ? { finalPrice: parsedFinalPrice } : {}),
+        },
+      },
       {
         onSuccess: () => {
           toast({ title: "Appel confirmé avec succès" });
           setIsDialogOpen(false);
+          setFinalPrice("");
           setNotes("");
           onSuccess();
         },
@@ -74,6 +84,7 @@ export function RequestActions({ requestId, status, onSuccess }: RequestActionsP
           toast({ title: "Paiement confirmé avec succès" });
           setIsDialogOpen(false);
           setAmount("");
+          setFinalPrice("");
           setNotes("");
           onSuccess();
         },
@@ -96,6 +107,7 @@ export function RequestActions({ requestId, status, onSuccess }: RequestActionsP
 
   const openDialog = (action: string) => {
     setCurrentAction(action);
+    setFinalPrice(action === "CALL_CONFIRMED" && estimatedPrice ? String(estimatedPrice) : "");
     setIsDialogOpen(true);
   };
 
@@ -173,7 +185,17 @@ export function RequestActions({ requestId, status, onSuccess }: RequestActionsP
         )}
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) {
+            setAmount("");
+            setFinalPrice("");
+            setNotes("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirmer l'action</DialogTitle>
@@ -183,6 +205,18 @@ export function RequestActions({ requestId, status, onSuccess }: RequestActionsP
           </DialogHeader>
           
           <div className="space-y-4 py-4">
+            {currentAction === "CALL_CONFIRMED" && (
+              <div className="space-y-2">
+                <Label>Prix final (MAD)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={finalPrice}
+                  onChange={(e) => setFinalPrice(e.target.value)}
+                  placeholder={estimatedPrice ? `Ex: ${estimatedPrice}` : "Ex: 1500"}
+                />
+              </div>
+            )}
             {currentAction === "PAYMENT_CONFIRMED" && (
               <div className="space-y-2">
                 <Label>Montant payé (MAD)</Label>

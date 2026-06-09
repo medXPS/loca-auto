@@ -58,7 +58,12 @@ export default function AdminRequestDetail() {
         </div>
 
         <div className="bg-card p-2 rounded-lg border shadow-sm">
-          <RequestActions requestId={request.id} status={request.status} onSuccess={handleSuccess} />
+          <RequestActions
+            requestId={request.id}
+            status={request.status}
+            estimatedPrice={request.estimatedTotalPrice}
+            onSuccess={handleSuccess}
+          />
         </div>
       </div>
 

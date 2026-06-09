@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Image,
   Pressable,
@@ -36,6 +36,7 @@ export function CarCard({ car, onPress }: CarCardProps) {
   const colors = useColors();
   const available = car.status === "AVAILABLE";
   const imageUrl = car.mainImageUrl ?? null;
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
     <Pressable
@@ -51,8 +52,13 @@ export function CarCard({ car, onPress }: CarCardProps) {
       ]}
     >
       <View style={styles.imageWrap}>
-        {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+        {imageUrl && !imageFailed ? (
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.image}
+            resizeMode="cover"
+            onError={() => setImageFailed(true)}
+          />
         ) : (
           <View style={[styles.imagePlaceholder, { backgroundColor: colors.muted }]}>
             <Ionicons name="car-outline" size={36} color={colors.mutedForeground} />

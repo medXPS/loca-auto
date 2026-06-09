@@ -19,26 +19,26 @@ export function StatusBadge({ status, type = "rental", className }: StatusBadgeP
     switch (status) {
       case "PENDING":
       case "UNDER_REVIEW":
-        colorClass = "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200";
+        colorClass = "bg-amber-500/12 text-amber-700 hover:bg-amber-500/18 border-amber-200";
         break;
       case "CALL_ATTEMPTED":
       case "CALL_CONFIRMED":
       case "WAITING_AGENCY_PAYMENT":
       case "WAITING_DOCUMENTS":
-        colorClass = "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200";
+        colorClass = "bg-sky-500/12 text-sky-700 hover:bg-sky-500/18 border-sky-200";
         break;
       case "RESERVED":
       case "CAR_DELIVERED":
-        colorClass = "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20";
+        colorClass = "bg-primary/10 text-primary hover:bg-primary/18 border-primary/15";
         break;
       case "COMPLETED":
       case "CAR_RETURNED":
-        colorClass = "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200";
+        colorClass = "bg-emerald-500/12 text-emerald-700 hover:bg-emerald-500/18 border-emerald-200";
         break;
       case "REJECTED":
       case "CANCELLED":
       case "ABANDONED":
-        colorClass = "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20";
+        colorClass = "bg-rose-500/12 text-rose-700 hover:bg-rose-500/18 border-rose-200";
         break;
       default:
         variant = "outline";
@@ -46,17 +46,17 @@ export function StatusBadge({ status, type = "rental", className }: StatusBadgeP
   } else {
     switch (status) {
       case "AVAILABLE":
-        colorClass = "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-emerald-200";
+        colorClass = "bg-emerald-500/12 text-emerald-700 hover:bg-emerald-500/18 border-emerald-200";
         break;
       case "TEMPORARILY_HELD":
       case "RESERVED":
-        colorClass = "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200";
+        colorClass = "bg-amber-500/12 text-amber-700 hover:bg-amber-500/18 border-amber-200";
         break;
       case "RENTED":
-        colorClass = "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-200";
+        colorClass = "bg-sky-500/12 text-sky-700 hover:bg-sky-500/18 border-sky-200";
         break;
       case "MAINTENANCE":
-        colorClass = "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20";
+        colorClass = "bg-rose-500/12 text-rose-700 hover:bg-rose-500/18 border-rose-200";
         break;
       default:
         variant = "outline";
@@ -64,7 +64,7 @@ export function StatusBadge({ status, type = "rental", className }: StatusBadgeP
   }
 
   return (
-    <Badge variant={variant} className={cn("whitespace-nowrap font-medium", colorClass, className)}>
+    <Badge variant={variant} className={cn("whitespace-nowrap font-bold uppercase tracking-[0.12em]", colorClass, className)}>
       {label}
     </Badge>
   );

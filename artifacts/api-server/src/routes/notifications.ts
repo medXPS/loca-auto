@@ -23,7 +23,7 @@ router.patch("/:id/read", authMiddleware, async (req, res) => {
   try {
     const [notification] = await db.update(schema.notificationsTable)
       .set({ read: true })
-      .where(and(eq(schema.notificationsTable.id, parseInt(req.params.id)), eq(schema.notificationsTable.userId, req.user!.userId)))
+      .where(and(eq(schema.notificationsTable.id, parseInt(String(req.params.id), 10)), eq(schema.notificationsTable.userId, req.user!.userId)))
       .returning();
     if (!notification) { res.status(404).json({ error: "Notification non trouvée" }); return; }
     res.json(notification);

@@ -1,39 +1,15 @@
-import React, { useState } from "react";
-import {
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
-
-const MONTHS_FR = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
-];
-const DAYS_FR = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"];
-
-function daysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate();
-}
-
-function firstDayOfMonth(year: number, month: number): number {
-  const d = new Date(year, month, 1).getDay();
-  return d === 0 ? 6 : d - 1;
-}
-
-function formatDisplay(iso: string): string {
-  if (!iso) return "Sélectionner une date";
-  const [y, m, d] = iso.split("-");
-  return `${d} ${MONTHS_FR[parseInt(m, 10) - 1]} ${y}`;
-}
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import {
+  buildMonthCells,
+  DAYS_FR,
+  formatDisplayDate,
+  formatMonthLabel,
+} from "@workspace/api-client-react/calendar";
+import { getIsoYearMonth, todayIso } from "@workspace/api-client-react/availability";
 
 interface DatePickerProps {
   value: string;
@@ -46,46 +22,55 @@ export function DatePicker({ value, onChange, label, minDate }: DatePickerProps)
   const colors = useColors();
   const [open, setOpen] = useState(false);
 
+  const minIso = minDate || todayIso();
+  const anchorIso = value || minIso;
+  const { year: initialYear, month: initialMonth } = getIsoYearMonth(anchorIso);
+  const [viewYear, setViewYear] = useState(initialYear);
+  const [viewMonth, setViewMonth] = useState(initialMonth);
+
+  useEffect(() => {
+    const { year, month } = getIsoYearMonth(anchorIso);
+    setViewYear(year);
+    setViewMonth(month);
+  }, [anchorIso]);
+
+  const cells = useMemo(() => buildMonthCells(viewYear, viewMonth), [viewYear, viewMonth]);
   const today = todayIso();
-  const [y, m] = (value || today).split("-").map(Number);
-  const [viewYear, setViewYear] = useState(y || new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(m ? m - 1 : new Date().getMonth());
-
-  const totalDays = daysInMonth(viewYear, viewMonth);
-  const firstDay = firstDayOfMonth(viewYear, viewMonth);
-
-  const cells: (number | null)[] = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let i = 1; i <= totalDays; i++) cells.push(i);
-  while (cells.length % 7 !== 0) cells.push(null);
 
   function prevMonth() {
     Haptics.selectionAsync();
-    if (viewMonth === 0) { setViewYear(viewYear - 1); setViewMonth(11); }
-    else setViewMonth(viewMonth - 1);
+    if (viewMonth === 0) {
+      setViewYear((year) => year - 1);
+      setViewMonth(11);
+    } else {
+      setViewMonth((month) => month - 1);
+    }
   }
 
   function nextMonth() {
     Haptics.selectionAsync();
-    if (viewMonth === 11) { setViewYear(viewYear + 1); setViewMonth(0); }
-    else setViewMonth(viewMonth + 1);
+    if (viewMonth === 11) {
+      setViewYear((year) => year + 1);
+      setViewMonth(0);
+    } else {
+      setViewMonth((month) => month + 1);
+    }
   }
 
   function selectDay(day: number) {
     const iso = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    if (minDate && iso < minDate) return;
+    if (iso < minIso) return;
     Haptics.selectionAsync();
     onChange(iso);
     setOpen(false);
   }
 
-  function isoForDay(day: number): string {
-    return `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-  }
-
-  const isSelected = (day: number) => isoForDay(day) === value;
-  const isDisabled = (day: number) => minDate ? isoForDay(day) < minDate : false;
-  const isToday = (day: number) => isoForDay(day) === today;
+  const isSelected = (day: number) =>
+    `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` === value;
+  const isDisabled = (day: number) =>
+    `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` < minIso;
+  const isToday = (day: number) =>
+    `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}` === today;
 
   return (
     <>
@@ -110,7 +95,7 @@ export function DatePicker({ value, onChange, label, minDate }: DatePickerProps)
             { color: value ? colors.foreground : colors.mutedForeground },
           ]}
         >
-          {formatDisplay(value)}
+          {formatDisplayDate(value)}
         </Text>
         <Ionicons name="chevron-down-outline" size={14} color={colors.mutedForeground} />
       </Pressable>
@@ -139,7 +124,7 @@ export function DatePicker({ value, onChange, label, minDate }: DatePickerProps)
                 <Ionicons name="chevron-back" size={20} color={colors.foreground} />
               </Pressable>
               <Text style={[styles.monthLabel, { color: colors.foreground }]}>
-                {MONTHS_FR[viewMonth]} {viewYear}
+                {formatMonthLabel(viewYear, viewMonth)}
               </Text>
               <Pressable
                 onPress={nextMonth}
@@ -150,21 +135,23 @@ export function DatePicker({ value, onChange, label, minDate }: DatePickerProps)
             </View>
 
             <View style={styles.weekRow}>
-              {DAYS_FR.map((d) => (
-                <Text key={d} style={[styles.weekDay, { color: colors.mutedForeground }]}>
-                  {d}
+              {DAYS_FR.map((day) => (
+                <Text key={day} style={[styles.weekDay, { color: colors.mutedForeground }]}>
+                  {day}
                 </Text>
               ))}
             </View>
 
             <View style={styles.grid}>
-              {cells.map((day, idx) => {
+              {cells.map((day, index) => {
                 if (day === null) {
-                  return <View key={`empty-${idx}`} style={styles.cell} />;
+                  return <View key={`empty-${index}`} style={styles.cell} />;
                 }
+
                 const selected = isSelected(day);
                 const disabled = isDisabled(day);
-                const tod = isToday(day);
+                const current = isToday(day);
+
                 return (
                   <Pressable
                     key={`day-${day}`}
@@ -172,7 +159,7 @@ export function DatePicker({ value, onChange, label, minDate }: DatePickerProps)
                     style={[
                       styles.cell,
                       selected && { backgroundColor: colors.primary, borderRadius: 10 },
-                      tod && !selected && { borderWidth: 1.5, borderColor: colors.primary, borderRadius: 10 },
+                      current && !selected && { borderWidth: 1.5, borderColor: colors.primary, borderRadius: 10 },
                     ]}
                   >
                     <Text

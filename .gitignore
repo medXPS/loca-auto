@@ -4,6 +4,8 @@
 dist
 tmp
 out-tsc
+*.pyc
+__pycache__/
 *.tsbuildinfo
 .expo
 .expo-shared
@@ -28,10 +30,12 @@ node_modules
 !.vscode/extensions.json
 
 # misc
+.env
 /.sass-cache
 /connect.lock
 /coverage
 /libpeerconnection.log
+*.log
 npm-debug.log
 yarn-error.log
 testem.log

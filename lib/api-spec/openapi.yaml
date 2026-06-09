@@ -49,7 +49,45 @@ paths:
               $ref: "#/components/schemas/RegisterInput"
       responses:
         "201":
-          description: Registered
+          description: Verification email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+
+  /auth/resend-verification:
+    post:
+      operationId: resendVerification
+      tags: [auth]
+      summary: Resend verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResendVerificationInput"
+      responses:
+        "200":
+          description: Verification email sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/verify-email:
+    post:
+      operationId: verifyEmail
+      tags: [auth]
+      summary: Verify email address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyEmailInput"
+      responses:
+        "200":
+          description: Email verified and authenticated
           content:
             application/json:
               schema:
@@ -1122,7 +1160,29 @@ components:
         phone: { type: string }
         role: { type: string }
         status: { type: string }
+        emailVerifiedAt: { type: ["string", "null"] }
         createdAt: { type: string }
+
+    RegisterResponse:
+      type: object
+      required: [message, verificationRequired, email]
+      properties:
+        message: { type: string }
+        verificationRequired: { type: boolean }
+        email: { type: string }
+
+    ResendVerificationInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+
+    VerifyEmailInput:
+      type: object
+      required: [email, code]
+      properties:
+        email: { type: string }
+        code: { type: string }
 
     UserProfileUpdate:
       type: object
@@ -1412,6 +1472,10 @@ components:
         city: { type: ["string", "null"] }
         user:
           $ref: "#/components/schemas/User"
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
         rentalRequests:
           type: array
           items:
@@ -1432,6 +1496,8 @@ components:
     CustomerUpdate:
       type: object
       properties:
+        fullName: { type: string }
+        phone: { type: string }
         cin: { type: string }
         passportNumber: { type: string }
         drivingLicenseNumber: { type: string }

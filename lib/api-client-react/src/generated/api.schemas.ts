@@ -32,12 +32,29 @@ export interface User {
   phone: string;
   role: string;
   status: string;
+  /** @nullable */
+  emailVerifiedAt?: string | null;
   createdAt?: string;
 }
 
 export interface AuthResponse {
   user: User;
   token: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  verificationRequired: boolean;
+  email: string;
+}
+
+export interface ResendVerificationInput {
+  email: string;
+}
+
+export interface VerifyEmailInput {
+  email: string;
+  code: string;
 }
 
 export interface UserProfileUpdate {
@@ -313,6 +330,17 @@ export interface ConfirmPaymentInput {
   notes?: string;
 }
 
+export interface Document {
+  id: number;
+  customerId: number;
+  /** @nullable */
+  rentalRequestId?: number | null;
+  type: string;
+  fileUrl: string;
+  status?: string;
+  uploadedAt: string;
+}
+
 export interface CustomerDetail {
   id: number;
   userId: number;
@@ -327,6 +355,7 @@ export interface CustomerDetail {
   /** @nullable */
   city?: string | null;
   user: User;
+  documents?: Document[];
   rentalRequests?: RentalRequest[];
 }
 
@@ -338,6 +367,8 @@ export interface CustomerListResponse {
 }
 
 export interface CustomerUpdate {
+  fullName?: string;
+  phone?: string;
   cin?: string;
   passportNumber?: string;
   drivingLicenseNumber?: string;
@@ -560,17 +591,6 @@ export interface CompanySettingsUpdate {
   primaryColor?: string;
   secondaryColor?: string;
   paymentDeadlineHours?: number;
-}
-
-export interface Document {
-  id: number;
-  customerId: number;
-  /** @nullable */
-  rentalRequestId?: number | null;
-  type: string;
-  fileUrl: string;
-  status?: string;
-  uploadedAt: string;
 }
 
 export interface DocumentInput {

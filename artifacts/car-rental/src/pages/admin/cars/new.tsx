@@ -51,9 +51,9 @@ export default function AdminNewCar() {
       brand: "",
       model: "",
       year: new Date().getFullYear(),
-      category: "ECONOMY",
-      fuelType: "PETROL",
-      transmission: "MANUAL",
+      category: "CITADINE",
+      fuelType: "ESSENCE",
+      transmission: "MANUELLE",
       seats: 5,
       doors: 4,
       dailyPrice: 200,
@@ -121,12 +121,14 @@ export default function AdminNewCar() {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="ECONOMY">Économique</SelectItem>
-                        <SelectItem value="COMPACT">Compacte</SelectItem>
-                        <SelectItem value="SEDAN">Berline</SelectItem>
+                        <SelectItem value="CITADINE">Citadine</SelectItem>
+                        <SelectItem value="BERLINE">Berline</SelectItem>
                         <SelectItem value="SUV">SUV</SelectItem>
-                        <SelectItem value="LUXURY">Luxe</SelectItem>
-                        <SelectItem value="VAN">Van</SelectItem>
+                        <SelectItem value="MONOSPACE">Monospace</SelectItem>
+                        <SelectItem value="UTILITAIRE">Utilitaire</SelectItem>
+                        <SelectItem value="LUXE">Luxe</SelectItem>
+                        <SelectItem value="SPORT">Sport</SelectItem>
+                        <SelectItem value="4X4">4x4</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -139,10 +141,11 @@ export default function AdminNewCar() {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="PETROL">Essence</SelectItem>
+                        <SelectItem value="ESSENCE">Essence</SelectItem>
                         <SelectItem value="DIESEL">Diesel</SelectItem>
-                        <SelectItem value="HYBRID">Hybride</SelectItem>
-                        <SelectItem value="ELECTRIC">Électrique</SelectItem>
+                        <SelectItem value="HYBRIDE">Hybride</SelectItem>
+                        <SelectItem value="ELECTRIQUE">Électrique</SelectItem>
+                        <SelectItem value="GPL">GPL</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -155,8 +158,8 @@ export default function AdminNewCar() {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <SelectItem value="MANUAL">Manuelle</SelectItem>
-                        <SelectItem value="AUTOMATIC">Automatique</SelectItem>
+                        <SelectItem value="MANUELLE">Manuelle</SelectItem>
+                        <SelectItem value="AUTOMATIQUE">Automatique</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

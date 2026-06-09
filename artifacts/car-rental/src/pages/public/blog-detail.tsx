@@ -1,24 +1,26 @@
 import { useGetBlogPost, getGetBlogPostQueryKey } from "@workspace/api-client-react";
 import { useRoute, Link } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime } from "@/lib/utils";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CalendarDays, Sparkles } from "lucide-react";
 
 export default function BlogDetail() {
   const [, params] = useRoute("/blog/:slug");
   const slug = params?.slug || "";
-  
-  const { data: post, isLoading } = useGetBlogPost(slug, { 
-    query: { enabled: !!slug, queryKey: getGetBlogPostQueryKey(slug) } 
+
+  const { data: post, isLoading } = useGetBlogPost(slug, {
+    query: { enabled: !!slug, queryKey: getGetBlogPostQueryKey(slug) },
   });
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-12 max-w-3xl">
-        <Skeleton className="h-8 w-24 mb-8" />
-        <Skeleton className="h-12 w-3/4 mb-4" />
-        <Skeleton className="h-4 w-32 mb-8" />
-        <Skeleton className="h-[400px] w-full rounded-xl mb-8" />
+      <div className="container mx-auto max-w-4xl px-4 py-12">
+        <Skeleton className="mb-8 h-8 w-24" />
+        <Skeleton className="mb-4 h-14 w-3/4" />
+        <Skeleton className="mb-8 h-4 w-40" />
+        <Skeleton className="mb-8 h-[420px] w-full rounded-[2rem]" />
         <div className="space-y-4">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
@@ -40,35 +42,80 @@ export default function BlogDetail() {
   }
 
   return (
-    <article className="container mx-auto px-4 py-12 max-w-4xl">
-      <Link href="/blog" className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8">
-        <ArrowLeft className="w-4 h-4" />
+    <article className="container mx-auto px-4 py-12">
+      <Link
+        href="/blog"
+        className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+      >
+        <ArrowLeft className="h-4 w-4" />
         Retour au blog
       </Link>
 
-      <header className="mb-10 text-center">
-        <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6 leading-tight">
-          {post.title}
-        </h1>
-        <p className="text-muted-foreground">
-          Publié le {formatDateTime(post.createdAt).split(' ')[0]}
-        </p>
+      <header className="mb-10 overflow-hidden rounded-[2rem] border border-border/70 bg-[linear-gradient(135deg,hsl(214_90%_48%),hsl(223_45%_18%))] px-6 py-10 text-white shadow-[0_30px_80px_-40px_hsl(var(--primary)/0.8)] md:px-10">
+        <div className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/12 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/85">
+            <Sparkles className="h-3.5 w-3.5" />
+            Article
+          </div>
+          <h1 className="mt-6 text-4xl font-extrabold leading-tight tracking-tight md:text-5xl text-balance">
+            {post.title}
+          </h1>
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-white/80">
+            <span className="inline-flex items-center gap-2">
+              <CalendarDays className="h-4 w-4" />
+              Publié le {formatDateTime(post.createdAt).split(" ")[0]}
+            </span>
+          </div>
+        </div>
       </header>
 
       {post.coverImage && (
-        <div className="aspect-[21/9] rounded-2xl overflow-hidden mb-12 bg-muted shadow-lg">
-          <img 
-            src={post.coverImage} 
-            alt={post.title} 
-            className="w-full h-full object-cover"
-          />
+        <div className="mb-12 overflow-hidden rounded-[2rem] border border-border/70 bg-muted shadow-[0_24px_60px_-34px_hsl(var(--primary)/0.24)]">
+          <img src={post.coverImage} alt={post.title} className="h-full w-full object-cover" />
         </div>
       )}
 
-      <div 
-        className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-serif prose-a:text-primary"
-        dangerouslySetInnerHTML={{ __html: post.content || "" }}
-      />
+      <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <Card className="surface-panel">
+          <CardContent className="p-6">
+            <div
+              className="prose prose-lg max-w-none prose-headings:font-extrabold prose-a:text-primary"
+              dangerouslySetInnerHTML={{ __html: post.content || "" }}
+            />
+          </CardContent>
+        </Card>
+
+        <Card className="surface-panel-strong h-fit overflow-hidden">
+          <div className="bg-[linear-gradient(180deg,hsl(214_90%_48%),hsl(223_45%_18%))] px-6 py-7 text-white">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/12 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/85">
+              <Sparkles className="h-3.5 w-3.5" />
+              Conseil rapide
+            </div>
+            <h2 className="mt-5 text-2xl font-extrabold leading-tight text-balance">
+              Prenez quelques minutes pour comparer avant de valider.
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/85">
+              Les meilleures décisions viennent souvent d’une lecture rapide de plusieurs offres, avec un vrai aperçu du prix et des conditions.
+            </p>
+          </div>
+
+          <CardContent className="space-y-4 p-6">
+            <div className="rounded-2xl border border-border/70 bg-white p-4 text-sm leading-7 text-muted-foreground">
+              <p className="font-semibold text-foreground">Pourquoi ce sujet est utile</p>
+              <p className="mt-2">
+                Chaque article vous aide à mieux comprendre le parcours, à éviter les erreurs les plus courantes et à réserver plus sereinement.
+              </p>
+            </div>
+
+            <Link href="/voitures">
+              <Button className="w-full rounded-full bg-emerald-500 px-6 text-white hover:bg-emerald-600">
+                Voir les voitures
+                <ArrowLeft className="h-4 w-4 rotate-180" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     </article>
   );
 }

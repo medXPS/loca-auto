@@ -46,7 +46,7 @@ export default function RegisterScreen() {
       });
       await saveAuth(res.token, res.user);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace("/(tabs)");
+      router.replace("/");
     } catch (err: unknown) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       const msg =

@@ -2,8 +2,6 @@ import {
   useGetRentalRequest,
   getGetRentalRequestQueryKey,
   useCancelRentalRequest,
-  useGetUploadUrl,
-  useUploadDocument,
   useListDocuments,
   getListDocumentsQueryKey,
 } from "@workspace/api-client-react";
@@ -13,7 +11,7 @@ import { formatPrice, formatDateTime } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Car, Calendar, Clock, FileText, Upload, X, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Car, Calendar, Clock, FileText, X, CheckCircle2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,130 +26,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DocumentUploadField } from "@/components/document-upload-field";
 
-function DocumentUploadField({
-  label,
-  docType,
-  rentalRequestId,
-  onUploaded,
-}: {
-  label: string;
-  docType: string;
-  rentalRequestId: number;
-  onUploaded: () => void;
-}) {
-  const { toast } = useToast();
-  const getUploadUrl = useGetUploadUrl();
-  const uploadDocument = useUploadDocument();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [progress, setProgress] = useState<"idle" | "uploading" | "done" | "error">("idle");
-  const [fileName, setFileName] = useState<string | null>(null);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setFileName(file.name);
-    setProgress("uploading");
-
-    try {
-      const presignResult = await new Promise<{ uploadUrl: string; fileUrl: string }>(
-        (resolve, reject) => {
-          getUploadUrl.mutate(
-            { data: { fileName: file.name, fileType: file.type, context: "documents" } },
-            {
-              onSuccess: (data) => resolve(data as { uploadUrl: string; fileUrl: string }),
-              onError: reject,
-            }
-          );
-        }
-      );
-
-      await fetch(presignResult.uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
-      });
-
-      await new Promise<void>((resolve, reject) => {
-        uploadDocument.mutate(
-          {
-            data: {
-              rentalRequestId,
-              type: docType,
-              fileUrl: presignResult.fileUrl,
-            },
-          },
-          {
-            onSuccess: () => resolve(),
-            onError: reject,
-          }
-        );
-      });
-
-      setProgress("done");
-      toast({ title: `${label} téléversé avec succès` });
-      onUploaded();
-    } catch {
-      setProgress("error");
-      toast({
-        title: "Erreur de téléversement",
-        description: "Réessayez ou contactez le support.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <div className="flex items-center gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-2"
-          disabled={progress === "uploading" || progress === "done"}
-          onClick={() => inputRef.current?.click()}
-        >
-          {progress === "uploading" ? (
-            <>
-              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              Téléversement...
-            </>
-          ) : progress === "done" ? (
-            <>
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              Téléversé
-            </>
-          ) : progress === "error" ? (
-            <>
-              <AlertTriangle className="w-4 h-4 text-destructive" />
-              Réessayer
-            </>
-          ) : (
-            <>
-              <Upload className="w-4 h-4" />
-              Choisir un fichier
-            </>
-          )}
-        </Button>
-        {fileName && (
-          <span className="text-sm text-muted-foreground truncate max-w-[160px]">{fileName}</span>
-        )}
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*,.pdf"
-          className="hidden"
-          onChange={handleFileChange}
-        />
-      </div>
-    </div>
-  );
+function fileNameFromUrl(fileUrl: string) {
+  const fileName = fileUrl.split("/").pop();
+  return fileName && fileName.trim() ? fileName : fileUrl;
 }
 
 export default function CustomerRequestDetail() {
@@ -180,7 +59,7 @@ export default function CustomerRequestDetail() {
       { id },
       {
         onSuccess: () => {
-          toast({ title: "Demande annulée avec succès" });
+          toast({ title: "Demande annulee avec succes" });
           handleSuccess();
         },
         onError: (error: any) => {
@@ -194,12 +73,14 @@ export default function CustomerRequestDetail() {
     );
   };
 
-  if (isLoading)
+  if (isLoading) {
     return (
       <div className="p-6">
         <Skeleton className="h-96 w-full rounded-xl" />
       </div>
     );
+  }
+
   if (!request) return <div className="p-6 text-center">Demande introuvable</div>;
 
   const showCountdown =
@@ -208,23 +89,23 @@ export default function CustomerRequestDetail() {
 
   const canCancel = request.status === "PENDING" || request.status === "CALL_ATTEMPTED";
 
-  const hasCin = documents?.some((d) => d.type === "CIN");
-  const hasLicense = documents?.some((d) => d.type === "DRIVING_LICENSE");
+  const cinDocument = documents?.find((doc) => doc.type === "CIN" || doc.type === "PASSPORT");
+  const licenseDocument = documents?.find((doc) => doc.type === "PERMIS_CONDUIRE");
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto py-8 px-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+    <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-serif font-bold tracking-tight">Ma Demande #{request.id}</h1>
-          <p className="text-muted-foreground mt-1">Créée le {formatDateTime(request.createdAt)}</p>
+          <p className="mt-1 text-muted-foreground">Creee le {formatDateTime(request.createdAt)}</p>
         </div>
         <div className="flex items-center gap-3">
-          <StatusBadge status={request.status} className="text-lg px-4 py-1.5" />
+          <StatusBadge status={request.status} className="px-4 py-1.5 text-lg" />
           {canCancel && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm" className="gap-2">
-                  <X className="w-4 h-4" />
+                  <X className="h-4 w-4" />
                   Annuler
                 </Button>
               </AlertDialogTrigger>
@@ -232,8 +113,8 @@ export default function CustomerRequestDetail() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Annuler la demande ?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Cette action est irréversible. Votre demande de location sera annulée et le
-                    véhicule sera remis à disposition.
+                    Cette action est irreversible. Votre demande de location sera annulee et le vehicule
+                    sera remis a disposition.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -257,24 +138,24 @@ export default function CustomerRequestDetail() {
       )}
 
       {request.status === "CALL_CONFIRMED" && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-xl mb-6 flex gap-3">
-          <Clock className="w-6 h-6 shrink-0 mt-0.5" />
+        <div className="mb-6 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-800">
+          <Clock className="mt-0.5 h-6 w-6 shrink-0" />
           <div>
-            <h3 className="font-bold">Prochaine étape : Paiement à l'agence</h3>
-            <p className="text-sm mt-1">
-              Votre demande a été confirmée par téléphone. Veuillez vous présenter à notre agence
-              avant le délai imparti pour finaliser le paiement et récupérer votre véhicule.
+            <h3 className="font-bold">Prochaine etape : Paiement a l'agence</h3>
+            <p className="mt-1 text-sm">
+              Votre demande a ete confirmee par telephone. Veuillez vous presenter a notre agence avant
+              le delai imparti pour finaliser le paiement et recuperer votre vehicule.
             </p>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Car className="w-5 h-5 text-primary" />
-              Véhicule Réservé
+              <Car className="h-5 w-5 text-primary" />
+              Vehicule reserve
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -282,10 +163,10 @@ export default function CustomerRequestDetail() {
               <img
                 src={request.car.mainImageUrl}
                 alt={request.car.model}
-                className="w-full h-48 object-cover rounded-lg mb-4"
+                className="mb-4 h-48 w-full rounded-lg object-cover"
               />
             )}
-            <h3 className="font-bold text-xl">
+            <h3 className="text-xl font-bold">
               {request.car?.brand} {request.car?.model}
             </h3>
             <p className="text-muted-foreground">
@@ -297,33 +178,29 @@ export default function CustomerRequestDetail() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              Détails de location
+              <Calendar className="h-5 w-5 text-primary" />
+              Details de location
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Départ</p>
-                <p className="font-medium text-lg">
-                  {new Date(request.startDate).toLocaleDateString("fr-MA")}
-                </p>
+                <p className="mb-1 text-sm text-muted-foreground">Depart</p>
+                <p className="text-lg font-medium">{new Date(request.startDate).toLocaleDateString("fr-MA")}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Retour</p>
-                <p className="font-medium text-lg">
-                  {new Date(request.returnDate).toLocaleDateString("fr-MA")}
-                </p>
+                <p className="mb-1 text-sm text-muted-foreground">Retour</p>
+                <p className="text-lg font-medium">{new Date(request.returnDate).toLocaleDateString("fr-MA")}</p>
               </div>
             </div>
 
-            <div className="pt-4 border-t">
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-muted-foreground">Prix estimé</p>
+            <div className="border-t pt-4">
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-muted-foreground">Prix estime</p>
                 <p>{formatPrice(request.estimatedTotalPrice)}</p>
               </div>
-              <div className="flex justify-between items-center font-bold text-xl text-primary mt-2 pt-2 border-t border-dashed">
-                <p>Total à payer</p>
+              <div className="mt-2 flex items-center justify-between border-t border-dashed pt-2 text-xl font-bold text-primary">
+                <p>Total a payer</p>
                 <p>{formatPrice(request.finalPrice || request.estimatedTotalPrice)}</p>
               </div>
             </div>
@@ -331,65 +208,48 @@ export default function CustomerRequestDetail() {
         </Card>
       </div>
 
-      {/* Document Upload Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary" />
+            <FileText className="h-5 w-5 text-primary" />
             Documents requis
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <p className="text-sm text-muted-foreground">
-            Veuillez téléverser vos documents d'identité pour finaliser votre dossier. Les fichiers
-            acceptés sont les images (JPG, PNG) et les PDF.
+            Televersez vos documents d'identite pour finaliser votre dossier. Les fichiers acceptes sont
+            les images (JPG, PNG) et les PDF. Vous pouvez remplacer chaque fichier a tout moment.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              {hasCin ? (
-                <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
-                  <CheckCircle2 className="w-4 h-4" />
-                  CIN / Passeport téléversé
-                </div>
-              ) : (
-                <DocumentUploadField
-                  label="CIN / Passeport"
-                  docType="CIN"
-                  rentalRequestId={id}
-                  onUploaded={handleDocsRefresh}
-                />
-              )}
-            </div>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <DocumentUploadField
+              label="CIN / Passeport"
+              docType="CIN"
+              rentalRequestId={id}
+              existingDocument={cinDocument || null}
+              onUploaded={handleDocsRefresh}
+            />
 
-            <div className="space-y-2">
-              {hasLicense ? (
-                <div className="flex items-center gap-2 text-emerald-600 text-sm font-medium">
-                  <CheckCircle2 className="w-4 h-4" />
-                  Permis de conduire téléversé
-                </div>
-              ) : (
-                <DocumentUploadField
-                  label="Permis de conduire"
-                  docType="DRIVING_LICENSE"
-                  rentalRequestId={id}
-                  onUploaded={handleDocsRefresh}
-                />
-              )}
-            </div>
+            <DocumentUploadField
+              label="Permis de conduire"
+              docType="PERMIS_CONDUIRE"
+              rentalRequestId={id}
+              existingDocument={licenseDocument || null}
+              onUploaded={handleDocsRefresh}
+            />
           </div>
 
           {documents && documents.length > 0 && (
-            <div className="pt-4 border-t">
-              <p className="text-xs font-medium text-muted-foreground mb-3">Documents envoyés :</p>
+            <div className="border-t pt-4">
+              <p className="mb-3 text-xs font-medium text-muted-foreground">Documents envoyes :</p>
               <ul className="space-y-2">
                 {documents.map((doc) => (
                   <li key={doc.id} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                     <span className="font-medium">
-                      {doc.type === "CIN" ? "CIN / Passeport" : "Permis de conduire"}
+                      {doc.type === "CIN" ? "CIN / Passeport" : doc.type === "PASSPORT" ? "Passeport" : "Permis de conduire"}
                     </span>
-                    <span className="text-muted-foreground truncate">— {doc.fileUrl.split("/").pop()}</span>
+                    <span className="truncate text-muted-foreground">— {fileNameFromUrl(doc.fileUrl)}</span>
                   </li>
                 ))}
               </ul>
