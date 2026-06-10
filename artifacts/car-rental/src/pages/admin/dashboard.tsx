@@ -1,4 +1,3 @@
-import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -7,9 +6,9 @@ import {
   useGetRevenueChart,
   useGetRequestsByStatus,
 } from "@workspace/api-client-react";
-import { formatPrice, formatDateTime, STATUS_TRANSLATIONS } from "@/lib/utils";
+import { formatPrice, STATUS_TRANSLATIONS } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
-import { Users, Car, CreditCard, Banknote, CalendarClock, TrendingUp } from "lucide-react";
+import { Car, Banknote, CalendarClock, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Area,

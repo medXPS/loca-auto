@@ -61,7 +61,7 @@ export function Seo({ title, description, canonical, image = "/opengraph.jpg", t
     }
 
     const scriptId = "seo-jsonld";
-    const existing = document.getElementById(scriptId);
+    const existing = document.getElementById(scriptId) as HTMLScriptElement | null;
 
     if (jsonLd) {
       const script = existing ?? document.createElement("script");

@@ -4,12 +4,28 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime } from "@/lib/utils";
 import { ArrowRight, CalendarDays, Newspaper, Sparkles } from "lucide-react";
+import { Seo } from "@/components/seo";
 
 export default function Blog() {
   const { data, isLoading } = useListBlogPosts({ limit: 12 });
+  const posts = (data?.posts ?? []) as Array<{
+    id: number;
+    title: string;
+    slug: string;
+    excerpt?: string | null;
+    category?: string | null;
+    tags?: string | null;
+    coverImage?: string | null;
+    createdAt: string;
+  }>;
 
   return (
     <div className="container mx-auto px-4 py-10">
+      <Seo
+        title="Blog"
+        description="Conseils de location de voiture au Maroc, SEO et bonnes pratiques pour choisir le bon véhicule."
+        canonical="/blog"
+      />
       <section className="overflow-hidden rounded-[2rem] marketing-dark-panel marketing-grid px-6 py-10 text-white md:px-8">
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] marketing-kicker marketing-pill">
@@ -38,8 +54,8 @@ export default function Blog() {
               </div>
             </div>
           ))
-        ) : data?.posts && data.posts.length > 0 ? (
-          data.posts.map((post) => (
+        ) : posts.length > 0 ? (
+          posts.map((post) => (
             <Link key={post.id} href={`/blog/${post.slug}`} className="group h-full">
               <Card className="h-full overflow-hidden border-black/8 bg-white/92 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_65px_-36px_rgba(16,23,34,0.22)]">
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
@@ -63,6 +79,14 @@ export default function Blog() {
                   <h2 className="mt-3 text-xl font-semibold tracking-tight transition-colors group-hover:text-primary line-clamp-2">
                     {post.title}
                   </h2>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                    <span className="rounded-full bg-primary/10 px-3 py-1 font-medium text-primary">{post.category || "Conseils"}</span>
+                    {post.tags ? post.tags.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 3).map((tag) => (
+                      <span key={tag} className="rounded-full border border-black/8 bg-white px-3 py-1 text-muted-foreground">
+                        {tag.trim()}
+                      </span>
+                    )) : null}
+                  </div>
                   <p className="mt-3 line-clamp-3 text-muted-foreground">{post.excerpt}</p>
                   <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
                     Lire l'article

@@ -1,0 +1,116 @@
+.fc {
+  color: inherit;
+  font-family: inherit;
+  --fc-border-color: hsl(var(--border));
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: hsl(var(--muted));
+  --fc-list-event-hover-bg-color: hsl(var(--muted));
+  --fc-today-bg-color: rgba(21, 117, 80, 0.08);
+  --fc-button-text-color: hsl(var(--foreground));
+  --fc-button-bg-color: hsl(var(--background));
+  --fc-button-border-color: hsl(var(--border));
+  --fc-button-hover-bg-color: hsl(var(--muted));
+  --fc-button-hover-border-color: hsl(var(--border));
+  --fc-button-active-bg-color: hsl(var(--primary));
+  --fc-button-active-border-color: hsl(var(--primary));
+  --fc-button-active-text-color: hsl(var(--primary-foreground));
+}
+
+.fc .fc-toolbar {
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.fc .fc-button {
+  border-radius: 9999px !important;
+  border-width: 1px !important;
+  padding: 0.55rem 0.95rem !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+  font-weight: 600 !important;
+}
+
+.fc .fc-button:focus {
+  box-shadow: none !important;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background: hsl(var(--primary)) !important;
+  border-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+.fc .fc-scrollgrid {
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+}
+
+.fc .fc-theme-standard td,
+.fc .fc-theme-standard th {
+  border-color: hsl(var(--border));
+}
+
+.fc .fc-col-header-cell {
+  background: hsl(var(--muted));
+  padding: 0.85rem 0;
+}
+
+.fc .fc-col-header-cell-cushion,
+.fc .fc-daygrid-day-number,
+.fc .fc-timegrid-axis-cushion {
+  color: inherit;
+  font-weight: 600;
+}
+
+.fc .fc-daygrid-day-frame,
+.fc .fc-timegrid-col-frame {
+  background: transparent;
+}
+
+.fc .fc-day-today {
+  background: rgba(21, 117, 80, 0.06) !important;
+}
+
+.fc .fc-event {
+  border: none;
+  border-radius: 0.875rem;
+  overflow: hidden;
+  box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.4);
+}
+
+.fc .fc-daygrid-event,
+.fc .fc-timegrid-event,
+.fc .fc-list-event {
+  border-radius: 0.875rem;
+}
+
+.fc .fc-event-main {
+  padding: 0.35rem 0.45rem;
+}
+
+.fc .fc-list-day-cushion {
+  background: hsl(var(--muted));
+}
+
+.fc .fc-list-event:hover td {
+  background: hsl(var(--muted));
+}
+
+.fc .fc-list-event-title,
+.fc .fc-list-event-time {
+  color: inherit;
+}
+
+.fc .fc-daygrid-day:hover,
+.fc .fc-timegrid-col:hover {
+  background: rgba(21, 117, 80, 0.03);
+}

@@ -5,14 +5,30 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDateTime } from "@/lib/utils";
 import { ArrowLeft, CalendarDays, Sparkles } from "lucide-react";
+import { Seo } from "@/components/seo";
 
 export default function BlogDetail() {
   const [, params] = useRoute("/blog/:slug");
   const slug = params?.slug || "";
 
-  const { data: post, isLoading } = useGetBlogPost(slug, {
+  const { data: rawPost, isLoading } = useGetBlogPost(slug, {
     query: { enabled: !!slug, queryKey: getGetBlogPostQueryKey(slug) },
   });
+  const post = rawPost as
+    | {
+        title: string;
+        slug: string;
+        excerpt?: string | null;
+        content?: string | null;
+        coverImage?: string | null;
+        seoTitle?: string | null;
+        seoDescription?: string | null;
+        ogImage?: string | null;
+        category?: string | null;
+        tags?: string | null;
+        createdAt: string;
+      }
+    | undefined;
 
   if (isLoading) {
     return (
@@ -43,6 +59,25 @@ export default function BlogDetail() {
 
   return (
     <article className="container mx-auto px-4 py-12">
+      <Seo
+        title={post.seoTitle || post.title}
+        description={post.seoDescription || post.excerpt || post.title}
+        canonical={`/blog/${post.slug}`}
+        image={post.ogImage || post.coverImage || "/opengraph.jpg"}
+        type="article"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          headline: post.seoTitle || post.title,
+          description: post.seoDescription || post.excerpt || post.title,
+          image: post.ogImage || post.coverImage || "/opengraph.jpg",
+          datePublished: post.createdAt,
+          mainEntityOfPage: {
+            "@type": "WebPage",
+            "@id": `${window.location.origin}/blog/${post.slug}`,
+          },
+        }}
+      />
       <Link
         href="/blog"
         className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
@@ -63,7 +98,21 @@ export default function BlogDetail() {
               <CalendarDays className="h-4 w-4 text-primary" />
               Publié le {formatDateTime(post.createdAt).split(" ")[0]}
             </span>
+            {post.category && (
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.18em]">
+                {post.category}
+              </span>
+            )}
           </div>
+          {post.tags && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {post.tags.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 6).map((tag) => (
+                <span key={tag} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-white/72">
+                  {tag.trim()}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 

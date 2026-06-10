@@ -2,7 +2,7 @@ import { useListRentalRequests } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
-import { Search, Eye, Filter, ClipboardList } from "lucide-react";
+import { Search, Eye, Filter, ClipboardList, CalendarDays } from "lucide-react";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { StatusBadge } from "@/components/status-badge";
 import { formatPrice, formatDateTime } from "@/lib/utils";
@@ -14,24 +14,38 @@ import { RequestActions } from "@/components/request-actions";
 export default function AdminRequests() {
   const [location] = useLocation();
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const { data, isLoading, refetch } = useListRentalRequests({ 
+  const [search, setSearch] = useState("");
+  const requestParams = {
     limit: 100,
-    status: statusFilter !== "all" ? statusFilter : undefined
-  });
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    search: search || undefined,
+  } as any;
+  const { data, isLoading, refetch } = useListRentalRequests(requestParams);
   const basePath = location.startsWith("/agent") ? "/agent" : "/admin";
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-2xl font-bold tracking-tight">Demandes de location</h1>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Demandes de location</h1>
+          <p className="text-sm text-muted-foreground">Recherche, validation et suivi des réservations.</p>
+        </div>
+        <Link href={`${basePath}/calendrier`}>
+          <Button variant="outline" className="gap-2">
+            <CalendarDays className="w-4 h-4" />
+            Calendrier
+          </Button>
+        </Link>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row">
         <div className="flex-1 flex items-center gap-2 bg-card p-2 rounded-lg border">
           <Search className="w-5 h-5 text-muted-foreground ml-2" />
-          <Input 
-            placeholder="Rechercher un client..." 
+          <Input
+            placeholder="Rechercher par nom, téléphone, email ou CIN..."
             className="border-0 shadow-none focus-visible:ring-0"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="w-full sm:w-64">
@@ -45,11 +59,14 @@ export default function AdminRequests() {
             <SelectContent>
               <SelectItem value="all">Tous les statuts</SelectItem>
               <SelectItem value="PENDING">En attente</SelectItem>
-              <SelectItem value="CALL_ATTEMPTED">Appel effectué</SelectItem>
-              <SelectItem value="CALL_CONFIRMED">Confirmée</SelectItem>
-              <SelectItem value="RESERVED">Réservée</SelectItem>
-              <SelectItem value="CAR_DELIVERED">Livrée</SelectItem>
-              <SelectItem value="COMPLETED">Terminée</SelectItem>
+              <SelectItem value="UNDER_REVIEW">En attente</SelectItem>
+              <SelectItem value="CALL_ATTEMPTED">Appel tenté</SelectItem>
+              <SelectItem value="CALL_CONFIRMED">Appel confirmé</SelectItem>
+              <SelectItem value="RESERVED">Réservé</SelectItem>
+              <SelectItem value="CAR_DELIVERED">En cours de location</SelectItem>
+              <SelectItem value="CAR_RETURNED">Retourné</SelectItem>
+              <SelectItem value="ABANDONED">Abandonné</SelectItem>
+              <SelectItem value="CANCELLED">Annulé</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -87,7 +104,7 @@ export default function AdminRequests() {
                   <tr key={req.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="font-mono text-xs mb-1">#{req.id}</div>
-                      <div className="text-xs text-muted-foreground">{formatDateTime(req.createdAt).split(' ')[0]}</div>
+                      <div className="text-xs text-muted-foreground">{formatDateTime(req.createdAt).split(" ")[0]}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-medium">{req.fullName}</div>

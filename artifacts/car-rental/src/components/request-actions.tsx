@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 
 interface RequestActionsProps {
@@ -29,13 +30,14 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
 
   const [notes, setNotes] = useState("");
   const [amount, setAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("CASH_AT_AGENCY");
   const [finalPrice, setFinalPrice] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentAction, setCurrentAction] = useState<string | null>(null);
 
   const handleStatusUpdate = (newStatus: string) => {
     updateStatus.mutate(
-      { id: requestId, data: { status: newStatus, notes } },
+      { id: requestId, data: { status: newStatus, notes } as any },
       {
         onSuccess: () => {
           toast({ title: "Statut mis à jour avec succès" });
@@ -46,8 +48,8 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
         },
         onError: (error: any) => {
           toast({ title: "Erreur", description: error.message, variant: "destructive" });
-        }
-      }
+        },
+      },
     );
   };
 
@@ -59,7 +61,7 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
         data: {
           notes,
           ...(parsedFinalPrice > 0 ? { finalPrice: parsedFinalPrice } : {}),
-        },
+        } as any,
       },
       {
         onSuccess: () => {
@@ -71,32 +73,44 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
         },
         onError: (error: any) => {
           toast({ title: "Erreur", description: error.message, variant: "destructive" });
-        }
-      }
+        },
+      },
     );
   };
 
   const handleConfirmPayment = () => {
+    const parsedAmount = Number(amount);
     confirmPayment.mutate(
-      { id: requestId, data: { amount: Number(amount) || undefined, notes } },
       {
-        onSuccess: () => {
+        id: requestId,
+        data: {
+          amount: Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : undefined,
+          paymentMethod,
+          notes,
+        } as any,
+      },
+      {
+        onSuccess: (response: any) => {
           toast({ title: "Paiement confirmé avec succès" });
+          if (response?.receiptUrl) {
+            window.open(response.receiptUrl, "_blank", "noopener,noreferrer");
+          }
           setIsDialogOpen(false);
           setAmount("");
+          setPaymentMethod("CASH_AT_AGENCY");
           setFinalPrice("");
           setNotes("");
           onSuccess();
         },
         onError: (error: any) => {
           toast({ title: "Erreur", description: error.message, variant: "destructive" });
-        }
-      }
+        },
+      },
     );
   };
 
   const executeAction = () => {
-    if (currentAction === "REJECTED" || currentAction === "ABANDONED" || currentAction === "CAR_DELIVERED" || currentAction === "CAR_RETURNED" || currentAction === "COMPLETED" || currentAction === "CALL_ATTEMPTED") {
+    if (currentAction === "REJECTED" || currentAction === "ABANDONED" || currentAction === "CAR_DELIVERED" || currentAction === "CAR_RETURNED" || currentAction === "RETURNED" || currentAction === "COMPLETED" || currentAction === "CALL_ATTEMPTED") {
       handleStatusUpdate(currentAction);
     } else if (currentAction === "CALL_CONFIRMED") {
       handleConfirmCall();
@@ -108,6 +122,8 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
   const openDialog = (action: string) => {
     setCurrentAction(action);
     setFinalPrice(action === "CALL_CONFIRMED" && estimatedPrice ? String(estimatedPrice) : "");
+    setAmount(action === "PAYMENT_CONFIRMED" && estimatedPrice ? String(estimatedPrice) : "");
+    setPaymentMethod("CASH_AT_AGENCY");
     setIsDialogOpen(true);
   };
 
@@ -117,10 +133,10 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
         {(status === "PENDING" || status === "UNDER_REVIEW") && (
           <>
             <Button size="sm" variant="outline" onClick={() => openDialog("CALL_ATTEMPTED")} className="gap-2">
-              <Phone className="w-4 h-4" /> Appel effectué
+              <Phone className="w-4 h-4" /> Appel tenté
             </Button>
             <Button size="sm" onClick={() => openDialog("CALL_CONFIRMED")} className="gap-2">
-              <Check className="w-4 h-4" /> Confirmer appel
+              <Check className="w-4 h-4" /> Appel confirmé
             </Button>
             <Button size="sm" variant="destructive" onClick={() => openDialog("REJECTED")} className="gap-2">
               <Ban className="w-4 h-4" /> Refuser
@@ -131,7 +147,7 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
         {status === "CALL_ATTEMPTED" && (
           <>
             <Button size="sm" onClick={() => openDialog("CALL_CONFIRMED")} className="gap-2">
-              <Check className="w-4 h-4" /> Confirmer appel
+              <Check className="w-4 h-4" /> Appel confirmé
             </Button>
             <Button size="sm" variant="destructive" onClick={() => openDialog("REJECTED")} className="gap-2">
               <Ban className="w-4 h-4" /> Refuser
@@ -139,24 +155,13 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
           </>
         )}
 
-        {status === "CALL_CONFIRMED" && (
+        {(status === "CALL_CONFIRMED" || status === "WAITING_AGENCY_PAYMENT") && (
           <>
             <Button size="sm" onClick={() => openDialog("PAYMENT_CONFIRMED")} className="gap-2">
-              <CreditCard className="w-4 h-4" /> Confirmer paiement
+              <CreditCard className="w-4 h-4" /> Enregistrer paiement
             </Button>
             <Button size="sm" variant="destructive" onClick={() => openDialog("ABANDONED")} className="gap-2">
-              <Flag className="w-4 h-4" /> Abandonner
-            </Button>
-          </>
-        )}
-
-        {status === "WAITING_AGENCY_PAYMENT" && (
-          <>
-            <Button size="sm" onClick={() => openDialog("PAYMENT_CONFIRMED")} className="gap-2">
-              <CreditCard className="w-4 h-4" /> Confirmer paiement
-            </Button>
-            <Button size="sm" variant="destructive" onClick={() => openDialog("ABANDONED")} className="gap-2">
-              <Flag className="w-4 h-4" /> Abandonner
+              <Flag className="w-4 h-4" /> Marquer abandonné
             </Button>
           </>
         )}
@@ -164,23 +169,23 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
         {status === "RESERVED" && (
           <>
             <Button size="sm" onClick={() => openDialog("CAR_DELIVERED")} className="gap-2">
-              <Key className="w-4 h-4" /> Livrer voiture
+              <Key className="w-4 h-4" /> Remettre le véhicule
             </Button>
-            <Button size="sm" variant="destructive" onClick={() => openDialog("REJECTED")} className="gap-2">
-              <Ban className="w-4 h-4" /> Refuser
+            <Button size="sm" variant="outline" onClick={() => openDialog("ABANDONED")} className="gap-2">
+              <Flag className="w-4 h-4" /> Abandonner
             </Button>
           </>
         )}
 
-        {status === "CAR_DELIVERED" && (
+        {(status === "CAR_DELIVERED" || status === "RENTED") && (
           <Button size="sm" onClick={() => openDialog("CAR_RETURNED")} className="gap-2">
-            <Undo2 className="w-4 h-4" /> Voiture retournée
+            <Undo2 className="w-4 h-4" /> Retour du véhicule
           </Button>
         )}
 
-        {status === "CAR_RETURNED" && (
+        {(status === "CAR_RETURNED" || status === "RETURNED") && (
           <Button size="sm" onClick={() => openDialog("COMPLETED")} className="gap-2">
-            <Check className="w-4 h-4" /> Terminer location
+            <Check className="w-4 h-4" /> Clôturer
           </Button>
         )}
       </div>
@@ -191,6 +196,7 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
           setIsDialogOpen(open);
           if (!open) {
             setAmount("");
+            setPaymentMethod("CASH_AT_AGENCY");
             setFinalPrice("");
             setNotes("");
           }
@@ -200,14 +206,14 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
           <DialogHeader>
             <DialogTitle>Confirmer l'action</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir effectuer cette action ? Vous pouvez ajouter des notes optionnelles.
+              Vous pouvez ajouter des notes optionnelles avant d'enregistrer cette étape du workflow.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             {currentAction === "CALL_CONFIRMED" && (
               <div className="space-y-2">
-                <Label>Prix final (MAD)</Label>
+                <Label>Prix final estimé (MAD)</Label>
                 <Input
                   type="number"
                   min="0"
@@ -218,32 +224,42 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
               </div>
             )}
             {currentAction === "PAYMENT_CONFIRMED" && (
-              <div className="space-y-2">
-                <Label>Montant payé (MAD)</Label>
-                <Input 
-                  type="number" 
-                  value={amount} 
-                  onChange={(e) => setAmount(e.target.value)} 
-                  placeholder="Ex: 1500" 
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label>Montant payé (MAD)</Label>
+                  <Input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Ex: 1500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Mode de paiement</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CASH_AT_AGENCY">Espèces à l'agence</SelectItem>
+                      <SelectItem value="CARD_AT_AGENCY">Carte à l'agence</SelectItem>
+                      <SelectItem value="BANK_TRANSFER">Virement bancaire</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
             )}
             <div className="space-y-2">
-              <Label>Notes (Optionnel)</Label>
-              <Input 
-                value={notes} 
-                onChange={(e) => setNotes(e.target.value)} 
-                placeholder="Ajouter un commentaire..." 
-              />
+              <Label>Notes (optionnel)</Label>
+              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Ajouter un commentaire..." />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Annuler</Button>
-            <Button 
-              onClick={executeAction}
-              disabled={updateStatus.isPending || confirmCall.isPending || confirmPayment.isPending}
-            >
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button onClick={executeAction} disabled={updateStatus.isPending || confirmCall.isPending || confirmPayment.isPending}>
               Confirmer
             </Button>
           </DialogFooter>

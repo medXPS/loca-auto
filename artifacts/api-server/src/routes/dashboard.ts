@@ -1,47 +1,83 @@
 import { Router } from "express";
-import { eq, sql, desc, and, gte, lte, lt } from "drizzle-orm";
+import { eq, sql, desc, and, gte, lte } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 
 const router = Router();
 
 // GET /api/dashboard/stats
-router.get("/stats", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
+router.get("/stats", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
-    // Revenue: sum of finalPrice for COMPLETED requests
-    const [revenueRow] = await db.select({ total: sql<number>`COALESCE(SUM(final_price::numeric), 0)::float` })
-      .from(schema.rentalRequestsTable).where(eq(schema.rentalRequestsTable.status, "COMPLETED"));
-
-    // Expected: sum for RESERVED + CAR_DELIVERED
-    const [expectedRow] = await db.select({ total: sql<number>`COALESCE(SUM(COALESCE(final_price, estimated_total_price)::numeric), 0)::float` })
+    const [revenueRow] = await db
+      .select({ total: sql<number>`COALESCE(SUM(final_price::numeric), 0)::float` })
       .from(schema.rentalRequestsTable)
-      .where(sql`status IN ('RESERVED', 'CAR_DELIVERED')`);
+      .where(eq(schema.rentalRequestsTable.status, "COMPLETED"));
 
-    // Pending revenue: WAITING_AGENCY_PAYMENT
-    const [pendingRow] = await db.select({ total: sql<number>`COALESCE(SUM(COALESCE(final_price, estimated_total_price)::numeric), 0)::float` })
-      .from(schema.rentalRequestsTable).where(eq(schema.rentalRequestsTable.status, "WAITING_AGENCY_PAYMENT"));
+    const [expectedRow] = await db
+      .select({
+        total: sql<number>`COALESCE(SUM(COALESCE(final_price, estimated_total_price)::numeric), 0)::float`,
+      })
+      .from(schema.rentalRequestsTable)
+      .where(sql`status IN ('RESERVED', 'CAR_DELIVERED', 'RENTED')`);
 
-    // Expenses
-    const [expensesRow] = await db.select({ total: sql<number>`COALESCE(SUM(amount::numeric), 0)::float` })
+    const [pendingRow] = await db
+      .select({
+        total: sql<number>`COALESCE(SUM(COALESCE(final_price, estimated_total_price)::numeric), 0)::float`,
+      })
+      .from(schema.rentalRequestsTable)
+      .where(sql`status IN ('CALL_CONFIRMED', 'WAITING_AGENCY_PAYMENT')`);
+
+    const [expensesRow] = await db
+      .select({ total: sql<number>`COALESCE(SUM(amount::numeric), 0)::float` })
       .from(schema.carExpensesTable);
 
-    // Request counts
-    const [totalRequests] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.rentalRequestsTable);
-    const [pendingRequests] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.rentalRequestsTable).where(eq(schema.rentalRequestsTable.status, "PENDING"));
-    const [callConfirmed] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.rentalRequestsTable).where(sql`status IN ('WAITING_AGENCY_PAYMENT')`);
-    const [abandoned] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.rentalRequestsTable).where(eq(schema.rentalRequestsTable.status, "ABANDONED"));
-    const [activeRentals] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.rentalRequestsTable).where(sql`status IN ('CAR_DELIVERED')`);
+    const [totalRequests] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.rentalRequestsTable);
+    const [pendingRequests] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.rentalRequestsTable)
+      .where(eq(schema.rentalRequestsTable.status, "PENDING"));
+    const [callConfirmed] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.rentalRequestsTable)
+      .where(sql`status IN ('CALL_CONFIRMED', 'WAITING_AGENCY_PAYMENT')`);
+    const [abandoned] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.rentalRequestsTable)
+      .where(eq(schema.rentalRequestsTable.status, "ABANDONED"));
+    const [activeRentals] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.rentalRequestsTable)
+      .where(sql`status IN ('CAR_DELIVERED', 'RENTED')`);
 
-    // Car counts
-    const [availableCars] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.carsTable).where(eq(schema.carsTable.status, "AVAILABLE"));
-    const [temporarilyCars] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.carsTable).where(eq(schema.carsTable.status, "TEMPORARILY_HELD"));
-    const [reservedCars] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.carsTable).where(eq(schema.carsTable.status, "RESERVED"));
-    const [rentedCars] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.carsTable).where(eq(schema.carsTable.status, "RENTED"));
-    const [maintenanceCars] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.carsTable).where(eq(schema.carsTable.status, "MAINTENANCE"));
+    const [availableCars] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.carsTable)
+      .where(eq(schema.carsTable.status, "AVAILABLE"));
+    const [temporarilyCars] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.carsTable)
+      .where(eq(schema.carsTable.status, "TEMPORARILY_HELD"));
+    const [reservedCars] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.carsTable)
+      .where(eq(schema.carsTable.status, "RESERVED"));
+    const [rentedCars] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.carsTable)
+      .where(eq(schema.carsTable.status, "RENTED"));
+    const [maintenanceCars] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.carsTable)
+      .where(eq(schema.carsTable.status, "MAINTENANCE"));
 
-    // People
-    const [totalCustomers] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.customersTable);
-    const [totalAgents] = await db.select({ count: sql<number>`count(*)::int` }).from(schema.agentsTable);
+    const [totalCustomers] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.customersTable);
+    const [totalAgents] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.agentsTable);
 
     const totalRevenue = revenueRow.total;
     const totalExpenses = expensesRow.total;
@@ -72,9 +108,9 @@ router.get("/stats", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, 
 });
 
 // GET /api/dashboard/revenue-chart
-router.get("/revenue-chart", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
+router.get("/revenue-chart", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
-    const months = parseInt((req.query.months as string) ?? "12");
+    const months = parseInt((req.query.months as string) ?? "12", 10);
     const rows = await db.execute(sql`
       WITH months AS (
         SELECT generate_series(
@@ -98,7 +134,7 @@ router.get("/revenue-chart", authMiddleware, requireRole("ADMIN", "AGENT"), asyn
       ORDER BY m.month ASC
     `);
 
-    const data = (rows.rows as any[]).map(row => ({
+    const data = (rows.rows as any[]).map((row) => ({
       month: row.month,
       revenue: Number(row.revenue),
       expenses: Number(row.expenses),
@@ -112,7 +148,7 @@ router.get("/revenue-chart", authMiddleware, requireRole("ADMIN", "AGENT"), asyn
 });
 
 // GET /api/dashboard/car-performance
-router.get("/car-performance", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
+router.get("/car-performance", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     const rows = await db.execute(sql`
       SELECT
@@ -128,7 +164,7 @@ router.get("/car-performance", authMiddleware, requireRole("ADMIN", "AGENT"), as
       GROUP BY c.id
       ORDER BY revenue DESC
     `);
-    const data = (rows.rows as any[]).map(row => ({
+    const data = (rows.rows as any[]).map((row) => ({
       ...row,
       profit: row.revenue - row.expenses,
     }));
@@ -140,21 +176,35 @@ router.get("/car-performance", authMiddleware, requireRole("ADMIN", "AGENT"), as
 });
 
 // GET /api/dashboard/requests-by-status
-router.get("/requests-by-status", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
+router.get("/requests-by-status", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     const rows = await db.execute(sql`
       SELECT status, count(*)::int AS count
       FROM rental_requests
       GROUP BY status
     `);
-    const LABELS: Record<string, string> = {
-      PENDING: "En attente", UNDER_REVIEW: "En vérification", CALL_ATTEMPTED: "Appel effectué",
-      CALL_CONFIRMED: "Appel confirmé", WAITING_AGENCY_PAYMENT: "En attente paiement",
-      RESERVED: "Réservée", REJECTED: "Refusée", WAITING_DOCUMENTS: "Documents demandés",
-      CAR_DELIVERED: "Voiture livrée", CAR_RETURNED: "Voiture retournée",
-      CANCELLED: "Annulée", ABANDONED: "Abandonnée", COMPLETED: "Terminée",
+    const labels: Record<string, string> = {
+      PENDING: "En attente",
+      UNDER_REVIEW: "En attente",
+      CALL_ATTEMPTED: "En attente",
+      CALL_CONFIRMED: "Appel confirmé",
+      WAITING_AGENCY_PAYMENT: "Appel confirmé",
+      RESERVED: "Réservé",
+      REJECTED: "Refusé",
+      WAITING_DOCUMENTS: "En attente",
+      CAR_DELIVERED: "En cours de location",
+      RENTED: "En cours de location",
+      CAR_RETURNED: "Retourné",
+      RETURNED: "Retourné",
+      CANCELLED: "Annulé",
+      ABANDONED: "Abandonné",
+      COMPLETED: "Retourné",
     };
-    const data = (rows.rows as any[]).map(row => ({ status: row.status, label: LABELS[row.status] ?? row.status, count: row.count }));
+    const data = (rows.rows as any[]).map((row) => ({
+      status: row.status,
+      label: labels[row.status] ?? row.status,
+      count: row.count,
+    }));
     res.json(data);
   } catch (err) {
     req.log.error(err);
@@ -163,20 +213,30 @@ router.get("/requests-by-status", authMiddleware, requireRole("ADMIN", "AGENT"),
 });
 
 // GET /api/dashboard/recent-requests
-router.get("/recent-requests", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
+router.get("/recent-requests", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
-    const limit = parseInt((req.query.limit as string) ?? "10");
-    const requests = await db.select().from(schema.rentalRequestsTable).orderBy(desc(schema.rentalRequestsTable.createdAt)).limit(limit);
-    const carIds = [...new Set(requests.map(r => r.carId))];
-    const cars = carIds.length > 0
-      ? await db.select().from(schema.carsTable).where(sql`${schema.carsTable.id} = ANY(ARRAY[${sql.join(carIds.map(id => sql`${id}`), sql`, `)}]::int[])`)
-      : [];
-    const carsMap = Object.fromEntries(cars.map(c => [c.id, c]));
-    const result = requests.map(r => ({
+    const limit = parseInt((req.query.limit as string) ?? "10", 10);
+    const requests = await db
+      .select()
+      .from(schema.rentalRequestsTable)
+      .orderBy(desc(schema.rentalRequestsTable.createdAt))
+      .limit(limit);
+    const carIds = [...new Set(requests.map((r) => r.carId))];
+    const cars =
+      carIds.length > 0
+        ? await db
+            .select()
+            .from(schema.carsTable)
+            .where(sql`${schema.carsTable.id} = ANY(ARRAY[${sql.join(carIds.map((id) => sql`${id}`), sql`, `)}]::int[])`)
+        : [];
+    const carsMap = Object.fromEntries(cars.map((c) => [c.id, c]));
+    const result = requests.map((r) => ({
       ...r,
       estimatedTotalPrice: Number(r.estimatedTotalPrice),
       finalPrice: r.finalPrice ? Number(r.finalPrice) : null,
-      car: carsMap[r.carId] ? { ...carsMap[r.carId], dailyPrice: Number(carsMap[r.carId].dailyPrice) } : null,
+      car: carsMap[r.carId]
+        ? { ...carsMap[r.carId], dailyPrice: Number(carsMap[r.carId].dailyPrice) }
+        : null,
     }));
     res.json(result);
   } catch (err) {
@@ -186,16 +246,20 @@ router.get("/recent-requests", authMiddleware, requireRole("ADMIN", "AGENT"), as
 });
 
 // GET /api/dashboard/expiring-requests
-router.get("/expiring-requests", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
+router.get("/expiring-requests", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
-    const requests = await db.select().from(schema.rentalRequestsTable)
-      .where(and(
-        eq(schema.rentalRequestsTable.status, "WAITING_AGENCY_PAYMENT"),
-        lte(schema.rentalRequestsTable.paymentDeadline, twoHoursFromNow),
-        gte(schema.rentalRequestsTable.paymentDeadline, new Date())
-      ));
-    const result = requests.map(r => ({
+    const requests = await db
+      .select()
+      .from(schema.rentalRequestsTable)
+      .where(
+        and(
+          sql`status IN ('CALL_CONFIRMED', 'WAITING_AGENCY_PAYMENT')`,
+          lte(schema.rentalRequestsTable.paymentDeadline, twoHoursFromNow),
+          gte(schema.rentalRequestsTable.paymentDeadline, new Date()),
+        ),
+      );
+    const result = requests.map((r) => ({
       ...r,
       estimatedTotalPrice: Number(r.estimatedTotalPrice),
       finalPrice: r.finalPrice ? Number(r.finalPrice) : null,
@@ -211,10 +275,15 @@ router.get("/expiring-requests", authMiddleware, requireRole("ADMIN", "AGENT"), 
 router.get("/audit-logs", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     const { page = "1", limit = "20" } = req.query as Record<string, string>;
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(100, parseInt(limit));
+    const pageNum = Math.max(1, parseInt(page, 10));
+    const limitNum = Math.min(100, parseInt(limit, 10));
     const [{ total }] = await db.select({ total: sql<number>`count(*)::int` }).from(schema.auditLogsTable);
-    const logs = await db.select().from(schema.auditLogsTable).orderBy(desc(schema.auditLogsTable.createdAt)).limit(limitNum).offset((pageNum - 1) * limitNum);
+    const logs = await db
+      .select()
+      .from(schema.auditLogsTable)
+      .orderBy(desc(schema.auditLogsTable.createdAt))
+      .limit(limitNum)
+      .offset((pageNum - 1) * limitNum);
     res.json({ logs, total });
   } catch (err) {
     req.log.error(err);

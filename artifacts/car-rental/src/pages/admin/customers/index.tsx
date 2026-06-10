@@ -19,7 +19,7 @@ export default function AdminCustomers() {
       <div className="flex items-center gap-2 bg-card p-2 rounded-lg border">
         <Search className="w-5 h-5 text-muted-foreground ml-2" />
         <Input 
-          placeholder="Rechercher un client..." 
+          placeholder="Rechercher par nom, téléphone ou CIN..." 
           className="border-0 shadow-none focus-visible:ring-0"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -56,6 +56,7 @@ export default function AdminCustomers() {
                       <Link href={`/admin/clients/${customer.id}`} className="hover:text-primary hover:underline">
                         {customer.user.fullName}
                       </Link>
+                      <div className="text-xs text-muted-foreground">{customer.cin || "CIN non renseigné"}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div>{customer.user.email}</div>

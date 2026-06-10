@@ -19,6 +19,7 @@ import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
 
 import AdminDashboard from "@/pages/admin/dashboard";
+import AdminCalendar from "@/pages/admin/calendar";
 import AdminCars from "@/pages/admin/cars/index";
 import AdminNewCar from "@/pages/admin/cars/new";
 import AdminEditCar from "@/pages/admin/cars/edit";
@@ -31,8 +32,10 @@ import AdminNewAgent from "@/pages/admin/agents/new";
 import AdminExpenses from "@/pages/admin/expenses/index";
 import AdminBlog from "@/pages/admin/blog/index";
 import AdminNewBlogPost from "@/pages/admin/blog/new";
+import AdminEditBlogPost from "@/pages/admin/blog/edit";
 import AdminSettings from "@/pages/admin/settings";
 import AdminAuditLogs from "@/pages/admin/audit";
+import AgentDashboard from "@/pages/agent/dashboard";
 
 import CustomerDashboard from "@/pages/customer/dashboard";
 import CustomerRequests from "@/pages/customer/requests/index";
@@ -76,6 +79,7 @@ export default function AppRouter() {
     <Switch>
       {/* Admin Routes */}
       <Route path="/admin" component={() => <AdminRoute component={AdminDashboard} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/calendrier" component={() => <AdminRoute component={AdminCalendar} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/voitures/nouvelle" component={() => <AdminRoute component={AdminNewCar} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/voitures/:id" component={() => <AdminRoute component={AdminEditCar} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/voitures" component={() => <AdminRoute component={AdminCars} allowedRoles={["ADMIN"]} />} />
@@ -87,12 +91,14 @@ export default function AppRouter() {
       <Route path="/admin/agents" component={() => <AdminRoute component={AdminAgents} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/charges" component={() => <AdminRoute component={AdminExpenses} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/blog/nouveau" component={() => <AdminRoute component={AdminNewBlogPost} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/blog/:id" component={() => <AdminRoute component={AdminEditBlogPost} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/blog" component={() => <AdminRoute component={AdminBlog} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/parametres" component={() => <AdminRoute component={AdminSettings} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/audit" component={() => <AdminRoute component={AdminAuditLogs} allowedRoles={["ADMIN"]} />} />
 
       {/* Agent Routes */}
-      <Route path="/agent" component={() => <AdminRoute component={AdminDashboard} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent" component={() => <AdminRoute component={AgentDashboard} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/calendrier" component={() => <AdminRoute component={AdminCalendar} allowedRoles={["AGENT"]} />} />
       <Route path="/agent/voitures/nouvelle" component={() => <AdminRoute component={AdminNewCar} allowedRoles={["AGENT"]} />} />
       <Route path="/agent/voitures/:id" component={() => <AdminRoute component={AdminEditCar} allowedRoles={["AGENT"]} />} />
       <Route path="/agent/voitures" component={() => <AdminRoute component={AdminCars} allowedRoles={["AGENT"]} />} />
@@ -100,7 +106,9 @@ export default function AppRouter() {
       <Route path="/agent/demandes" component={() => <AdminRoute component={AdminRequests} allowedRoles={["AGENT"]} />} />
       <Route path="/agent/clients/:id" component={() => <AdminRoute component={AdminCustomerDetail} allowedRoles={["AGENT"]} />} />
       <Route path="/agent/clients" component={() => <AdminRoute component={AdminCustomers} allowedRoles={["AGENT"]} />} />
-      <Route path="/agent/charges" component={() => <AdminRoute component={AdminExpenses} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/blog/nouveau" component={() => <AdminRoute component={AdminNewBlogPost} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/blog/:id" component={() => <AdminRoute component={AdminEditBlogPost} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/blog" component={() => <AdminRoute component={AdminBlog} allowedRoles={["AGENT"]} />} />
 
       {/* Customer Routes */}
       <Route path="/dashboard" component={() => <CustomerRoute component={CustomerDashboard} />} />

@@ -11,7 +11,8 @@ import { StatusBadge } from "@/components/status-badge";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { RequestActions } from "@/components/request-actions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Phone, Mail, Calendar, FileText, History } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { User, Phone, Mail, Calendar, FileText, History, FileDown, CreditCard } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function AdminRequestDetail() {
@@ -38,6 +39,8 @@ export default function AdminRequestDetail() {
   const showCountdown =
     request.paymentDeadline &&
     (request.status === "CALL_CONFIRMED" || request.status === "WAITING_AGENCY_PAYMENT");
+  const receiptUrl = `/api/rental-requests/${request.id}/receipt`;
+  const canPrintReceipt = ["RESERVED", "CAR_DELIVERED", "RENTED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(request.status);
 
   const timelineEntries = (auditData?.logs || [])
     .filter(
@@ -58,12 +61,22 @@ export default function AdminRequestDetail() {
         </div>
 
         <div className="bg-card p-2 rounded-lg border shadow-sm">
-          <RequestActions
-            requestId={request.id}
-            status={request.status}
-            estimatedPrice={request.estimatedTotalPrice}
-            onSuccess={handleSuccess}
-          />
+          <div className="flex flex-col gap-3">
+            <RequestActions
+              requestId={request.id}
+              status={request.status}
+              estimatedPrice={request.estimatedTotalPrice}
+              onSuccess={handleSuccess}
+            />
+            {canPrintReceipt && (
+              <Button asChild variant="outline" className="gap-2">
+                <a href={receiptUrl} target="_blank" rel="noopener noreferrer">
+                  <FileDown className="w-4 h-4" />
+                  Imprimer le reçu
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -150,6 +163,19 @@ export default function AdminRequestDetail() {
                 <div className="flex justify-between items-center font-bold text-lg text-primary">
                   <p>Prix final</p>
                   <p>{formatPrice(request.finalPrice || request.estimatedTotalPrice)}</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Paiement</p>
+                    <div className="mt-2 flex items-center gap-2 font-medium">
+                      <CreditCard className="h-4 w-4 text-primary" />
+                      {request.paymentStatus || "Non payé"}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Mode</p>
+                    <p className="mt-2 font-medium">{request.paymentMethod || "Non renseigné"}</p>
+                  </div>
                 </div>
               </div>
             </div>

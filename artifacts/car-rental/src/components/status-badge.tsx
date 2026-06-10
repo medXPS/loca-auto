@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { STATUS_TRANSLATIONS, CAR_STATUS_TRANSLATIONS, cn } from "@/lib/utils";
+import { CAR_STATUS_TRANSLATIONS, STATUS_TRANSLATIONS, cn } from "@/lib/utils";
 
 interface StatusBadgeProps {
   status: string;
@@ -7,64 +7,58 @@ interface StatusBadgeProps {
   className?: string;
 }
 
+function getRentalTone(status: string) {
+  switch (status) {
+    case "PENDING":
+    case "UNDER_REVIEW":
+    case "CALL_ATTEMPTED":
+      return "bg-yellow-500/12 text-yellow-700 hover:bg-yellow-500/18 border-yellow-200";
+    case "CALL_CONFIRMED":
+    case "WAITING_AGENCY_PAYMENT":
+      return "bg-sky-500/12 text-sky-700 hover:bg-sky-500/18 border-sky-200";
+    case "RESERVED":
+      return "bg-primary/10 text-primary hover:bg-primary/18 border-primary/15";
+    case "CAR_DELIVERED":
+    case "RENTED":
+    case "CAR_RETURNED":
+    case "RETURNED":
+    case "COMPLETED":
+      return "bg-emerald-500/12 text-emerald-700 hover:bg-emerald-500/18 border-emerald-200";
+    case "REJECTED":
+    case "CANCELLED":
+    case "ABANDONED":
+      return "bg-rose-500/12 text-rose-700 hover:bg-rose-500/18 border-rose-200";
+    default:
+      return "border-border bg-background text-foreground";
+  }
+}
+
+function getCarTone(status: string) {
+  switch (status) {
+    case "AVAILABLE":
+      return "bg-emerald-500/12 text-emerald-700 hover:bg-emerald-500/18 border-emerald-200";
+    case "TEMPORARILY_HELD":
+      return "bg-amber-500/12 text-amber-700 hover:bg-amber-500/18 border-amber-200";
+    case "RESERVED":
+      return "bg-primary/10 text-primary hover:bg-primary/18 border-primary/15";
+    case "RENTED":
+      return "bg-sky-500/12 text-sky-700 hover:bg-sky-500/18 border-sky-200";
+    case "MAINTENANCE":
+      return "bg-rose-500/12 text-rose-700 hover:bg-rose-500/18 border-rose-200";
+    default:
+      return "border-border bg-background text-foreground";
+  }
+}
+
 export function StatusBadge({ status, type = "rental", className }: StatusBadgeProps) {
-  const label = type === "rental" 
-    ? STATUS_TRANSLATIONS[status] || status 
+  const label = type === "rental"
+    ? STATUS_TRANSLATIONS[status] || status
     : CAR_STATUS_TRANSLATIONS[status] || status;
 
-  let variant: "default" | "secondary" | "destructive" | "outline" = "default";
-  let colorClass = "";
-
-  if (type === "rental") {
-    switch (status) {
-      case "PENDING":
-      case "UNDER_REVIEW":
-        colorClass = "bg-amber-500/12 text-amber-700 hover:bg-amber-500/18 border-amber-200";
-        break;
-      case "CALL_ATTEMPTED":
-      case "CALL_CONFIRMED":
-      case "WAITING_AGENCY_PAYMENT":
-      case "WAITING_DOCUMENTS":
-        colorClass = "bg-sky-500/12 text-sky-700 hover:bg-sky-500/18 border-sky-200";
-        break;
-      case "RESERVED":
-      case "CAR_DELIVERED":
-        colorClass = "bg-primary/10 text-primary hover:bg-primary/18 border-primary/15";
-        break;
-      case "COMPLETED":
-      case "CAR_RETURNED":
-        colorClass = "bg-emerald-500/12 text-emerald-700 hover:bg-emerald-500/18 border-emerald-200";
-        break;
-      case "REJECTED":
-      case "CANCELLED":
-      case "ABANDONED":
-        colorClass = "bg-rose-500/12 text-rose-700 hover:bg-rose-500/18 border-rose-200";
-        break;
-      default:
-        variant = "outline";
-    }
-  } else {
-    switch (status) {
-      case "AVAILABLE":
-        colorClass = "bg-emerald-500/12 text-emerald-700 hover:bg-emerald-500/18 border-emerald-200";
-        break;
-      case "TEMPORARILY_HELD":
-      case "RESERVED":
-        colorClass = "bg-amber-500/12 text-amber-700 hover:bg-amber-500/18 border-amber-200";
-        break;
-      case "RENTED":
-        colorClass = "bg-sky-500/12 text-sky-700 hover:bg-sky-500/18 border-sky-200";
-        break;
-      case "MAINTENANCE":
-        colorClass = "bg-rose-500/12 text-rose-700 hover:bg-rose-500/18 border-rose-200";
-        break;
-      default:
-        variant = "outline";
-    }
-  }
+  const tone = type === "rental" ? getRentalTone(status) : getCarTone(status);
 
   return (
-    <Badge variant={variant} className={cn("whitespace-nowrap font-bold uppercase tracking-[0.12em]", colorClass, className)}>
+    <Badge variant="outline" className={cn("whitespace-nowrap font-semibold uppercase tracking-[0.12em]", tone, className)}>
       {label}
     </Badge>
   );

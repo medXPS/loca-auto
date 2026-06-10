@@ -97,9 +97,9 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                   <Link href="/connexion">Connexion</Link>
                 </Button>
                 <Button asChild className="rounded-full bg-primary px-5 text-primary-foreground">
-                  <Link href="/reservation">
-                    Réserver
-                    <ArrowRight className="h-4 w-4" />
+                  <Link href="/blog">
+                    Blog
+                    <Newspaper className="h-4 w-4" />
                   </Link>
                 </Button>
               </>
@@ -146,10 +146,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
               <div className="mt-4 grid gap-2">
                 <Button asChild className="w-full rounded-2xl bg-primary text-primary-foreground" onClick={() => setIsMenuOpen(false)}>
-                  <Link href="/reservation">
-                    Réserver
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
+                    <Link href="/blog">
+                      Blog
+                      <Newspaper className="h-4 w-4" />
+                    </Link>
                 </Button>
 
                 {isAuthenticated ? (
@@ -253,9 +253,9 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-white/96 px-3 py-3 shadow-[0_-12px_36px_-24px_rgba(16,23,34,0.24)] backdrop-blur md:hidden">
           <div className="mx-auto grid max-w-xl grid-cols-2 gap-3">
             <Button asChild className="h-12 rounded-full bg-primary text-primary-foreground">
-              <Link href="/reservation">
-                Réserver
-                <ArrowRight className="h-4 w-4" />
+              <Link href="/blog">
+                Blog
+                <Newspaper className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="outline" className="h-12 w-full rounded-full border-border/70 bg-white">
