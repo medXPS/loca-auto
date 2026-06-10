@@ -262,7 +262,7 @@ export default function CarDetailScreen() {
           onPress={() => router.back()}
           style={[
             styles.backBtn,
-            { top: topPad + 8, backgroundColor: "rgba(0,0,0,0.4)" },
+            { top: topPad + 8, backgroundColor: "rgba(17,24,39,0.36)" },
           ]}
         >
           <Ionicons name="arrow-back" size={20} color="#fff" />
@@ -274,13 +274,13 @@ export default function CarDetailScreen() {
             {
               top: topPad + 8,
               right: 16,
-              backgroundColor: available ? "#d1fae5" : "#fee2e2",
+              backgroundColor: available ? colors.secondary + "16" : colors.destructive + "16",
             },
           ]}
         >
           <Text
             style={{
-              color: available ? "#065f46" : "#991b1b",
+              color: available ? colors.secondary : colors.destructive,
               fontSize: 12,
               fontFamily: "Inter_600SemiBold",
               fontWeight: "600" as const,

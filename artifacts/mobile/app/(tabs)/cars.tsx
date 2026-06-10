@@ -63,7 +63,7 @@ export default function CarsScreen() {
       city: city || undefined,
       startDate: startDate || undefined,
       returnDate: returnDate || undefined,
-    },
+    } as Parameters<typeof useListCars>[0],
     {
       query: { queryKey: ["/api/cars", "list", city, startDate, returnDate] },
     }

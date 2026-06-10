@@ -2,7 +2,7 @@ import { useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CarFront, House, LogOut, Menu, MessageCircle, Newspaper, Phone, X } from "lucide-react";
+import { ArrowRight, CarFront, House, LogOut, Menu, MessageCircle, Phone, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -28,13 +28,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   const navLinks: NavItem[] = [
     { href: "/", label: "Accueil", icon: House },
     { href: "/voitures", label: "Véhicules", icon: CarFront },
-    { href: "/blog", label: "Blog", icon: Newspaper },
     { href: "/contact", label: "Contact", icon: Phone },
   ];
 
   const isActive = (href: string) => {
     if (href === "/") return location === href;
-    if (href === "/blog") return location === href || location.startsWith("/blog/");
     return location === href || location.startsWith(`${href}/`);
   };
 
@@ -96,12 +94,6 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 <Button asChild variant="outline" className="rounded-full border-border/70 bg-white px-5">
                   <Link href="/connexion">Connexion</Link>
                 </Button>
-                <Button asChild className="rounded-full bg-primary px-5 text-primary-foreground">
-                  <Link href="/blog">
-                    Blog
-                    <Newspaper className="h-4 w-4" />
-                  </Link>
-                </Button>
               </>
             )}
           </div>
@@ -145,13 +137,6 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               </div>
 
               <div className="mt-4 grid gap-2">
-                <Button asChild className="w-full rounded-2xl bg-primary text-primary-foreground" onClick={() => setIsMenuOpen(false)}>
-                    <Link href="/blog">
-                      Blog
-                      <Newspaper className="h-4 w-4" />
-                    </Link>
-                </Button>
-
                 {isAuthenticated ? (
                   <Button
                     type="button"
@@ -251,13 +236,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
       {!isCarDetailPage && (
         <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-white/96 px-3 py-3 shadow-[0_-12px_36px_-24px_rgba(16,23,34,0.24)] backdrop-blur md:hidden">
-          <div className="mx-auto grid max-w-xl grid-cols-2 gap-3">
-            <Button asChild className="h-12 rounded-full bg-primary text-primary-foreground">
-              <Link href="/blog">
-                Blog
-                <Newspaper className="h-4 w-4" />
-              </Link>
-            </Button>
+          <div className="mx-auto grid max-w-xl grid-cols-1 gap-3">
             <Button asChild variant="outline" className="h-12 w-full rounded-full border-border/70 bg-white">
               <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="h-4 w-4" />

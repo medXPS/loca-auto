@@ -151,7 +151,7 @@ export default function RentalDetailScreen() {
       >
         <Pressable
           onPress={() => router.back()}
-          style={[styles.backBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]}
+          style={[styles.backBtn, { backgroundColor: "rgba(255,255,255,0.16)" }]}
         >
           <Ionicons name="arrow-back" size={20} color="#fff" />
         </Pressable>
@@ -242,15 +242,15 @@ export default function RentalDetailScreen() {
         </View>
 
         <View
-          style={[styles.card, { backgroundColor: "#fef3c7", borderColor: "#fcd34d" }]}
+          style={[styles.card, { backgroundColor: colors.primary + "10", borderColor: colors.primary + "30" }]}
         >
           <View style={styles.codRow}>
-            <Ionicons name="cash-outline" size={20} color="#92400e" />
+            <Ionicons name="cash-outline" size={20} color={colors.primary} />
             <View style={styles.codContent}>
-              <Text style={[styles.codTitle, { color: "#92400e" }]}>
+              <Text style={[styles.codTitle, { color: colors.primary }]}>
                 Paiement en espèces
               </Text>
-              <Text style={[styles.codText, { color: "#92400e" }]}>
+              <Text style={[styles.codText, { color: colors.primary }]}>
                 Le paiement s'effectue en espèces directement à l'agence lors de
                 la confirmation de la réservation.
               </Text>

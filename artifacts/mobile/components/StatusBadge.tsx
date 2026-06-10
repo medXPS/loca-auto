@@ -15,17 +15,17 @@ const STATUS_LABELS: Record<string, string> = {
 function getStatusColors(status: string, colors: ReturnType<typeof useColors>) {
   switch (status) {
     case "PENDING":
-      return { bg: "#fef3c7", text: "#92400e" };
+      return { bg: colors.primary + "18", text: colors.primary };
     case "CONFIRMED_CALL":
     case "WAITING_AGENCY_PAYMENT":
-      return { bg: "#dbeafe", text: "#1e40af" };
+      return { bg: colors.secondary + "18", text: colors.secondary };
     case "ACTIVE":
-      return { bg: "#d1fae5", text: "#065f46" };
+      return { bg: colors.primary + "12", text: colors.primary };
     case "COMPLETED":
       return { bg: colors.muted, text: colors.mutedForeground };
     case "CANCELLED":
     case "ABANDONED":
-      return { bg: "#fee2e2", text: "#991b1b" };
+      return { bg: colors.destructive + "14", text: colors.destructive };
     default:
       return { bg: colors.muted, text: colors.mutedForeground };
   }

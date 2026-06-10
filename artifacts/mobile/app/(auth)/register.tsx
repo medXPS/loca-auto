@@ -13,12 +13,10 @@ import {
 import { Link, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useColors } from "@/hooks/useColors";
-import { useAuth } from "@/contexts/AuthContext";
 import { register } from "@workspace/api-client-react";
 
 export default function RegisterScreen() {
   const colors = useColors();
-  const { login: saveAuth } = useAuth();
   const router = useRouter();
 
   const [name, setName] = useState("");
@@ -38,15 +36,19 @@ export default function RegisterScreen() {
     }
     setLoading(true);
     try {
-      const res = await register({
+      await register({
         fullName: name.trim(),
         email: email.trim().toLowerCase(),
         password,
         phone: phone.trim(),
       });
-      await saveAuth(res.token, res.user);
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace("/");
+      Alert.alert("Inscription réussie", "Votre compte a été créé. Connectez-vous pour continuer.", [
+        {
+          text: "Se connecter",
+          onPress: () => router.replace("/(auth)/login"),
+        },
+      ]);
     } catch (err: unknown) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       const msg =

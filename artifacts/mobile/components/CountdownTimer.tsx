@@ -32,8 +32,8 @@ export function CountdownTimer({ deadline }: CountdownTimerProps) {
   }, [deadline]);
 
   const urgent = !expired && timeLeft.h < 2;
-  const bg = expired ? "#fee2e2" : urgent ? "#fef3c7" : "#d1fae5";
-  const fg = expired ? "#991b1b" : urgent ? "#92400e" : "#065f46";
+  const bg = expired ? colors.destructive + "14" : urgent ? colors.primary + "14" : colors.secondary + "14";
+  const fg = expired ? colors.destructive : urgent ? colors.primary : colors.secondary;
 
   return (
     <View style={[styles.container, { backgroundColor: bg, borderColor: fg + "40" }]}>

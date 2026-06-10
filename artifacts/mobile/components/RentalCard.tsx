@@ -72,9 +72,9 @@ export function RentalCard({ rental, onPress }: RentalCardProps) {
         )}
       </View>
       {rental.status === "WAITING_AGENCY_PAYMENT" && rental.paymentDeadline && (
-        <View style={[styles.urgentBanner, { backgroundColor: "#fef3c7" }]}>
-          <Ionicons name="warning-outline" size={14} color="#92400e" />
-          <Text style={[styles.urgentText, { color: "#92400e" }]}>
+        <View style={[styles.urgentBanner, { backgroundColor: colors.primary + "12" }]}>
+          <Ionicons name="warning-outline" size={14} color={colors.primary} />
+          <Text style={[styles.urgentText, { color: colors.primary }]}>
             Paiement attendu avant {formatDate(rental.paymentDeadline)}
           </Text>
         </View>

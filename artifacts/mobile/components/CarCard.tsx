@@ -67,11 +67,11 @@ export function CarCard({ car, onPress }: CarCardProps) {
         <View
           style={[
             styles.badge,
-            { backgroundColor: available ? "#d1fae5" : "#fee2e2" },
+            { backgroundColor: available ? colors.secondary + "16" : colors.destructive + "16" },
           ]}
         >
           <Text
-            style={[styles.badgeText, { color: available ? "#065f46" : "#991b1b" }]}
+            style={[styles.badgeText, { color: available ? colors.secondary : colors.destructive }]}
           >
             {available ? "Disponible" : "Indisponible"}
           </Text>
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   imageWrap: {
     position: "relative",
     height: 170,
-    backgroundColor: "#f0ece6",
+    backgroundColor: "#f3f4f6",
   },
   image: {
     width: "100%",
