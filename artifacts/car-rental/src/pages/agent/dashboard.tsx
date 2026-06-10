@@ -20,15 +20,15 @@ function StatCard({
   icon: ComponentType<{ className?: string }>;
 }) {
   return (
-    <Card className="border-white/10 bg-white/5 text-white shadow-none backdrop-blur">
+    <Card className="border-border bg-card text-card-foreground shadow-sm">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-white/55">{title}</p>
-            <div className="mt-2 text-3xl font-semibold tracking-tight">{value}</div>
-            <p className="mt-2 text-sm text-white/55">{description}</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{title}</p>
+            <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground">{value}</div>
+            <p className="mt-2 text-sm text-muted-foreground">{description}</p>
           </div>
-          <div className="rounded-2xl bg-primary/15 p-3 text-primary">
+          <div className="rounded-2xl bg-primary/10 p-3 text-primary">
             <Icon className="h-5 w-5" />
           </div>
         </div>
@@ -55,10 +55,10 @@ export default function AgentDashboard() {
   if (isRequestsLoading || isCarsLoading || isCustomersLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-32 w-full rounded-3xl bg-white/10" />
+        <Skeleton className="h-32 w-full rounded-3xl bg-muted/60" />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {Array(4).fill(0).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-3xl bg-white/10" />
+            <Skeleton key={i} className="h-28 rounded-3xl bg-muted/60" />
           ))}
         </div>
       </div>
@@ -107,62 +107,62 @@ export default function AgentDashboard() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <Card className="border-white/10 bg-white/5 text-white shadow-none backdrop-blur">
-          <CardHeader className="border-b border-white/10">
-            <CardTitle className="text-white">Demandes prioritaires</CardTitle>
+        <Card className="border-border bg-card text-card-foreground shadow-sm">
+          <CardHeader className="border-b border-border">
+            <CardTitle className="text-foreground">Demandes prioritaires</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 p-6">
             {urgentRequests.length > 0 ? (
               urgentRequests.map((request) => (
-                <div key={request.id} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div key={request.id} className="flex flex-col gap-3 rounded-2xl border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-white">#{request.id}</span>
+                      <span className="font-semibold text-foreground">#{request.id}</span>
                       <StatusBadge status={request.status} />
                     </div>
-                    <p className="mt-1 text-sm text-white/75">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {request.fullName} • {request.phone}
                     </p>
-                    <p className="mt-1 text-xs text-white/55">
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {new Date(request.startDate).toLocaleDateString("fr-MA")} - {new Date(request.returnDate).toLocaleDateString("fr-MA")}
                     </p>
                   </div>
-                  <div className="text-sm font-medium text-white">
+                  <div className="text-sm font-medium text-foreground">
                     {formatPrice(request.finalPrice || request.estimatedTotalPrice)}
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-white/55">Aucune demande prioritaire pour le moment.</p>
+              <p className="text-sm text-muted-foreground">Aucune demande prioritaire pour le moment.</p>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-white/10 bg-white/5 text-white shadow-none backdrop-blur">
-          <CardHeader className="border-b border-white/10">
-            <CardTitle className="text-white">Raccourcis utiles</CardTitle>
+        <Card className="border-border bg-card text-card-foreground shadow-sm">
+          <CardHeader className="border-b border-border">
+            <CardTitle className="text-foreground">Raccourcis utiles</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 p-6">
             <Link href="/agent/voitures">
-              <Button variant="outline" className="w-full justify-between border-white/10 bg-white/5 text-white hover:bg-white/10">
+              <Button variant="outline" className="w-full justify-between rounded-2xl">
                 Gérer les véhicules
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             <Link href="/agent/clients">
-              <Button variant="outline" className="w-full justify-between border-white/10 bg-white/5 text-white hover:bg-white/10">
+              <Button variant="outline" className="w-full justify-between rounded-2xl">
                 Rechercher un client
                 <Users className="h-4 w-4" />
               </Button>
             </Link>
             <Link href="/agent/blog">
-              <Button variant="outline" className="w-full justify-between border-white/10 bg-white/5 text-white hover:bg-white/10">
+              <Button variant="outline" className="w-full justify-between rounded-2xl">
                 Publier un article
                 <BookOpen className="h-4 w-4" />
               </Button>
             </Link>
             <Link href="/agent/demandes">
-              <Button variant="outline" className="w-full justify-between border-white/10 bg-white/5 text-white hover:bg-white/10">
+              <Button variant="outline" className="w-full justify-between rounded-2xl">
                 Suivre les demandes
                 <ClipboardList className="h-4 w-4" />
               </Button>
@@ -171,22 +171,22 @@ export default function AgentDashboard() {
         </Card>
       </div>
 
-      <Card className="border-white/10 bg-white/5 text-white shadow-none backdrop-blur">
-        <CardHeader className="border-b border-white/10">
-          <CardTitle className="text-white">Vue rapide clients et flotte</CardTitle>
+      <Card className="border-border bg-card text-card-foreground shadow-sm">
+        <CardHeader className="border-b border-border">
+          <CardTitle className="text-foreground">Vue rapide clients et flotte</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3 p-6">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-white/55">Clients</p>
-            <p className="mt-2 text-2xl font-semibold">{customers.length}</p>
+          <div className="rounded-2xl border border-border bg-muted/40 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Clients</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{customers.length}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-white/55">Véhicules en entretien</p>
-            <p className="mt-2 text-2xl font-semibold">{cars.filter((car) => car.status === "MAINTENANCE").length}</p>
+          <div className="rounded-2xl border border-border bg-muted/40 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Véhicules en entretien</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">{cars.filter((car) => car.status === "MAINTENANCE").length}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-white/55">Réservations aujourd'hui</p>
-            <p className="mt-2 text-2xl font-semibold">
+          <div className="rounded-2xl border border-border bg-muted/40 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Réservations aujourd'hui</p>
+            <p className="mt-2 text-2xl font-semibold text-foreground">
               {requests.filter((request) => new Date(request.startDate).toDateString() === new Date().toDateString()).length}
             </p>
           </div>
