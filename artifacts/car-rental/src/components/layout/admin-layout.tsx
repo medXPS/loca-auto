@@ -65,7 +65,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const subtitle = isAgentMode ? "Opérations, calendrier et suivi des réservations." : "Pilotage financier, flotte et gouvernance.";
 
   return (
-    <div className={cn("min-h-screen flex", isAgentMode ? "bg-slate-950 text-slate-100" : "bg-muted/30")}>
+    <div className={cn("min-h-screen flex", isAgentMode ? "bg-[linear-gradient(180deg,rgba(12,74,110,0.98),rgba(2,132,199,0.86))] text-white" : "bg-muted/30")}>
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
@@ -76,7 +76,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-72 border-r flex flex-col transition-transform duration-200 ease-in-out md:translate-x-0 md:sticky md:top-0",
-          isAgentMode ? "bg-slate-950 border-white/10 text-slate-100" : "bg-sidebar border-border md:bg-sidebar",
+          isAgentMode ? "bg-[linear-gradient(180deg,rgba(12,74,110,0.98),rgba(2,132,199,0.82))] border-white/10 text-white" : "bg-sidebar border-border md:bg-sidebar",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -88,7 +88,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               </span>
               <div className="leading-tight">
                 <span className="block text-lg font-semibold tracking-tight">{title}</span>
-                <span className={cn("block text-[0.68rem] uppercase tracking-[0.24em]", isAgentMode ? "text-slate-400" : "text-muted-foreground")}>
+                <span className={cn("block text-[0.68rem] uppercase tracking-[0.24em]", isAgentMode ? "text-white/70" : "text-muted-foreground")}>
                   {isAgentMode ? "Agent" : "Administrateur"}
                 </span>
               </div>
@@ -97,7 +97,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className={cn("mt-4 text-sm leading-6", isAgentMode ? "text-slate-400" : "text-muted-foreground")}>{subtitle}</p>
+          <p className={cn("mt-4 text-sm leading-6", isAgentMode ? "text-white/70" : "text-muted-foreground")}>{subtitle}</p>
         </div>
 
         <div className="flex-1 overflow-y-auto py-4">
@@ -113,7 +113,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       isAgentMode
                         ? isActive
                           ? "bg-primary text-primary-foreground"
-                          : "text-slate-300 hover:bg-white/8 hover:text-white"
+                          : "text-white/75 hover:bg-white/10 hover:text-white"
                         : isActive
                           ? "bg-primary text-primary-foreground"
                           : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -133,7 +133,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             variant="outline"
             className={cn(
               "w-full justify-start gap-2",
-              isAgentMode ? "border-white/10 bg-white/5 text-slate-100 hover:bg-white/10" : "bg-background",
+            isAgentMode ? "border-white/10 bg-white/5 text-white hover:bg-white/10" : "bg-background",
             )}
             onClick={logout}
           >
@@ -147,7 +147,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <header
           className={cn(
             "h-16 border-b flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 backdrop-blur",
-            isAgentMode ? "border-white/10 bg-slate-950/80 text-slate-100" : "bg-background",
+            isAgentMode ? "border-white/10 bg-[rgba(12,74,110,0.88)] text-white" : "bg-background",
           )}
         >
           <button className="md:hidden p-2 -ml-2" onClick={() => setIsSidebarOpen(true)}>
@@ -168,7 +168,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className={cn("flex-1 p-4 sm:p-6 overflow-y-auto", isAgentMode && "bg-slate-950 text-slate-100")}>
+        <main className={cn(
+          "flex-1 p-4 sm:p-6 overflow-y-auto",
+          isAgentMode && "bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.12),transparent_32%),linear-gradient(180deg,rgba(240,249,255,0.98),rgba(240,249,255,1))] text-foreground",
+        )}>
           {children}
         </main>
       </div>

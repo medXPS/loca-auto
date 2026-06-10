@@ -67,7 +67,7 @@ export default function AgentDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(17,89,183,0.30),transparent_45%),linear-gradient(135deg,rgba(9,13,25,0.96),rgba(15,23,42,0.98))] px-6 py-8 shadow-[0_24px_70px_-30px_rgba(15,23,42,0.65)] md:px-8">
+      <section className="overflow-hidden rounded-[2rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(2,132,199,0.28),transparent_45%),radial-gradient(circle_at_84%_18%,rgba(245,158,11,0.14),transparent_28%),linear-gradient(135deg,rgba(12,74,110,0.98),rgba(2,132,199,0.88))] px-6 py-8 shadow-[0_24px_70px_-30px_rgba(2,132,199,0.45)] md:px-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-slate-300">

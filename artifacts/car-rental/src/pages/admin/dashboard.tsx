@@ -24,7 +24,7 @@ import {
   Legend,
 } from "recharts";
 
-const PIE_COLORS = ["#157550", "#215025", "#409050", "#174045", "#340545", "#d97706", "#dc2626"];
+const PIE_COLORS = ["#0284C7", "#7DD3FC", "#F59E0B", "#0C4A6E", "#38BDF8", "#BAE6FD", "#0369A1"];
 
 export default function AdminDashboard() {
   const { data: stats, isLoading: isStatsLoading } = useGetDashboardStats();
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
           <CardContent className="p-6 flex flex-col justify-between h-full">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-medium text-muted-foreground">Bénéfice net</p>
-              <div className="p-2 bg-emerald-500/10 rounded-full text-emerald-500">
+              <div className="p-2 bg-accent/15 rounded-full text-accent">
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
@@ -91,7 +91,7 @@ export default function AdminDashboard() {
           <CardContent className="p-6 flex flex-col justify-between h-full">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-medium text-muted-foreground">Demandes actives</p>
-              <div className="p-2 bg-amber-500/10 rounded-full text-amber-500">
+              <div className="p-2 bg-secondary/30 rounded-full text-secondary-foreground">
                 <CalendarClock className="w-4 h-4" />
               </div>
             </div>
@@ -103,7 +103,7 @@ export default function AdminDashboard() {
           <CardContent className="p-6 flex flex-col justify-between h-full">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-medium text-muted-foreground">Flotte disponible</p>
-              <div className="p-2 bg-blue-500/10 rounded-full text-blue-500">
+              <div className="p-2 bg-primary/10 rounded-full text-primary">
                 <Car className="w-4 h-4" />
               </div>
             </div>
@@ -134,8 +134,8 @@ export default function AdminDashboard() {
                 <AreaChart data={formattedRevenue}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#157550" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#157550" stopOpacity={0} />
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <XAxis
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
                   <Area
                     type="monotone"
                     dataKey="revenue"
-                    stroke="#157550"
+                    stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     fill="url(#colorRevenue)"
                   />
