@@ -107,14 +107,16 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
           </div>
         )}
 
-        <div className="mt-auto pt-5">
-          <Button asChild className="rounded-full bg-primary px-5 text-primary-foreground">
-            <Link href={reserveHref}>
-              Réserver
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
+        {!isCompact && (
+          <div className="mt-auto pt-5">
+            <Button asChild className="rounded-full bg-primary px-5 text-primary-foreground">
+              <Link href={reserveHref}>
+                Réserver
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        )}
       </div>
 
       {isCompact && (
