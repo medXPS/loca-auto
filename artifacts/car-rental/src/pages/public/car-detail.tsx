@@ -231,6 +231,16 @@ export default function CarDetail() {
   const transmissionLabel = car?.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
   const fuelLabel = car ? FUEL_TRANSLATIONS[car.fuelType] || car.fuelType : "";
   const hasAirConditioning = Boolean(car?.airConditioning);
+  const images = useMemo(
+    () =>
+      car
+        ? [
+            ...(car.images || []),
+            ...(car.mainImageUrl ? [{ id: -1, url: car.mainImageUrl, altText: `${car.brand} ${car.model}` }] : []),
+          ].filter((item, index, array) => array.findIndex((candidate) => candidate.url === item.url) === index)
+        : [],
+    [car?.brand, car?.images, car?.mainImageUrl, car?.model],
+  );
   const whatsappHref = buildWhatsAppHref(
     car ? `${car.brand} ${car.model}` : "Location Auto Maroc",
     `Bonjour, je souhaite réserver${car ? ` ${car.brand} ${car.model}` : ""}${startDate ? ` du ${formatDisplayDate(startDate)}` : ""}${returnDate ? ` au ${formatDisplayDate(returnDate)}` : ""}${estimatedTotalPrice > 0 ? `. Budget estimé : ${formatPrice(estimatedTotalPrice)}` : ""}.`,
@@ -376,14 +386,6 @@ export default function CarDetail() {
   const pageTitle = `${car.brand} ${car.model}`;
   const pageDescription = `Réservez ${car.brand} ${car.model} au Maroc. Prix, caractéristiques et demande rapide en ligne.`;
   const canonical = `https://demo-locationauto.shonenx.shop/voitures/${car.id}`;
-  const images = useMemo(
-    () =>
-      [
-        ...(car.images || []),
-        ...(car.mainImageUrl ? [{ id: -1, url: car.mainImageUrl, altText: `${car.brand} ${car.model}` }] : []),
-      ].filter((item, index, array) => array.findIndex((candidate) => candidate.url === item.url) === index),
-    [car.brand, car.images, car.mainImageUrl, car.model],
-  );
 
   return (
     <div className="container mx-auto px-4 py-8 lg:py-10">

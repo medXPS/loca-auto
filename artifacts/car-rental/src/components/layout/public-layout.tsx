@@ -2,7 +2,7 @@ import { useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CarFront, CalendarDays, House, LogOut, Menu, MessageCircle, Phone, X, UserRound } from "lucide-react";
+import { ArrowRight, CarFront, House, LogOut, Menu, MessageCircle, Newspaper, Phone, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -28,13 +28,13 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   const navLinks: NavItem[] = [
     { href: "/", label: "Accueil", icon: House },
     { href: "/voitures", label: "Véhicules", icon: CarFront },
-    { href: "/reservation", label: "Réservation", icon: CalendarDays },
+    { href: "/blog", label: "Blog", icon: Newspaper },
     { href: "/contact", label: "Contact", icon: Phone },
   ];
 
   const isActive = (href: string) => {
     if (href === "/") return location === href;
-    if (href === "/reservation") return location === href || location.startsWith("/reservation/");
+    if (href === "/blog") return location === href || location.startsWith("/blog/");
     return location === href || location.startsWith(`${href}/`);
   };
 
@@ -203,8 +203,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <Link href="/voitures" className="transition-colors hover:text-primary">
                 Véhicules
               </Link>
-              <Link href="/reservation" className="transition-colors hover:text-primary">
-                Réservation
+              <Link href="/blog" className="transition-colors hover:text-primary">
+                Blog
               </Link>
               <Link href="/contact" className="transition-colors hover:text-primary">
                 Contact
