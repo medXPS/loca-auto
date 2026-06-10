@@ -7,7 +7,7 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import type { EventInput } from "@fullcalendar/core";
-import { useListCars, useListRentalRequests } from "@workspace/api-client-react";
+import { customFetch, useListCars, useListRentalRequests } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -122,19 +122,14 @@ export default function AdminCalendarPage() {
   }, [requests]);
 
   const updateDates = async (requestId: number, start: Date, end: Date) => {
-    const response = await fetch(`/api/rental-requests/${requestId}`, {
+    await customFetch(`/api/rental-requests/${requestId}`, {
       method: "PATCH",
-      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         startDate: start.toISOString().slice(0, 10),
         returnDate: new Date(end.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       }),
     });
-
-    if (!response.ok) {
-      throw new Error("Impossible de mettre à jour les dates");
-    }
 
     await refetch();
   };
@@ -143,7 +138,7 @@ export default function AdminCalendarPage() {
     const requestId = Number(info.event.id);
     try {
       await updateDates(requestId, info.event.start!, info.event.end!);
-    } catch (error) {
+    } catch {
       info.revert();
     }
   };
@@ -152,7 +147,7 @@ export default function AdminCalendarPage() {
     const requestId = Number(info.event.id);
     try {
       await updateDates(requestId, info.event.start!, info.event.end!);
-    } catch (error) {
+    } catch {
       info.revert();
     }
   };
@@ -163,32 +158,37 @@ export default function AdminCalendarPage() {
   };
 
   if (isRequestsLoading || isCarsLoading) {
-    return <Skeleton className="h-[70vh] w-full rounded-3xl" />;
+    return <Skeleton className="h-[70vh] w-full rounded-3xl bg-muted/60" />;
   }
 
   return (
-    <div className="space-y-6">
-      <section className={cn("overflow-hidden rounded-[2rem] border px-6 py-7 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.22)]", isAgentMode ? "border-white/10 bg-white/5 text-white" : "border-border bg-background")}>
+    <div className="space-y-6 text-foreground">
+      <section
+        className={cn(
+          "overflow-hidden rounded-[2rem] border px-6 py-7 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.22)]",
+          isAgentMode ? "border-border bg-card text-card-foreground" : "border-border bg-background",
+        )}
+      >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-4 py-2 text-[11px] uppercase tracking-[0.2em] text-primary">
               <CalendarRange className="h-3.5 w-3.5" />
               Calendrier opérationnel
             </div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
               Vue calendrier des réservations
             </h1>
-            <p className={cn("mt-3 max-w-2xl text-sm leading-7", isAgentMode ? "text-white/75" : "text-muted-foreground")}>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
               Passez rapidement de la vue jour à la vue mois, filtrez par véhicule ou par agent, puis déplacez une réservation pour ajuster ses dates.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button variant="outline" className="gap-2" onClick={() => refetch()}>
+            <Button variant="outline" className="gap-2 rounded-full" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4" />
               Actualiser
             </Button>
             <Link href={`${basePath}/demandes`}>
-              <Button className="gap-2">
+              <Button className="gap-2 rounded-full">
                 <CalendarDays className="h-4 w-4" />
                 Demandes
               </Button>
@@ -198,16 +198,16 @@ export default function AdminCalendarPage() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_0.55fr]">
-        <Card className={cn("border", isAgentMode ? "border-white/10 bg-white/5 text-white" : "bg-background")}>
-          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
-            <CardTitle className="flex items-center gap-2">
+        <Card className={cn("border", isAgentMode ? "border-border bg-card text-card-foreground" : "bg-background")}>
+          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border">
+            <CardTitle className="flex items-center gap-2 text-foreground">
               <Filter className="h-5 w-5 text-primary" />
               Filtres
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 p-6 md:grid-cols-2 xl:grid-cols-3">
             <div className="space-y-2">
-              <p className="text-sm font-medium">Véhicule</p>
+              <p className="text-sm font-medium text-foreground">Véhicule</p>
               <Select value={carFilter} onValueChange={setCarFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les véhicules" />
@@ -223,7 +223,7 @@ export default function AdminCalendarPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium">Agent</p>
+              <p className="text-sm font-medium text-foreground">Agent</p>
               <Select value={agentFilter} onValueChange={setAgentFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Tous les agents" />
@@ -239,7 +239,7 @@ export default function AdminCalendarPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium">Légende</p>
+              <p className="text-sm font-medium text-foreground">Légende</p>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="outline">En attente</Badge>
                 <Badge variant="outline">Appel confirmé</Badge>
@@ -250,9 +250,9 @@ export default function AdminCalendarPage() {
           </CardContent>
         </Card>
 
-        <Card className={cn("border", isAgentMode ? "border-white/10 bg-white/5 text-white" : "bg-background")}>
-          <CardHeader className="border-b">
-            <CardTitle className="flex items-center gap-2">
+        <Card className={cn("border", isAgentMode ? "border-border bg-card text-card-foreground" : "bg-background")}>
+          <CardHeader className="border-b border-border">
+            <CardTitle className="flex items-center gap-2 text-foreground">
               <CarFront className="h-5 w-5 text-primary" />
               Véhicules indisponibles
             </CardTitle>
@@ -260,9 +260,9 @@ export default function AdminCalendarPage() {
           <CardContent className="space-y-3 p-6">
             {unavailableCars.length > 0 ? (
               unavailableCars.slice(0, 6).map((car) => (
-                <div key={car.id} className="flex items-center justify-between rounded-2xl border bg-muted/30 px-4 py-3">
+                <div key={car.id} className="flex items-center justify-between rounded-2xl border border-border bg-muted/40 px-4 py-3">
                   <div>
-                    <p className="font-medium">
+                    <p className="font-medium text-foreground">
                       {car.brand} {car.model}
                     </p>
                     <p className="text-xs text-muted-foreground">{car.city || "Ville non renseignée"}</p>
@@ -277,7 +277,7 @@ export default function AdminCalendarPage() {
         </Card>
       </div>
 
-      <Card className={cn("overflow-hidden", isAgentMode ? "border-white/10 bg-white/5 text-white" : "bg-background")}>
+      <Card className={cn("overflow-hidden", isAgentMode ? "border-border bg-card text-card-foreground" : "bg-background")}>
         <CardContent className="p-4 md:p-6">
           <FullCalendar
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
