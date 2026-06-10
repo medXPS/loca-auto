@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useMemo, useState, type ComponentType, type FormEvent, type ReactNode } from "react";
 import { useListCars } from "@workspace/api-client-react";
+import { formatDisplayDate } from "@workspace/api-client-react/availability";
 import { CarCard } from "@/components/car-card";
 import { DateRangeCalendar } from "@/components/date-range-calendar";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -10,7 +11,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDisplayDate } from "@workspace/api-client-react/availability";
 import {
   ArrowRight,
   BadgeCheck,
@@ -22,7 +22,6 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
-  SlidersHorizontal,
   Star,
   Users,
 } from "lucide-react";
@@ -32,34 +31,34 @@ const timeOptions = ["08:00", "09:00", "10:00", "11:00", "12:00", "14:00", "16:0
 
 const trustHighlights = [
   {
-    title: "Prix transparents",
-    description: "Tarifs lisibles, sans frais cachés ni mauvaise surprise à l’arrivée.",
+    title: "Parcours plus direct",
+    description: "La recherche, la comparaison et la prise de contact restent visibles sans détour inutile.",
+    icon: Sparkles,
+  },
+  {
+    title: "Tarifs lisibles",
+    description: "Les prix et conditions importantes remontent en haut des cartes pour rassurer plus vite.",
     icon: ShieldCheck,
   },
   {
-    title: "Service local",
-    description: "Des agences situées dans les villes et les aéroports les plus demandés.",
+    title: "Présence locale",
+    description: "Villes, aéroports et contact WhatsApp restent accessibles à chaque étape.",
     icon: MapPin,
-  },
-  {
-    title: "Réponse rapide",
-    description: "Un parcours de réservation pensé pour aller droit au but, sur mobile comme sur desktop.",
-    icon: Sparkles,
   },
 ];
 
 const bookingSteps = [
   {
-    title: "Choisissez votre point de départ",
-    description: "Sélectionnez la ville, l’aéroport ou l’agence qui vous convient le mieux.",
+    title: "Sélectionnez votre ville",
+    description: "Choisissez l'agence ou l'aéroport le plus pratique selon votre arrivée.",
   },
   {
-    title: "Comparez les offres",
-    description: "Filtrez par prix, boîte, carburant et disponibilité pour garder le contrôle.",
+    title: "Comparez les véhicules",
+    description: "Repérez rapidement le prix, la boîte, les places et la disponibilité.",
   },
   {
-    title: "Réservez en quelques clics",
-    description: "Préparez votre dossier, puis finalisez la demande quand vous êtes prêt.",
+    title: "Confirmez la demande",
+    description: "Passez à la réservation ou contactez l'équipe pour finaliser plus vite.",
   },
 ];
 
@@ -67,18 +66,27 @@ const faqItems = [
   {
     question: "Quels documents faut-il pour réserver ?",
     answer:
-      "Une pièce d’identité valide, un permis de conduire en cours de validité et un moyen de contact fiable suffisent pour lancer la demande. Le détail peut varier selon le véhicule.",
+      "Une pièce d'identité valide, un permis de conduire en cours de validité et un moyen de contact suffisent pour lancer une demande.",
   },
   {
-    question: "Les prix affichés sont-ils définitifs ?",
+    question: "Les prix affichés sont-ils transparents ?",
     answer:
-      "Oui, nous privilégions des tarifs clairs. Les éventuels frais spécifiques sont affichés avant validation afin que vous puissiez comparer sereinement.",
+      "Oui. Le tarif journalier ou le total estimé apparaît directement sur la fiche véhicule avant la prise de contact.",
   },
   {
-    question: "Puis-je modifier mes dates après la recherche ?",
+    question: "Puis-je réserver depuis mobile ?",
     answer:
-      "Oui. Il suffit de relancer la recherche avec une autre période, ou d’ouvrir la fiche véhicule pour ajuster votre demande avant confirmation.",
+      "Oui. La recherche, les cartes véhicules et les actions de réservation sont pensées pour fonctionner proprement sur téléphone.",
   },
+];
+
+const airportDestinations = [
+  { label: "Aéroport Mohammed V", city: "Casablanca" },
+  { label: "Aéroport Marrakech Menara", city: "Marrakech" },
+  { label: "Aéroport Rabat-Salé", city: "Rabat" },
+  { label: "Aéroport Ibn Battouta", city: "Tanger" },
+  { label: "Aéroport Al Massira", city: "Agadir" },
+  { label: "Aéroport Fès-Saïss", city: "Fès" },
 ];
 
 function SectionHeader({
@@ -96,15 +104,17 @@ function SectionHeader({
     <div className={cn("space-y-4", align === "center" ? "text-center" : "text-left")}>
       <div
         className={cn(
-          "inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/6 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-primary",
+          "inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/72 px-4 py-1.5 text-xs font-semibold text-primary marketing-kicker",
           align === "center" ? "" : "mx-0",
         )}
       >
         <BadgeCheck className="h-3.5 w-3.5" />
         {eyebrow}
       </div>
-      <h2 className="text-3xl font-extrabold tracking-tight text-foreground md:text-4xl">{title}</h2>
-      <p className="mx-auto max-w-3xl text-base leading-7 text-muted-foreground">{description}</p>
+      <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{title}</h2>
+      <p className={cn("max-w-3xl text-base leading-7 text-muted-foreground", align === "center" ? "mx-auto" : "")}>
+        {description}
+      </p>
     </div>
   );
 }
@@ -119,12 +129,21 @@ function SearchField({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-[1.35rem] border border-white/24 bg-white/94 px-4 py-3 shadow-[0_16px_30px_-22px_hsl(var(--primary)/0.55)] transition-transform hover:-translate-y-0.5">
-      <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+    <div className="rounded-[1.35rem] border border-black/8 bg-white/90 px-4 py-3 shadow-[0_18px_32px_-26px_rgba(16,23,34,0.2)] transition-transform hover:-translate-y-0.5">
+      <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase text-muted-foreground marketing-kicker">
         <Icon className="h-3.5 w-3.5 text-primary" />
         {label}
       </div>
       {children}
+    </div>
+  );
+}
+
+function HeroMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[1.35rem] border border-white/10 bg-white/6 p-4 backdrop-blur">
+      <p className="text-[11px] text-white/58 marketing-kicker">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-white">{value}</p>
     </div>
   );
 }
@@ -139,7 +158,7 @@ function DestinationLink({
   return (
     <Link
       href={`/voitures?city=${encodeURIComponent(city)}`}
-      className="group flex items-center justify-between rounded-2xl border border-border/70 bg-white px-4 py-3 text-sm font-medium transition-all hover:border-primary/20 hover:bg-primary/5 hover:text-primary"
+      className="group flex items-center justify-between rounded-2xl border border-black/8 bg-white/88 px-4 py-3 text-sm font-medium transition-all hover:border-primary/25 hover:text-primary"
     >
       <span>{label}</span>
       <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
@@ -176,29 +195,13 @@ export default function Home() {
     }
 
     if (cities.size === 0) {
-      [
-        "Casablanca",
-        "Marrakech",
-        "Rabat",
-        "Tanger",
-        "Agadir",
-        "Fès",
-        "Essaouira",
-      ].forEach((city) => cities.add(city));
+      ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès", "Essaouira"].forEach((city) => cities.add(city));
     }
 
     return Array.from(cities).sort((a, b) => a.localeCompare(b, "fr"));
   }, [citiesSource]);
 
   const topCities = agencyCities.slice(0, 6);
-  const airportDestinations = [
-    { label: "Aéroport Mohammed V", city: "Casablanca" },
-    { label: "Aéroport Marrakech Menara", city: "Marrakech" },
-    { label: "Aéroport Rabat-Salé", city: "Rabat" },
-    { label: "Aéroport Ibn Battouta", city: "Tanger" },
-    { label: "Aéroport Al Massira", city: "Agadir" },
-    { label: "Aéroport Fès-Saïss", city: "Fès" },
-  ];
 
   const periodLabel =
     dateDebut && dateFin
@@ -223,200 +226,193 @@ export default function Home() {
 
   return (
     <div className="flex w-full flex-col">
-      <section className="relative isolate overflow-hidden">
-        <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=2400&q=80"
-            alt="Route côtière au lever du jour"
-            className="h-full w-full object-cover object-center opacity-30"
-          />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_28%),radial-gradient(circle_at_80%_20%,rgba(41,128,255,0.32),transparent_30%),linear-gradient(180deg,rgba(11,91,194,0.96),rgba(17,105,216,0.88)_42%,rgba(216,232,250,0.9)_100%)]" />
-        </div>
+      <section className="container mx-auto px-4 pt-8 md:pt-10">
+        <div className="overflow-hidden rounded-[2.3rem] marketing-dark-panel marketing-grid">
+          <div className="relative z-10 grid gap-10 px-6 py-8 md:px-8 md:py-10 xl:grid-cols-[1.1fr_0.9fr]">
+            <div className="flex flex-col justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs marketing-kicker marketing-pill">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  Refonte commerciale inspirée des codes SaaS premium
+                </div>
 
-        <div className="container relative mx-auto px-4 py-10 lg:py-14">
-          <div className="mx-auto flex max-w-6xl flex-col items-center text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/12 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/92 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5" />
-              Réservation premium au Maroc
-            </div>
+                <h1 className="mt-6 max-w-4xl text-4xl font-semibold leading-tight text-white text-balance md:text-5xl xl:text-6xl">
+                  Louez une voiture au Maroc avec une vitrine plus claire, plus crédible et prête à vendre.
+                </h1>
 
-            <h1 className="mt-6 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-white text-balance drop-shadow-[0_8px_30px_rgba(0,0,0,0.35)] md:text-5xl lg:text-6xl">
-              Location de voitures - recherchez, comparez et partez avec plus de clarté.
-            </h1>
-
-            <p className="mt-5 max-w-3xl text-base leading-8 text-white/88 md:text-lg">
-              Une expérience pensée comme un vrai comparateur: même logique que les grands sites de réservation,
-              mais avec une palette plus riche, une lecture plus douce et un parcours plus direct.
-            </p>
-
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-sm font-medium text-white/90">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-2 backdrop-blur">
-                <ShieldCheck className="h-4 w-4" />
-                Annulation flexible
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-2 backdrop-blur">
-                <Users className="h-4 w-4" />
-                Plus de 60 agences
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-2 backdrop-blur">
-                <Clock3 className="h-4 w-4" />
-                Assistance 7j/7
-              </span>
-            </div>
-
-            <div className="mt-10 w-full max-w-6xl rounded-[2rem] border border-white/25 bg-white/84 p-3 shadow-[0_30px_80px_-42px_hsl(var(--primary)/0.7)] backdrop-blur-xl">
-              <form className="grid gap-3 lg:grid-cols-[1.2fr_1fr_0.5fr_0.5fr_auto] lg:items-stretch" onSubmit={handleSearch}>
-                <SearchField label="Lieu de prise en charge" icon={MapPin}>
-                  <Select value={agencyCity} onValueChange={setAgencyCity}>
-                    <SelectTrigger className="h-11 rounded-2xl border-0 bg-transparent px-0 text-sm shadow-none focus:ring-0">
-                      <SelectValue placeholder="Aéroport, ville ou agence" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {agencyCities.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {city}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </SearchField>
-
-                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="w-full rounded-[1.35rem] border border-white/24 bg-white/94 px-4 py-3 text-left shadow-[0_16px_30px_-22px_hsl(var(--primary)/0.55)] transition-transform hover:-translate-y-0.5"
-                    >
-                      <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        <CalendarDays className="h-3.5 w-3.5 text-primary" />
-                        Dates de location
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                            {dateDebut ? "Prise en charge" : "Choisir les dates"}
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-foreground">{periodLabel}</p>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    align="start"
-                    className="w-[min(calc(100vw-1rem),34rem)] rounded-[1.35rem] border-border/70 bg-background/96 p-2 shadow-[0_26px_70px_-42px_hsl(var(--primary)/0.65)] backdrop-blur-xl"
-                  >
-                    <div className="flex items-center justify-between px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      <span>Choisissez vos dates</span>
-                      <span>Jours réservés en gris</span>
-                    </div>
-                    <DateRangeCalendar
-                      label="Période de location"
-                      startDate={dateDebut}
-                      returnDate={dateFin}
-                      onChange={({ startDate, returnDate }) => {
-                        setDateDebut(startDate);
-                        setDateFin(returnDate);
-                        if (startDate && returnDate) {
-                          setCalendarOpen(false);
-                        }
-                      }}
-                      minimal
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                <SearchField label="Heure de départ" icon={Clock3}>
-                  <Select value={pickupTime} onValueChange={setPickupTime}>
-                    <SelectTrigger className="h-11 rounded-2xl border-0 bg-transparent px-0 text-sm shadow-none focus:ring-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeOptions.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </SearchField>
-
-                <SearchField label="Heure de retour" icon={Clock3}>
-                  <Select value={returnTime} onValueChange={setReturnTime}>
-                    <SelectTrigger className="h-11 rounded-2xl border-0 bg-transparent px-0 text-sm shadow-none focus:ring-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeOptions.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </SearchField>
-
-                <Button
-                  type="submit"
-                  className="h-auto rounded-[1.35rem] bg-emerald-500 px-6 py-4 text-base font-semibold text-white shadow-[0_20px_36px_-20px_rgba(34,197,94,0.78)] hover:bg-emerald-600 lg:min-h-[84px]"
-                >
-                  <Search className="h-5 w-5" />
-                  Rechercher
-                </Button>
-              </form>
-
-              <div className="mt-3 grid gap-3 rounded-[1.6rem] border border-border/50 bg-white/75 px-4 py-3 lg:grid-cols-[1.2fr_1fr_auto] lg:items-center">
-                <label className="flex items-center gap-3 text-sm font-medium text-foreground">
-                  <Checkbox checked={differentDropoff} onCheckedChange={(checked) => setDifferentDropoff(checked === true)} />
-                  Je souhaite restituer la voiture dans un autre endroit
-                </label>
-                <label className="flex items-center gap-3 text-sm font-medium text-foreground">
-                  <Checkbox checked={driverAgeOk} onCheckedChange={(checked) => setDriverAgeOk(checked === true)} />
-                  Le conducteur a-t-il entre 30 et 65 ans ?
-                </label>
-                <Link
-                  href="/voitures"
-                  className="inline-flex items-center justify-center rounded-full border border-primary/15 bg-primary/6 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
-                >
-                  Filtres rapides
-                </Link>
-              </div>
-            </div>
-
-            <div className="mt-8 grid w-full max-w-5xl gap-3 sm:grid-cols-3">
-              <div className="rounded-[1.35rem] border border-white/18 bg-white/10 px-4 py-3 text-left text-white backdrop-blur">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">Véhicules disponibles</p>
-                <p className="mt-1 text-2xl font-extrabold">
-                  {featuredCars?.total ?? 0}
-                  <span className="text-base font-semibold text-white/75">+</span>
+                <p className="mt-5 max-w-2xl text-base leading-8 text-white/72 md:text-lg">
+                  Une expérience plus professionnelle pour capter la demande vite: design premium, hiérarchie plus nette et recherche immédiatement exploitable.
                 </p>
+
+                <div className="mt-8 flex flex-wrap gap-3 text-sm text-white/78">
+                  <span className="rounded-full px-4 py-2 marketing-pill">Catalogue structuré</span>
+                  <span className="rounded-full px-4 py-2 marketing-pill">Contact visible</span>
+                  <span className="rounded-full px-4 py-2 marketing-pill">Réservation mobile-friendly</span>
+                </div>
               </div>
-              <div className="rounded-[1.35rem] border border-white/18 bg-white/10 px-4 py-3 text-left text-white backdrop-blur">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">Villes couvertes</p>
-                <p className="mt-1 text-2xl font-extrabold">{agencyCities.length}</p>
+
+              <div className="mt-10 grid gap-4 sm:grid-cols-3">
+                <HeroMetric label="Véhicules listés" value={`${featuredCars?.total ?? 0}+`} />
+                <HeroMetric label="Villes couvertes" value={`${agencyCities.length}+`} />
+                <HeroMetric label="Canal direct" value="WhatsApp" />
               </div>
-              <div className="rounded-[1.35rem] border border-white/18 bg-white/10 px-4 py-3 text-left text-white backdrop-blur">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-white/70">Réservation</p>
-                <p className="mt-1 text-2xl font-extrabold">Rapide</p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="rounded-[2rem] marketing-soft-panel p-4 md:p-5">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground marketing-kicker">Recherche rapide</p>
+                    <p className="mt-1 text-xl font-semibold text-foreground">Préparez une demande en quelques clics</p>
+                  </div>
+                  <span className="hidden rounded-full border border-black/8 bg-white/72 px-3 py-1 text-xs text-muted-foreground md:inline-flex">
+                    Ready for sale
+                  </span>
+                </div>
+
+                <form className="grid gap-3 md:grid-cols-2" onSubmit={handleSearch}>
+                  <SearchField label="Lieu" icon={MapPin}>
+                    <Select value={agencyCity} onValueChange={setAgencyCity}>
+                      <SelectTrigger className="h-11 rounded-2xl border-0 bg-transparent px-0 text-sm shadow-none focus:ring-0">
+                        <SelectValue placeholder="Ville, agence ou aéroport" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {agencyCities.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </SearchField>
+
+                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="rounded-[1.35rem] border border-black/8 bg-white/90 px-4 py-3 text-left shadow-[0_18px_32px_-26px_rgba(16,23,34,0.2)] transition-transform hover:-translate-y-0.5"
+                      >
+                        <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase text-muted-foreground marketing-kicker">
+                          <CalendarDays className="h-3.5 w-3.5 text-primary" />
+                          Dates
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-[11px] uppercase text-muted-foreground marketing-kicker">
+                              {dateDebut ? "Période choisie" : "Choisir les dates"}
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-foreground">{periodLabel}</p>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className="w-[min(calc(100vw-1rem),34rem)] rounded-[1.35rem] border-black/8 bg-background/96 p-2 shadow-[0_26px_70px_-42px_rgba(16,23,34,0.3)] backdrop-blur-xl"
+                    >
+                      <div className="flex items-center justify-between px-2 pb-2 text-[11px] text-muted-foreground marketing-kicker">
+                        <span>Choisissez vos dates</span>
+                        <span>Disponibilités en direct</span>
+                      </div>
+                      <DateRangeCalendar
+                        label="Période de location"
+                        startDate={dateDebut}
+                        returnDate={dateFin}
+                        onChange={({ startDate, returnDate }) => {
+                          setDateDebut(startDate);
+                          setDateFin(returnDate);
+                          if (startDate && returnDate) {
+                            setCalendarOpen(false);
+                          }
+                        }}
+                        minimal
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  <SearchField label="Départ" icon={Clock3}>
+                    <Select value={pickupTime} onValueChange={setPickupTime}>
+                      <SelectTrigger className="h-11 rounded-2xl border-0 bg-transparent px-0 text-sm shadow-none focus:ring-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timeOptions.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </SearchField>
+
+                  <SearchField label="Retour" icon={Clock3}>
+                    <Select value={returnTime} onValueChange={setReturnTime}>
+                      <SelectTrigger className="h-11 rounded-2xl border-0 bg-transparent px-0 text-sm shadow-none focus:ring-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timeOptions.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </SearchField>
+
+                  <div className="md:col-span-2 grid gap-3 rounded-[1.35rem] border border-black/8 bg-[#0f1521] px-4 py-4 text-white md:grid-cols-[1fr_1fr_auto] md:items-center">
+                    <label className="flex items-center gap-3 text-sm text-white/78">
+                      <Checkbox checked={differentDropoff} onCheckedChange={(checked) => setDifferentDropoff(checked === true)} />
+                      Retour dans une autre ville
+                    </label>
+                    <label className="flex items-center gap-3 text-sm text-white/78">
+                      <Checkbox checked={driverAgeOk} onCheckedChange={(checked) => setDriverAgeOk(checked === true)} />
+                      Conducteur 30 à 65 ans
+                    </label>
+                    <Button type="submit" className="h-12 rounded-full px-6 marketing-accent-button">
+                      <Search className="h-5 w-5" />
+                      Rechercher
+                    </Button>
+                  </div>
+                </form>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-[1.6rem] border border-white/10 bg-white/6 p-5 text-white backdrop-blur">
+                  <p className="text-xs text-white/56 marketing-kicker">Pourquoi ce redesign</p>
+                  <p className="mt-2 text-xl font-semibold">Une page d’accueil qui agit comme un commercial.</p>
+                  <p className="mt-3 text-sm leading-7 text-white/72">
+                    Les infos utiles remontent plus vite: recherche, prix, preuves de confiance et destination.
+                  </p>
+                </div>
+
+                <div className="rounded-[1.6rem] border border-white/10 bg-white/6 p-5 text-white backdrop-blur">
+                  <p className="text-xs text-white/56 marketing-kicker">Objectif business</p>
+                  <p className="mt-2 text-xl font-semibold">Réduire l'hésitation et accélérer la prise de contact.</p>
+                  <p className="mt-3 text-sm leading-7 text-white/72">
+                    Le catalogue devient plus lisible et les CTA restent visibles sans paraître agressifs.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="border-b border-border/60 bg-[linear-gradient(180deg,hsl(216_55%_97%),hsl(216_45%_99%))] py-10">
+      <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="grid gap-4 md:grid-cols-3">
             {trustHighlights.map((item) => {
               const Icon = item.icon;
               return (
-                <Card key={item.title} className="surface-panel">
+                <Card key={item.title} className="marketing-soft-panel">
                   <CardContent className="flex items-start gap-4 p-5">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                       <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold">{item.title}</h3>
+                      <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
                       <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.description}</p>
                     </div>
                   </CardContent>
@@ -427,20 +423,13 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-8">
+      <section className="py-4">
         <div className="container mx-auto px-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
-            {[
-              "Atlas Mobility",
-              "Blue Coast Rent",
-              "Sahara Drive",
-              "Rif Auto",
-              "Médina Fleet",
-              "Coastal Cars",
-            ].map((brand) => (
+            {["Atlas Mobility", "Blue Coast Rent", "Sahara Drive", "Rif Auto", "Médina Fleet", "Coastal Cars"].map((brand) => (
               <div
                 key={brand}
-                className="rounded-[1.1rem] border border-border/60 bg-white px-4 py-3 text-center text-sm font-semibold text-muted-foreground shadow-sm"
+                className="rounded-[1.2rem] border border-black/8 bg-white/82 px-4 py-3 text-center text-sm font-medium text-muted-foreground shadow-[0_18px_35px_-28px_rgba(16,23,34,0.14)]"
               >
                 {brand}
               </div>
@@ -452,15 +441,15 @@ export default function Home() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <SectionHeader
-            eyebrow="Véhicules populaires"
-            title="Des offres choisies pour un parcours de réservation plus net."
-            description="Les modèles les plus demandés en ce moment, avec une hiérarchie visuelle plus lisible pour comparer rapidement le prix, la transmission et la disponibilité."
+            eyebrow="Véhicules mis en avant"
+            title="Des offres présentées comme un vrai produit prêt à être vendu."
+            description="La hiérarchie met d'abord en avant le prix, la disponibilité, les caractéristiques clés et l'appel à l'action."
           />
 
           <div className="mt-10 grid grid-cols-1 gap-6 xl:grid-cols-3">
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-white shadow-sm">
+                <div key={i} className="overflow-hidden rounded-[1.5rem] border border-black/8 bg-white shadow-sm">
                   <Skeleton className="h-[220px] w-full rounded-none" />
                   <div className="space-y-4 p-5">
                     <Skeleton className="h-5 w-2/3" />
@@ -472,14 +461,14 @@ export default function Home() {
             ) : featuredCars?.cars && featuredCars.cars.length > 0 ? (
               featuredCars.cars.map((car) => <CarCard key={car.id} car={car} />)
             ) : (
-              <div className="col-span-full rounded-[1.5rem] border border-dashed border-border/70 bg-white/80 py-16 text-center text-muted-foreground">
+              <div className="col-span-full rounded-[1.5rem] border border-dashed border-black/10 bg-white/82 py-16 text-center text-muted-foreground">
                 Aucune voiture disponible pour le moment.
               </div>
             )}
           </div>
 
           <div className="mt-10 text-center">
-            <Button asChild variant="outline" className="rounded-full border-border/70 bg-white px-8">
+            <Button asChild className="rounded-full px-8 marketing-accent-button">
               <Link href="/voitures">
                 Voir toutes les voitures
                 <ArrowRight className="h-4 w-4" />
@@ -489,153 +478,99 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-y border-border/60 bg-[linear-gradient(180deg,hsl(216_55%_98%),hsl(216_45%_96%))] py-16">
+      <section className="py-16">
         <div className="container mx-auto px-4">
-          <SectionHeader
-            eyebrow="Pourquoi nous"
-            title="Une interface inspirée des meilleurs standards, mais adaptée à votre logique locale."
-            description="Nous avons gardé le schéma de réservation que les utilisateurs connaissent déjà, tout en lui donnant plus d’oxygène, plus de contraste et plus de hiérarchie."
-          />
+          <div className="grid gap-6 lg:grid-cols-[1fr_0.92fr]">
+            <Card className="overflow-hidden marketing-dark-panel marketing-grid text-white">
+              <CardContent className="relative z-10 p-6 md:p-8">
+                <SectionHeader
+                  eyebrow="Pourquoi ça convertit mieux"
+                  title="Une expérience qui ressemble davantage à un produit premium qu'à une simple page catalogue."
+                  description="Le site reprend des codes visuels plus nets: contrastes forts, repères typographiques, blocs éditoriaux courts et CTA visibles."
+                  align="left"
+                />
 
-          <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-            <div className="grid gap-4 md:grid-cols-3">
-              {[
-                {
-                  title: "Tarifs lisibles",
-                  description: "Chaque voiture affiche son prix de manière immédiate, avec des repères clairs sur le total estimé.",
-                  icon: Sparkles,
-                },
-                {
-                  title: "Filtres utiles",
-                  description: "Ville, dates, boîte, carburant et budget pour affiner la recherche sans surcharge.",
-                  icon: SlidersHorizontal,
-                },
-                {
-                  title: "Réservation sereine",
-                  description: "La fiche véhicule rassure avant la demande avec un vrai résumé des conditions.",
-                  icon: ShieldCheck,
-                },
-              ].map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Card key={item.title} className="surface-panel">
-                    <CardContent className="p-5">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                        <Icon className="h-5 w-5" />
+                <div className="mt-8 grid gap-4 md:grid-cols-3">
+                  {bookingSteps.map((step, index) => (
+                    <div key={step.title} className="rounded-[1.5rem] border border-white/10 bg-white/6 p-5 backdrop-blur">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-primary">
+                        <span className="text-lg font-semibold">{index + 1}</span>
                       </div>
-                      <h3 className="mt-4 text-lg font-bold">{item.title}</h3>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-
-            <Card className="surface-panel-strong overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
-                    <Star className="h-5 w-5 fill-current" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">Statistiques</p>
-                    <p className="text-2xl font-extrabold text-foreground">Une vue d’ensemble plus solide</p>
-                  </div>
-                </div>
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {[
-                    { label: "Villes couvertes", value: `${agencyCities.length}+` },
-                    { label: "Véhicules listés", value: `${featuredCars?.total ?? 0}+` },
-                    { label: "Formats de recherche", value: "5 champs" },
-                    { label: "Support", value: "7j/7" },
-                  ].map((stat) => (
-                    <div key={stat.label} className="rounded-2xl border border-border/70 bg-white px-4 py-4">
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">{stat.label}</p>
-                      <p className="mt-1 text-2xl font-extrabold text-primary">{stat.value}</p>
+                      <h3 className="mt-4 text-lg font-semibold text-white">{step.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-white/70">{step.description}</p>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </section>
 
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <SectionHeader
-            eyebrow="Destinations"
-            title="Les villes et les aéroports les plus demandés."
-            description="Le parcours reste le même, mais les entrées de destination sont plus lisibles et plus proches des attentes d’un site de réservation premium."
-          />
-
-          <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <Card className="surface-panel">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-extrabold">Les destinations les plus prisées</h3>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {topCities.map((city) => (
-                    <DestinationLink key={city} label={city} city={city} />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="surface-panel">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-extrabold">Les aéroports les plus demandés</h3>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {airportDestinations.map((airport) => (
-                    <DestinationLink key={airport.label} label={airport.label} city={airport.city} />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-border/60 bg-[linear-gradient(180deg,hsl(214_90%_48%/_0.06),hsl(216_45%_98%))] py-16">
-        <div className="container mx-auto px-4">
-          <SectionHeader
-            eyebrow="Comment ça marche"
-            title="Le même logique, mais en plus simple à lire."
-            description="Le voyage utilisateur reste familier: chercher, comparer, choisir. Nous avons surtout renforcé l’orientation visuelle et les points d’appui."
-          />
-
-          <div className="relative mt-12 grid gap-6 md:grid-cols-3">
-            <div className="absolute left-[12%] right-[12%] top-10 hidden h-px bg-gradient-to-r from-primary/10 via-primary/25 to-primary/10 md:block" />
-            {bookingSteps.map((step, index) => (
-              <Card key={step.title} className="surface-panel relative">
-                <CardContent className="p-6 text-center">
-                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.4rem] border border-primary/15 bg-primary/10 text-primary shadow-sm">
-                    <span className="text-xl font-extrabold">{index + 1}</span>
+            <div className="space-y-6">
+              <Card className="marketing-soft-panel">
+                <CardContent className="p-6">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/72 px-4 py-1.5 text-xs font-semibold text-primary marketing-kicker">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Destinations
                   </div>
-                  <h3 className="mt-5 text-xl font-bold">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{step.description}</p>
+                  <h3 className="mt-5 text-2xl font-semibold text-foreground">Villes et aéroports les plus demandés</h3>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {topCities.map((city) => (
+                      <DestinationLink key={city} label={city} city={city} />
+                    ))}
+                    {airportDestinations.slice(0, 2).map((airport) => (
+                      <DestinationLink key={airport.label} label={airport.label} city={airport.city} />
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
-            ))}
+
+              <Card className="marketing-soft-panel">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                      <Star className="h-5 w-5 fill-current" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground marketing-kicker">Signaux de confiance</p>
+                      <p className="text-2xl font-semibold text-foreground">Une lecture plus rassurante</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    {[
+                      { label: "Parcours", value: "Mobile-first" },
+                      { label: "Actions", value: "Toujours visibles" },
+                      { label: "Contact", value: "Direct" },
+                      { label: "Catalogue", value: "Plus lisible" },
+                    ].map((stat) => (
+                      <div key={stat.label} className="rounded-2xl border border-black/8 bg-white/82 px-4 py-4">
+                        <p className="text-[11px] text-muted-foreground marketing-kicker">{stat.label}</p>
+                        <p className="mt-2 text-xl font-semibold text-foreground">{stat.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </section>
 
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <Card className="surface-panel">
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <Card className="marketing-soft-panel">
               <CardContent className="p-6">
                 <SectionHeader
                   eyebrow="Questions fréquentes"
-                  title="Tout ce qu’il faut savoir avant de réserver."
-                  description="Nous gardons la partie informative simple et directe, sans noyer la page dans des blocs répétitifs."
+                  title="Les réponses essentielles avant la réservation."
+                  description="Une FAQ courte, utile et structurée pour répondre aux dernières hésitations avant la conversion."
                   align="left"
                 />
 
                 <Accordion type="single" collapsible className="mt-6 space-y-3">
                   {faqItems.map((faq, i) => (
-                    <AccordionItem key={i} value={`item-${i}`} className="overflow-hidden rounded-2xl border border-border/70 bg-white px-4">
+                    <AccordionItem key={i} value={`item-${i}`} className="overflow-hidden rounded-2xl border border-black/8 bg-white/82 px-4">
                       <AccordionTrigger className="py-4 text-left text-base font-semibold hover:no-underline">
                         {faq.question}
                       </AccordionTrigger>
@@ -648,76 +583,47 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <Card className="surface-panel-strong overflow-hidden">
-              <div className="bg-[linear-gradient(180deg,hsl(214_90%_48%),hsl(223_45%_18%))] px-6 py-7 text-white">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/12 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/85">
-                  <CarFront className="h-3.5 w-3.5" />
-                  Pourquoi ce refont
+            <Card className="overflow-hidden marketing-dark-panel text-white">
+              <CardContent className="p-6 md:p-8">
+                <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs marketing-kicker marketing-pill">
+                  <CarFront className="h-3.5 w-3.5 text-primary" />
+                  Dernier écran avant action
                 </div>
-                <h3 className="mt-5 text-3xl font-extrabold leading-tight text-balance">Une expérience plus nette, plus riche et plus rassurante.</h3>
-                <p className="mt-4 text-sm leading-7 text-white/85">
-                  Le design suit la logique d’un grand site de réservation, mais avec une direction visuelle plus moderne:
-                  bleu profond, ivoire, touches émeraude et cartes beaucoup plus aérées.
+
+                <h3 className="mt-5 text-3xl font-semibold leading-tight text-balance">
+                  Une interface plus professionnelle, prête pour la vente et le déploiement.
+                </h3>
+
+                <p className="mt-4 text-sm leading-7 text-white/72 md:text-base">
+                  Le site garde sa logique métier, mais sa présentation est désormais plus proche d'une plateforme produit sérieuse: plus d'impact, plus de structure, plus de confiance.
                 </p>
-              </div>
 
-              <CardContent className="space-y-4 p-6">
-                {[
-                  "Les prix sont mis en avant avant les longs blocs de texte.",
-                  "Les cartes utilisent des surfaces contrastées et des coins plus généreux.",
-                  "Les filtres et le parcours de réservation restent faciles à comprendre sur mobile.",
-                ].map((item) => (
-                  <div key={item} className="flex items-start gap-3 rounded-2xl border border-border/70 bg-white px-4 py-3">
-                    <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <p className="text-sm leading-6 text-muted-foreground">{item}</p>
-                  </div>
-                ))}
+                <div className="mt-6 space-y-3">
+                  {[
+                    "Design plus cohérent entre accueil, catalogue et fiches véhicules.",
+                    "Typographie plus nette avec repères inspirés des interfaces modernes.",
+                    "Mise en avant claire des CTA importants pour accélérer la demande.",
+                  ].map((item) => (
+                    <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
+                      <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <p className="text-sm leading-6 text-white/74">{item}</p>
+                    </div>
+                  ))}
+                </div>
 
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/8 px-4 py-4 text-sm leading-6 text-emerald-900">
-                  <p className="font-semibold text-emerald-950">Astuce rapide</p>
-                  <p className="mt-1">
-                    Lancez une recherche avec dates pour voir directement les véhicules disponibles et le total estimé.
-                  </p>
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                  <Button asChild className="rounded-full px-6 marketing-accent-button">
+                    <Link href="/voitures">
+                      Explorer les offres
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="rounded-full border-white/14 bg-white/6 px-6 text-white hover:bg-white/10 hover:text-white">
+                    <Link href="/contact">Parler à l'équipe</Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-border/60 py-16">
-        <div className="container mx-auto px-4">
-          <div className="rounded-[2rem] bg-[linear-gradient(135deg,hsl(214_90%_48%),hsl(198_85%_42%))] px-6 py-8 text-white shadow-[0_30px_80px_-38px_hsl(var(--primary)/0.75)] md:px-10 md:py-10">
-            <div className="grid gap-8 lg:grid-cols-[1.1fr_auto] lg:items-center">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/12 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/88">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Réservez maintenant
-                </div>
-                <h2 className="mt-5 text-3xl font-extrabold leading-tight md:text-4xl">
-                  Prêt pour votre prochain trajet ?
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-white/85 md:text-base">
-                  Comparez les véhicules, choisissez votre période et gardez un parcours de réservation fluide jusqu’à la demande finale.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-                <Button asChild className="w-full rounded-full bg-white px-6 text-primary hover:bg-white/95">
-                  <Link href="/voitures">
-                    Voir les voitures
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="w-full rounded-full border-white/20 bg-transparent px-6 text-white hover:bg-white/10 hover:text-white"
-                >
-                  <Link href="/contact">Nous contacter</Link>
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       </section>

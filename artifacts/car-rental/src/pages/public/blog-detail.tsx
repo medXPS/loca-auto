@@ -1,5 +1,5 @@
 import { useGetBlogPost, getGetBlogPostQueryKey } from "@workspace/api-client-react";
-import { useRoute, Link } from "wouter";
+import { Link, useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,7 +33,7 @@ export default function BlogDetail() {
   if (!post) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold mb-4">Article introuvable</h1>
+        <h1 className="mb-4 text-2xl font-semibold">Article introuvable</h1>
         <Link href="/blog" className="text-primary hover:underline">
           Retour au blog
         </Link>
@@ -51,18 +51,16 @@ export default function BlogDetail() {
         Retour au blog
       </Link>
 
-      <header className="mb-10 overflow-hidden rounded-[2rem] border border-border/70 bg-[linear-gradient(135deg,hsl(214_90%_48%),hsl(223_45%_18%))] px-6 py-10 text-white shadow-[0_30px_80px_-40px_hsl(var(--primary)/0.8)] md:px-10">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/12 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/85">
-            <Sparkles className="h-3.5 w-3.5" />
+      <header className="mb-10 overflow-hidden rounded-[2rem] marketing-dark-panel marketing-grid px-6 py-10 text-white md:px-10">
+        <div className="relative z-10 max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] marketing-kicker marketing-pill">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
             Article
           </div>
-          <h1 className="mt-6 text-4xl font-extrabold leading-tight tracking-tight md:text-5xl text-balance">
-            {post.title}
-          </h1>
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-white/80">
+          <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight text-balance md:text-5xl">{post.title}</h1>
+          <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-white/76">
             <span className="inline-flex items-center gap-2">
-              <CalendarDays className="h-4 w-4" />
+              <CalendarDays className="h-4 w-4 text-primary" />
               Publié le {formatDateTime(post.createdAt).split(" ")[0]}
             </span>
           </div>
@@ -70,45 +68,45 @@ export default function BlogDetail() {
       </header>
 
       {post.coverImage && (
-        <div className="mb-12 overflow-hidden rounded-[2rem] border border-border/70 bg-muted shadow-[0_24px_60px_-34px_hsl(var(--primary)/0.24)]">
+        <div className="mb-12 overflow-hidden rounded-[2rem] border border-black/8 bg-muted shadow-[0_24px_60px_-34px_rgba(16,23,34,0.18)]">
           <img src={post.coverImage} alt={post.title} className="h-full w-full object-cover" />
         </div>
       )}
 
       <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-        <Card className="surface-panel">
+        <Card className="marketing-soft-panel">
           <CardContent className="p-6">
             <div
-              className="prose prose-lg max-w-none prose-headings:font-extrabold prose-a:text-primary"
+              className="prose prose-lg max-w-none prose-headings:font-semibold prose-a:text-primary"
               dangerouslySetInnerHTML={{ __html: post.content || "" }}
             />
           </CardContent>
         </Card>
 
         <Card className="surface-panel-strong h-fit overflow-hidden">
-          <div className="bg-[linear-gradient(180deg,hsl(214_90%_48%),hsl(223_45%_18%))] px-6 py-7 text-white">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/12 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/85">
-              <Sparkles className="h-3.5 w-3.5" />
+          <div className="marketing-dark-panel px-6 py-7 text-white">
+            <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] marketing-kicker marketing-pill">
+              <Sparkles className="h-3.5 w-3.5 text-primary" />
               Conseil rapide
             </div>
-            <h2 className="mt-5 text-2xl font-extrabold leading-tight text-balance">
+            <h2 className="mt-5 text-2xl font-semibold leading-tight text-balance">
               Prenez quelques minutes pour comparer avant de valider.
             </h2>
-            <p className="mt-4 text-sm leading-7 text-white/85">
-              Les meilleures décisions viennent souvent d’une lecture rapide de plusieurs offres, avec un vrai aperçu du prix et des conditions.
+            <p className="mt-4 text-sm leading-7 text-white/72">
+              Les meilleures décisions viennent souvent d'une lecture rapide de plusieurs offres, avec un vrai aperçu du prix et des conditions.
             </p>
           </div>
 
           <CardContent className="space-y-4 p-6">
-            <div className="rounded-2xl border border-border/70 bg-white p-4 text-sm leading-7 text-muted-foreground">
+            <div className="rounded-2xl border border-black/8 bg-white/88 p-4 text-sm leading-7 text-muted-foreground">
               <p className="font-semibold text-foreground">Pourquoi ce sujet est utile</p>
               <p className="mt-2">
-                Chaque article vous aide à mieux comprendre le parcours, à éviter les erreurs les plus courantes et à réserver plus sereinement.
+                Chaque article vous aide à mieux comprendre le parcours, à éviter les erreurs courantes et à réserver plus sereinement.
               </p>
             </div>
 
             <Link href="/voitures">
-              <Button className="w-full rounded-full bg-emerald-500 px-6 text-white hover:bg-emerald-600">
+              <Button className="w-full rounded-full marketing-accent-button">
                 Voir les voitures
                 <ArrowLeft className="h-4 w-4 rotate-180" />
               </Button>

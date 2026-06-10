@@ -9,26 +9,26 @@ export default function Blog() {
   const { data, isLoading } = useListBlogPosts({ limit: 12 });
 
   return (
-    <div className="container mx-auto px-4 py-16">
-      <section className="mb-12 overflow-hidden rounded-[2rem] border border-border/70 bg-[linear-gradient(135deg,hsl(214_90%_48%),hsl(223_45%_18%))] px-6 py-10 text-white shadow-[0_30px_80px_-40px_hsl(var(--primary)/0.8)] md:px-10">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/12 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/85">
-            <Sparkles className="h-3.5 w-3.5" />
+    <div className="container mx-auto px-4 py-10">
+      <section className="overflow-hidden rounded-[2rem] marketing-dark-panel marketing-grid px-6 py-10 text-white md:px-8">
+        <div className="relative z-10 max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] marketing-kicker marketing-pill">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
             Blog
           </div>
-          <h1 className="mt-6 text-4xl font-extrabold tracking-tight md:text-5xl text-balance">
+          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance md:text-5xl">
             Conseils de voyage, location et bonnes pratiques pour le Maroc.
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-8 text-white/85">
-            Articles courts et utiles pour préparer votre trajet, mieux choisir votre véhicule et gagner du temps lors de la réservation.
+          <p className="mt-4 max-w-2xl text-base leading-8 text-white/72">
+            Des articles courts et utiles pour préparer votre trajet, mieux choisir votre véhicule et gagner du temps au moment de la réservation.
           </p>
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-white shadow-sm">
+            <div key={i} className="overflow-hidden rounded-[1.5rem] border border-black/8 bg-white shadow-sm">
               <Skeleton className="h-[220px] w-full rounded-none" />
               <div className="space-y-4 p-6">
                 <Skeleton className="h-4 w-1/3" />
@@ -41,7 +41,7 @@ export default function Blog() {
         ) : data?.posts && data.posts.length > 0 ? (
           data.posts.map((post) => (
             <Link key={post.id} href={`/blog/${post.slug}`} className="group h-full">
-              <Card className="h-full overflow-hidden border-border/70 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_34px_70px_-34px_hsl(var(--primary)/0.28)]">
+              <Card className="h-full overflow-hidden border-black/8 bg-white/92 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_65px_-36px_rgba(16,23,34,0.22)]">
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
                   {post.coverImage ? (
                     <img
@@ -60,12 +60,12 @@ export default function Blog() {
                     <CalendarDays className="h-4 w-4 text-primary" />
                     {formatDateTime(post.createdAt).split(" ")[0]}
                   </div>
-                  <h2 className="mt-3 text-xl font-bold tracking-tight transition-colors group-hover:text-primary line-clamp-2">
+                  <h2 className="mt-3 text-xl font-semibold tracking-tight transition-colors group-hover:text-primary line-clamp-2">
                     {post.title}
                   </h2>
                   <p className="mt-3 line-clamp-3 text-muted-foreground">{post.excerpt}</p>
                   <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                    Lire l’article
+                    Lire l'article
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </div>
                 </CardContent>
@@ -73,8 +73,8 @@ export default function Blog() {
             </Link>
           ))
         ) : (
-          <div className="col-span-full rounded-[1.5rem] border border-dashed border-border/70 bg-white py-20 text-center text-muted-foreground">
-            Aucun article n’a été publié pour le moment.
+          <div className="col-span-full rounded-[1.5rem] border border-dashed border-black/10 bg-white/88 py-20 text-center text-muted-foreground">
+            Aucun article n'a été publié pour le moment.
           </div>
         )}
       </div>
