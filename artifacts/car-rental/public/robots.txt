@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://demo-locationauto.shonenx.shop/sitemap.xml

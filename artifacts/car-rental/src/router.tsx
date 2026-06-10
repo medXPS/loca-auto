@@ -110,6 +110,7 @@ export default function AppRouter() {
 
       {/* Public Routes */}
       <Route path="/" component={() => <PublicLayout><Home /></PublicLayout>} />
+      <Route path="/reservation" component={() => <PublicLayout><Cars /></PublicLayout>} />
       <Route path="/voitures" component={() => <PublicLayout><Cars /></PublicLayout>} />
       <Route path="/voitures/:id" component={() => <PublicLayout><CarDetail /></PublicLayout>} />
       <Route path="/blog" component={() => <PublicLayout><Blog /></PublicLayout>} />
