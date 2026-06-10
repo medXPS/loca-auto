@@ -175,6 +175,9 @@ importers:
 
   artifacts/api-server:
     dependencies:
+      '@swc/helpers':
+        specifier: 0.5.23
+        version: 0.5.23
       '@types/pdfkit':
         specifier: ^0.17.6
         version: 0.17.6
