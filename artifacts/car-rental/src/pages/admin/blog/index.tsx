@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { customFetch } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
 import { Plus, Pencil, FileText, Tags } from "lucide-react";
@@ -25,11 +26,7 @@ type BlogManageResponse = {
 };
 
 async function fetchManagePosts(): Promise<BlogManageResponse> {
-  const response = await fetch("/api/blog/manage?limit=100", { credentials: "include" });
-  if (!response.ok) {
-    throw new Error("Impossible de charger les articles");
-  }
-  return response.json();
+  return customFetch<BlogManageResponse>("/api/blog/manage?limit=100");
 }
 
 export default function AdminBlog() {

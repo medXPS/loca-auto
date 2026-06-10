@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useUpdateBlogPost } from "@workspace/api-client-react";
+import { customFetch, useUpdateBlogPost } from "@workspace/api-client-react";
 import { useLocation, useRoute, Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -39,11 +39,7 @@ type BlogManageResponse = {
 };
 
 async function fetchManagePosts(): Promise<BlogManageResponse> {
-  const response = await fetch("/api/blog/manage?limit=100", { credentials: "include" });
-  if (!response.ok) {
-    throw new Error("Impossible de charger les articles");
-  }
-  return response.json();
+  return customFetch<BlogManageResponse>("/api/blog/manage?limit=100");
 }
 
 function makeSeoDescription(title: string, excerpt: string, content: string) {
