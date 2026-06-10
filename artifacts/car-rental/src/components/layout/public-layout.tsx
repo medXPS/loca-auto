@@ -2,7 +2,7 @@ import { useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CarFront, House, LogOut, Menu, MessageCircle, Phone, X } from "lucide-react";
+import { ArrowRight, CarFront, House, LogOut, Menu, MessageCircle, Newspaper, Phone, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -28,6 +28,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   const navLinks: NavItem[] = [
     { href: "/", label: "Accueil", icon: House },
     { href: "/voitures", label: "Véhicules", icon: CarFront },
+    { href: "/blog", label: "Blog", icon: Newspaper },
     { href: "/contact", label: "Contact", icon: Phone },
   ];
 
@@ -43,19 +44,19 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="public-site min-h-screen overflow-x-hidden bg-transparent text-foreground">
-      <header className="sticky top-0 z-50 border-b border-border/70 bg-white/94 backdrop-blur-xl">
-        <div className="container mx-auto flex h-16 items-center justify-between gap-4 px-4">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-white/92 backdrop-blur-xl">
+        <div className="container mx-auto flex h-14 items-center justify-between gap-4 px-4">
           <Link href="/" className="group flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-[0_18px_35px_-24px_hsl(var(--primary)/0.55)] transition-transform group-hover:-translate-y-0.5">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-[0_16px_32px_-22px_hsl(var(--primary)/0.55)] transition-transform group-hover:-translate-y-0.5">
               <CarFront className="h-5 w-5" />
             </span>
-            <span className="leading-tight">
-              <span className="block text-[1.02rem] font-semibold tracking-tight md:text-[1.1rem]">Location Auto Maroc</span>
-              <span className="block text-[0.68rem] uppercase tracking-[0.24em] text-muted-foreground">Location simple et rapide</span>
+            <span className="hidden leading-tight sm:block">
+              <span className="block text-[0.98rem] font-semibold tracking-tight">Location Auto Maroc</span>
+              <span className="block text-[0.67rem] uppercase tracking-[0.24em] text-muted-foreground">Location simple et rapide</span>
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-2 lg:flex">
+          <nav className="hidden items-center gap-1 lg:flex">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const active = isActive(link.href);
@@ -65,10 +66,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-all",
-                    active
-                      ? "border-primary/15 bg-primary/10 text-primary"
-                      : "border-transparent text-foreground/78 hover:border-border/70 hover:bg-muted/40 hover:text-foreground",
+                    "inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
+                    active ? "bg-primary/10 text-primary" : "text-foreground/72 hover:bg-muted/60 hover:text-foreground",
                   )}
                 >
                   <Icon className="h-4 w-4" />
@@ -79,28 +78,33 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
+            <Button asChild variant="outline" className="rounded-full border-border/70 bg-white px-4">
+              <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="h-4 w-4" />
+                WhatsApp
+              </a>
+            </Button>
+
             {isAuthenticated ? (
               <>
-                <Button asChild variant="outline" className="rounded-full border-border/70 bg-white px-5">
+                <Button asChild variant="outline" className="rounded-full border-border/70 bg-white px-4">
                   <Link href={dashboardHref}>Mon espace</Link>
                 </Button>
-                <Button type="button" className="rounded-full bg-primary px-5 text-primary-foreground" onClick={handleLogout}>
+                <Button type="button" variant="ghost" className="rounded-full px-4 text-foreground/72 hover:text-foreground" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
                   Déconnexion
                 </Button>
               </>
             ) : (
-              <>
-                <Button asChild variant="outline" className="rounded-full border-border/70 bg-white px-5">
-                  <Link href="/connexion">Connexion</Link>
-                </Button>
-              </>
+              <Button asChild className="rounded-full bg-primary px-4 text-primary-foreground">
+                <Link href="/connexion">Connexion</Link>
+              </Button>
             )}
           </div>
 
           <button
             type="button"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-white text-foreground transition-colors hover:bg-muted/40 lg:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-white text-foreground transition-colors hover:bg-muted/40 lg:hidden"
             onClick={() => setIsMenuOpen((value) => !value)}
             aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
           >
@@ -109,9 +113,9 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         </div>
 
         {isMenuOpen && (
-          <div className="border-t border-border/70 bg-white lg:hidden">
+          <div className="border-t border-border/60 bg-white lg:hidden">
             <div className="container mx-auto px-4 py-4">
-              <div className="space-y-2">
+              <div className="grid gap-2">
                 {navLinks.map((link) => {
                   const Icon = link.icon;
                   const active = isActive(link.href);
@@ -122,7 +126,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                       href={link.href}
                       onClick={() => setIsMenuOpen(false)}
                       className={cn(
-                        "flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium",
+                        "flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-medium transition-colors",
                         active ? "border-primary/15 bg-primary/10 text-primary" : "border-border/70 bg-white text-foreground",
                       )}
                     >
@@ -136,7 +140,14 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 })}
               </div>
 
-              <div className="mt-4 grid gap-2">
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <Button asChild variant="outline" className="w-full rounded-2xl border-border/70 bg-white">
+                  <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-4 w-4" />
+                    WhatsApp
+                  </a>
+                </Button>
+
                 {isAuthenticated ? (
                   <Button
                     type="button"
@@ -148,7 +159,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     Déconnexion
                   </Button>
                 ) : (
-                  <Button asChild variant="outline" className="w-full rounded-2xl border-border/70 bg-white">
+                  <Button asChild className="w-full rounded-2xl bg-primary text-primary-foreground">
                     <Link href="/connexion" onClick={() => setIsMenuOpen(false)}>
                       Connexion
                     </Link>

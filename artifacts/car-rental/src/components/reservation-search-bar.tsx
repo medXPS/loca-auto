@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, MapPin, Search, X } from "lucide-react";
+import { CalendarDays, MapPin, Search } from "lucide-react";
 import { formatDisplayDate } from "@workspace/api-client-react/availability";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -15,9 +15,20 @@ type ReservationSearchBarProps = {
   onCityChange: (value: string) => void;
   onDatesChange: (range: { startDate: string; returnDate: string }) => void;
   onSubmit: () => void;
-  onReset: () => void;
   className?: string;
 };
+
+function formatRangeLabel(startDate: string, returnDate: string) {
+  if (startDate && returnDate) {
+    return `${formatDisplayDate(startDate)} - ${formatDisplayDate(returnDate)}`;
+  }
+
+  if (startDate) {
+    return `Départ ${formatDisplayDate(startDate)}`;
+  }
+
+  return "Choisir vos dates";
+}
 
 export function ReservationSearchBar({
   cities,
@@ -27,14 +38,10 @@ export function ReservationSearchBar({
   onCityChange,
   onDatesChange,
   onSubmit,
-  onReset,
   className,
 }: ReservationSearchBarProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const hasSelection = Boolean(city || startDate || returnDate);
-
-  const selectedDateLabel = startDate ? formatDisplayDate(startDate) : "Choisir vos dates";
-  const rangeLabel = startDate && returnDate ? `${formatDisplayDate(startDate)} - ${formatDisplayDate(returnDate)}` : "Arrivée - Départ";
+  const selectedDateLabel = formatRangeLabel(startDate, returnDate);
 
   const handleCityChange = (value: string) => {
     onCityChange(value === "all" ? "" : value);
@@ -48,14 +55,14 @@ export function ReservationSearchBar({
       }}
       className={cn("w-full", className)}
     >
-      <div className="overflow-hidden rounded-[2rem] border border-border/70 bg-white shadow-[0_28px_70px_-40px_rgba(16,23,34,0.22)]">
+      <div className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-white shadow-[0_20px_55px_-34px_rgba(15,23,42,0.18)]">
         <div className="grid divide-y divide-border/70 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)_auto] lg:divide-x lg:divide-y-0">
           <div className="flex min-w-0 items-center gap-3 px-4 py-4 sm:px-5">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <MapPin className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Lieu</p>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Ville</p>
               <Select value={city || "all"} onValueChange={handleCityChange}>
                 <SelectTrigger className="h-auto border-0 bg-transparent px-0 py-0 text-left text-base font-semibold shadow-none focus:ring-0 [&>svg]:hidden">
                   <SelectValue placeholder="Où souhaitez-vous louer ?" />
@@ -82,9 +89,22 @@ export function ReservationSearchBar({
                   <CalendarDays className="h-5 w-5" />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Créneau de date</p>
-                  <p className="truncate text-base font-semibold text-foreground">{selectedDateLabel}</p>
-                  <p className="text-sm text-muted-foreground">{rangeLabel}</p>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Dates</p>
+                  <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Date début</p>
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {startDate ? formatDisplayDate(startDate) : "Choisir"}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Date fin</p>
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {returnDate ? formatDisplayDate(returnDate) : "Choisir"}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">{selectedDateLabel}</p>
                 </div>
               </button>
             </PopoverTrigger>
@@ -98,27 +118,18 @@ export function ReservationSearchBar({
                 startDate={startDate}
                 returnDate={returnDate}
                 onChange={onDatesChange}
+                minimal
               />
             </PopoverContent>
           </Popover>
 
-          <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-5 lg:justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 rounded-full border-border/70 bg-white px-4"
-              onClick={onReset}
-              disabled={!hasSelection}
-            >
-              <X className="h-4 w-4" />
-              <span className="hidden sm:inline">Effacer</span>
-            </Button>
+          <div className="flex items-center px-4 py-4 lg:justify-end">
             <Button
               type="submit"
-              className="h-12 w-12 rounded-full bg-primary p-0 text-primary-foreground shadow-[0_18px_35px_-22px_hsl(var(--primary)/0.7)]"
-              aria-label="Rechercher"
+              className="h-12 w-full rounded-full bg-primary px-6 text-primary-foreground shadow-[0_18px_35px_-22px_hsl(var(--primary)/0.55)] lg:w-auto"
             >
-              <Search className="h-5 w-5" />
+              <Search className="h-4 w-4" />
+              Rechercher
             </Button>
           </div>
         </div>

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, CarFront, Filter, Search, SlidersHorizontal } from "lucide-react";
+import { CarFront, Filter, Search, SlidersHorizontal } from "lucide-react";
 
 function getSearchParams() {
   return new URLSearchParams(window.location.search);
@@ -210,27 +210,24 @@ export default function Cars() {
         }}
       />
 
-      <div className="rounded-[1.8rem] marketing-dark-panel px-6 py-8 text-white md:px-8">
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/86">
-          <CarFront className="h-3.5 w-3.5" />
-          Catalogue
-        </div>
-        <h1 className="mt-5 text-3xl font-semibold tracking-tight md:text-5xl">{pageTitle}</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-white/82 md:text-base">{pageDescription}</p>
+      <div className="rounded-[2rem] border border-border/70 bg-white px-6 py-8 shadow-[0_16px_35px_-28px_rgba(16,23,34,0.14)] md:px-8">
+        <p className="text-sm font-medium uppercase tracking-[0.22em] text-primary">Catalogue</p>
+        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{pageTitle}</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">{pageDescription}</p>
 
-        <div className="mt-5 flex flex-wrap gap-2 text-sm">
-          <span className="rounded-full border border-white/16 bg-white/10 px-4 py-2 text-white/88">
+        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+          <span className="rounded-full border border-border/70 bg-muted/20 px-4 py-2">
             {data?.total || 0} véhicules
           </span>
           {isReservationRoute && (
-            <span className="rounded-full border border-white/16 bg-white/10 px-4 py-2 text-white/88">
+            <span className="rounded-full border border-border/70 bg-muted/20 px-4 py-2">
               Paiement à l’agence
             </span>
           )}
         </div>
       </div>
 
-      <div className="-mt-8 mb-8 flex justify-center px-2 sm:px-4">
+      <div className="mt-8 flex justify-center px-2 sm:px-4">
         <ReservationSearchBar
           cities={cities}
           city={city}
@@ -242,7 +239,6 @@ export default function Cars() {
             setReturnDate(nextReturnDate);
           }}
           onSubmit={handleSearch}
-          onReset={handleReset}
           className="w-full max-w-5xl"
         />
       </div>

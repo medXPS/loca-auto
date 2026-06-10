@@ -1,22 +1,14 @@
-import { Link, useLocation } from "wouter";
 import { useMemo, useState, type ComponentType } from "react";
+import { Link, useLocation } from "wouter";
 import { useListCars } from "@workspace/api-client-react";
 import { CarCard } from "@/components/car-card";
 import { ReservationSearchBar } from "@/components/reservation-search-bar";
 import { Seo } from "@/components/seo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  ArrowRight,
-  BadgeCheck,
-  Clock3,
-  ShieldCheck,
-  Sparkles,
-  Star,
-  Users,
-} from "lucide-react";
+import { ArrowRight, BadgeCheck, CarFront, MessageCircle, ShieldCheck, Sparkles, Star } from "lucide-react";
 
-function SectionHeader({
+function SectionHeading({
   eyebrow,
   title,
   description,
@@ -26,18 +18,15 @@ function SectionHeader({
   description: string;
 }) {
   return (
-    <div className="mx-auto max-w-3xl text-center">
-      <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-        <BadgeCheck className="h-3.5 w-3.5" />
-        {eyebrow}
-      </div>
-      <h2 className="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{title}</h2>
+    <div className="mx-auto max-w-2xl text-center">
+      <p className="text-sm font-medium uppercase tracking-[0.22em] text-primary">{eyebrow}</p>
+      <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{title}</h2>
       <p className="mt-3 text-base leading-7 text-muted-foreground">{description}</p>
     </div>
   );
 }
 
-function IconCard({
+function TrustCard({
   icon: Icon,
   title,
   description,
@@ -47,9 +36,9 @@ function IconCard({
   description: string;
 }) {
   return (
-    <Card className="rounded-[1.5rem] border border-border/70 bg-white shadow-[0_16px_40px_-28px_rgba(16,23,34,0.16)]">
+    <Card className="rounded-[1.5rem] border border-border/70 bg-white shadow-[0_16px_40px_-28px_rgba(16,23,34,0.12)]">
       <CardContent className="p-5">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Icon className="h-5 w-5" />
         </div>
         <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
@@ -59,59 +48,26 @@ function IconCard({
   );
 }
 
-const benefits = [
+const trustItems = [
   {
     icon: ShieldCheck,
     title: "Assurance incluse",
-    description: "Des offres rassurantes avec les informations utiles affichées clairement.",
-  },
-  {
-    icon: Clock3,
-    title: "Assistance 24/7",
-    description: "Une équipe réactive par WhatsApp et téléphone pour répondre rapidement.",
-  },
-  {
-    icon: Sparkles,
-    title: "Réservation rapide",
-    description: "Un parcours court pour choisir et réserver sans perdre de temps.",
+    description: "Des véhicules présentés avec une information claire et rassurante dès la première vue.",
   },
   {
     icon: BadgeCheck,
     title: "Prix transparents",
-    description: "Le tarif apparaît dès les premières secondes, sans surcharge visuelle.",
-  },
-];
-
-const steps = [
-  {
-    title: "Choisissez votre véhicule",
-    description: "Parcourez le catalogue et ouvrez la fiche qui correspond à votre besoin.",
+    description: "Le tarif journalier reste visible immédiatement, sans surcharge visuelle ni surprise.",
   },
   {
-    title: "Confirmez votre réservation",
-    description: "Validez vos dates et envoyez votre demande en quelques clics.",
+    icon: MessageCircle,
+    title: "Support WhatsApp",
+    description: "Un contact direct pour poser une question, confirmer une disponibilité ou finaliser une demande.",
   },
   {
-    title: "Récupérez votre voiture",
-    description: "L’agence vous contacte et prépare la remise du véhicule.",
-  },
-];
-
-const testimonials = [
-  {
-    name: "Youssef A.",
-    role: "Casablanca",
-    quote: "J’ai trouvé une voiture en moins de deux minutes et le prix était clair tout de suite.",
-  },
-  {
-    name: "Sara M.",
-    role: "Marrakech",
-    quote: "Le site est simple sur mobile et le bouton WhatsApp m’a permis d’être rassurée rapidement.",
-  },
-  {
-    name: "Hassan R.",
-    role: "Rabat",
-    quote: "Le parcours est direct, sans sections inutiles. On voit les voitures et on réserve.",
+    icon: Sparkles,
+    title: "Réservation rapide",
+    description: "Un parcours court, pensé pour aller droit au véhicule et au formulaire de réservation.",
   },
 ];
 
@@ -156,11 +112,26 @@ export default function Home() {
     setLocation(`/reservation${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
-  const handleResetSearch = () => {
-    setCity("");
-    setStartDate("");
-    setReturnDate("");
-  };
+  const heroStats = [
+    {
+      label: "Note client",
+      value: "4,8/5",
+      description: "Avis vérifiés et expérience fluide",
+      icon: Star,
+    },
+    {
+      label: "Confiance",
+      value: "Agence vérifiée",
+      description: "Processus clair et encadré",
+      icon: ShieldCheck,
+    },
+    {
+      label: "Véhicules",
+      value: `${featuredCars?.total ?? 0}+`,
+      description: "Offres prêtes à réserver",
+      icon: CarFront,
+    },
+  ];
 
   return (
     <div className="flex flex-col">
@@ -194,200 +165,47 @@ export default function Home() {
         ]}
       />
 
-      <section className="container mx-auto px-4 pt-8 lg:pt-10">
-        <div className="grid gap-6 overflow-hidden rounded-[2.2rem] bg-white shadow-[0_28px_70px_-40px_rgba(16,23,34,0.22)] lg:grid-cols-[1.02fr_0.98fr]">
-          <div className="flex flex-col justify-between gap-8 marketing-dark-panel p-6 text-white md:p-8 lg:p-10">
-            <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/90">
-                <Sparkles className="h-3.5 w-3.5" />
-                Location au Maroc
-              </div>
-              <h1 className="mt-6 text-4xl font-semibold leading-tight text-balance md:text-5xl lg:text-6xl">
-                Location de voitures au Maroc
+      <section className="container mx-auto px-4 pt-6 lg:pt-8">
+        <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-slate-950 text-white shadow-[0_28px_70px_-40px_rgba(16,23,34,0.3)]">
+          <img
+            src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1800&q=80"
+            alt="Voiture premium sur route"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(15,23,42,0.9),rgba(15,23,42,0.68)_55%,rgba(15,23,42,0.4))]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(239,68,68,0.24),transparent_28%)]" />
+
+          <div className="relative z-10 px-6 py-10 md:px-8 lg:px-12 lg:py-14">
+            <div className="max-w-3xl">
+              <p className="text-sm font-medium uppercase tracking-[0.24em] text-white/72">Location Auto Maroc</p>
+              <h1 className="mt-4 text-4xl font-semibold leading-tight text-balance md:text-5xl lg:text-6xl">
+                Réservez votre voiture au Maroc avec une expérience simple et premium.
               </h1>
-              <p className="mt-4 max-w-lg text-base leading-8 text-white/84 md:text-lg">
-                Trouvez votre véhicule en quelques clics.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Button asChild className="rounded-full bg-white px-6 text-primary hover:bg-white/95">
-                  <Link href="/voitures">
-                    Voir les véhicules
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="rounded-full border-white/16 bg-transparent px-6 text-white hover:bg-white/10 hover:text-white">
-                  <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
-                    WhatsApp
-                  </a>
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2 text-sm">
-              {["Prix transparents", "Réservation rapide", "WhatsApp direct"].map((item) => (
-                <span key={item} className="rounded-full border border-white/14 bg-white/10 px-4 py-2 text-white/86">
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="relative min-h-[420px]">
-            <img
-              src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1600&q=80"
-              alt="Voiture premium"
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,31,0.08),rgba(7,15,31,0.38))]" />
-            <div className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary shadow-sm">
-              Premium car
-            </div>
-            <div className="absolute bottom-4 left-4 right-4">
-              <div className="rounded-[1.6rem] border border-white/16 bg-white/92 p-4 shadow-[0_20px_40px_-24px_rgba(16,23,34,0.3)]">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Réserver vite</p>
-                    <p className="mt-1 text-xl font-semibold text-foreground">Les voitures et les prix sont visibles dès le premier écran.</p>
-                  </div>
-                  <div className="hidden rounded-full bg-primary/10 p-3 text-primary md:block">
-                    <Sparkles className="h-6 w-6" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="-mt-10 flex justify-center px-2 sm:px-4">
-          <ReservationSearchBar
-            cities={cities}
-            city={city}
-            startDate={startDate}
-            returnDate={returnDate}
-            onCityChange={setCity}
-            onDatesChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
-              setStartDate(nextStartDate);
-              setReturnDate(nextReturnDate);
-            }}
-            onSubmit={handleSearch}
-            onReset={handleResetSearch}
-            className="w-full max-w-5xl"
-          />
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 py-16">
-        <SectionHeader
-          eyebrow="Véhicules populaires"
-          title="Les offres les plus demandées"
-          description="Six véhicules maximum, présentés avec une hiérarchie simple pour décider rapidement."
-        />
-
-        <div className="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {isLoading
-            ? Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="h-[420px] rounded-[1.5rem] border border-border/70 bg-white shadow-sm">
-                  <div className="h-56 animate-pulse rounded-t-[1.5rem] bg-muted/60" />
-                </div>
-              ))
-            : featuredCars?.cars.slice(0, 6).map((car) => <CarCard key={car.id} car={car} />)}
-        </div>
-
-        <div className="mt-10 text-center">
-          <Button asChild className="rounded-full bg-primary px-6 text-primary-foreground">
-            <Link href="/voitures">
-              Voir tous les véhicules
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      </section>
-
-      <section className="border-y border-border/70 bg-muted/25 py-16">
-        <div className="container mx-auto px-4">
-          <SectionHeader
-            eyebrow="Pourquoi nous choisir"
-            title="Quatre raisons simples de réserver ici"
-            description="Aucune surcharge. Seulement les points qui rassurent vraiment."
-          />
-
-          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {benefits.map((benefit) => (
-              <IconCard key={benefit.title} {...benefit} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 py-16">
-        <SectionHeader
-          eyebrow="Comment ça marche"
-          title="Trois étapes"
-          description="Le parcours reste ultra court, du choix du véhicule à la remise des clés."
-        />
-
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {steps.map((step, index) => (
-            <Card key={step.title} className="rounded-[1.5rem] border border-border/70 bg-white shadow-[0_16px_40px_-28px_rgba(16,23,34,0.16)]">
-              <CardContent className="p-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-                  <span className="text-lg font-semibold">{index + 1}</span>
-                </div>
-                <h3 className="mt-4 text-lg font-semibold text-foreground">{step.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{step.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 pb-16">
-        <SectionHeader
-          eyebrow="Avis clients"
-          title="Ils ont réservé en toute simplicité"
-          description="Seulement trois témoignages, courts et crédibles."
-        />
-
-        <div className="mt-10 grid gap-4 md:grid-cols-3">
-          {testimonials.map((item) => (
-            <Card key={item.name} className="rounded-[1.5rem] border border-border/70 bg-white shadow-[0_16px_40px_-28px_rgba(16,23,34,0.16)]">
-              <CardContent className="p-6">
-                <div className="flex gap-1 text-primary">
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <Star key={index} className="h-4 w-4 fill-current" />
-                  ))}
-                </div>
-                <p className="mt-4 text-sm leading-7 text-muted-foreground">"{item.quote}"</p>
-                <div className="mt-5">
-                  <p className="font-semibold text-foreground">{item.name}</p>
-                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{item.role}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 pb-16">
-        <div className="overflow-hidden rounded-[2rem] marketing-dark-panel px-6 py-10 text-white md:px-8">
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_auto] lg:items-center">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/86">
-                <Users className="h-3.5 w-3.5" />
-                Besoin d'une voiture aujourd'hui ?
-              </div>
-              <h2 className="mt-5 text-3xl font-semibold leading-tight text-balance md:text-4xl">
-                Réservez maintenant et recevez une réponse rapide.
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-white/82 md:text-base">
-                Comparez, cliquez et contactez l'agence si besoin. Le site reste volontairement court pour aller droit à la réservation.
+              <p className="mt-4 max-w-2xl text-base leading-8 text-white/82 md:text-lg">
+                Comparez les véhicules disponibles, choisissez vos dates et lancez votre demande en quelques secondes.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+            <div className="mt-8 max-w-5xl">
+              <ReservationSearchBar
+                cities={cities}
+                city={city}
+                startDate={startDate}
+                returnDate={returnDate}
+                onCityChange={setCity}
+                onDatesChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+                  setStartDate(nextStartDate);
+                  setReturnDate(nextReturnDate);
+                }}
+                onSubmit={handleSearch}
+                className="w-full"
+              />
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
               <Button asChild className="rounded-full bg-white px-6 text-primary hover:bg-white/95">
-                <Link href="/reservation">
-                  Réserver maintenant
+                <Link href="/voitures">
+                  Voir les véhicules
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -397,7 +215,61 @@ export default function Home() {
                 </a>
               </Button>
             </div>
+
+            <div className="mt-10 grid gap-3 sm:grid-cols-3">
+              {heroStats.map((item) => {
+                const Icon = item.icon;
+
+                return (
+                  <div key={item.label} className="rounded-[1.35rem] border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs uppercase tracking-[0.18em] text-white/70">{item.label}</p>
+                      <Icon className="h-4 w-4 text-white/78" />
+                    </div>
+                    <p className="mt-2 text-2xl font-semibold">{item.value}</p>
+                    <p className="mt-1 text-sm leading-6 text-white/72">{item.description}</p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 py-14 lg:py-16">
+        <SectionHeading
+          eyebrow="Confiance"
+          title="Une réservation claire et rassurante"
+          description="Quatre repères simples pour garder une expérience premium, lisible et orientée conversion."
+        />
+
+        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {trustItems.map((item) => (
+            <TrustCard key={item.title} {...item} />
+          ))}
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-16 lg:pb-20">
+        <SectionHeading
+          eyebrow="Véhicules populaires"
+          title="Les offres les plus demandées"
+          description="Une sélection lisible avec le prix journalier, les caractéristiques clés et un accès direct à la réservation."
+        />
+
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {isLoading
+            ? Array.from({ length: 6 }).map((_, index) => (
+                <div key={index} className="overflow-hidden rounded-[1.6rem] border border-border/70 bg-white shadow-[0_16px_35px_-28px_rgba(16,23,34,0.14)]">
+                  <div className="h-60 animate-pulse bg-muted/60" />
+                  <div className="space-y-3 p-5">
+                    <div className="h-5 w-1/2 animate-pulse rounded-full bg-muted/60" />
+                    <div className="h-4 w-2/3 animate-pulse rounded-full bg-muted/60" />
+                    <div className="h-20 animate-pulse rounded-2xl bg-muted/60" />
+                  </div>
+                </div>
+              ))
+            : featuredCars?.cars?.slice(0, 6).map((car) => <CarCard key={car.id} car={car} />)}
         </div>
       </section>
     </div>
