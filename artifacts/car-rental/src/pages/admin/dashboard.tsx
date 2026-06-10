@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { formatPrice, STATUS_TRANSLATIONS } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
+import { ReceiptDownloadButton } from "@/components/receipt-download-button";
 import { Car, Banknote, CalendarClock, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -243,7 +244,8 @@ export default function AdminDashboard() {
                   <th className="px-4 py-3 font-medium">Véhicule</th>
                   <th className="px-4 py-3 font-medium">Dates</th>
                   <th className="px-4 py-3 font-medium">Total</th>
-                  <th className="px-4 py-3 font-medium rounded-tr-lg">Statut</th>
+                  <th className="px-4 py-3 font-medium">Statut</th>
+                  <th className="px-4 py-3 font-medium rounded-tr-lg">Reçu</th>
                 </tr>
               </thead>
               <tbody>
@@ -278,11 +280,25 @@ export default function AdminDashboard() {
                       <td className="px-4 py-3">
                         <StatusBadge status={req.status} />
                       </td>
+                      <td className="px-4 py-3">
+                        {["RESERVED", "CAR_DELIVERED", "RENTED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(req.status) ? (
+                          <ReceiptDownloadButton
+                            requestId={req.id}
+                            filename={`receipt-${String(req.id).padStart(6, "0")}.pdf`}
+                            size="sm"
+                            className="w-full justify-center"
+                          >
+                            PDF
+                          </ReceiptDownloadButton>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )}
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="p-4 text-center text-muted-foreground">
+                    <td colSpan={6} className="p-4 text-center text-muted-foreground">
                       Aucune demande récente
                     </td>
                   </tr>

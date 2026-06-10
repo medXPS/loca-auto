@@ -1,19 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { useUpdateRentalRequestStatus, useConfirmCall, useConfirmPayment } from "@workspace/api-client-react";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import { Phone, Check, CreditCard, Ban, Key, Undo2, Flag } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useUpdateRentalRequestStatus, useConfirmCall, useConfirmPayment } from "@workspace/api-client-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { downloadReceiptPdf } from "@/lib/receipt";
 
 interface RequestActionsProps {
   requestId: number;
@@ -90,17 +84,23 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
         } as any,
       },
       {
-        onSuccess: (response: any) => {
+        onSuccess: async () => {
           toast({ title: "Paiement confirmé avec succès" });
-          if (response?.receiptUrl) {
-            window.open(response.receiptUrl, "_blank", "noopener,noreferrer");
-          }
           setIsDialogOpen(false);
           setAmount("");
           setPaymentMethod("CASH_AT_AGENCY");
           setFinalPrice("");
           setNotes("");
           onSuccess();
+
+          try {
+            await downloadReceiptPdf(requestId, `receipt-${String(requestId).padStart(6, "0")}.pdf`);
+          } catch (error: any) {
+            toast({
+              title: "Reçu disponible",
+              description: error?.message || "Le paiement est validé, mais le téléchargement automatique a échoué.",
+            });
+          }
         },
         onError: (error: any) => {
           toast({ title: "Erreur", description: error.message, variant: "destructive" });
@@ -110,7 +110,15 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
   };
 
   const executeAction = () => {
-    if (currentAction === "REJECTED" || currentAction === "ABANDONED" || currentAction === "CAR_DELIVERED" || currentAction === "CAR_RETURNED" || currentAction === "RETURNED" || currentAction === "COMPLETED" || currentAction === "CALL_ATTEMPTED") {
+    if (
+      currentAction === "REJECTED" ||
+      currentAction === "ABANDONED" ||
+      currentAction === "CAR_DELIVERED" ||
+      currentAction === "CAR_RETURNED" ||
+      currentAction === "RETURNED" ||
+      currentAction === "COMPLETED" ||
+      currentAction === "CALL_ATTEMPTED"
+    ) {
       handleStatusUpdate(currentAction);
     } else if (currentAction === "CALL_CONFIRMED") {
       handleConfirmCall();

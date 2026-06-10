@@ -38,10 +38,16 @@ function upsertLink(rel: string, href: string) {
 export function Seo({ title, description, canonical, image = "/opengraph.jpg", type = "website", jsonLd }: SeoProps) {
   useEffect(() => {
     const fullTitle = title.includes("Location Auto Maroc") ? title : `${title} | Location Auto Maroc`;
+    const resolvedCanonical =
+      typeof window === "undefined"
+        ? canonical
+        : canonical
+          ? new URL(canonical, window.location.origin).toString()
+          : window.location.href;
     const resolvedImage =
       image.startsWith("http") || typeof window === "undefined"
         ? image
-        : new URL(image, canonical || window.location.href).toString();
+        : new URL(image, resolvedCanonical ?? window.location.href).toString();
 
     document.title = fullTitle;
 
@@ -50,14 +56,14 @@ export function Seo({ title, description, canonical, image = "/opengraph.jpg", t
     upsertMeta('meta[property="og:description"]', "property", "og:description", description);
     upsertMeta('meta[property="og:type"]', "property", "og:type", type);
     upsertMeta('meta[property="og:image"]', "property", "og:image", resolvedImage);
-    upsertMeta('meta[property="og:url"]', "property", "og:url", canonical || window.location.href);
+    upsertMeta('meta[property="og:url"]', "property", "og:url", resolvedCanonical || window.location.href);
     upsertMeta('meta[name="twitter:title"]', "name", "twitter:title", fullTitle);
     upsertMeta('meta[name="twitter:description"]', "name", "twitter:description", description);
     upsertMeta('meta[name="twitter:image"]', "name", "twitter:image", resolvedImage);
     upsertMeta('meta[name="twitter:card"]', "name", "twitter:card", "summary_large_image");
 
-    if (canonical) {
-      upsertLink("canonical", canonical);
+    if (resolvedCanonical) {
+      upsertLink("canonical", resolvedCanonical);
     }
 
     const scriptId = "seo-jsonld";

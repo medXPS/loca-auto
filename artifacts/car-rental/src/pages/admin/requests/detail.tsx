@@ -10,9 +10,9 @@ import { formatPrice, formatDateTime } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { RequestActions } from "@/components/request-actions";
+import { ReceiptDownloadButton } from "@/components/receipt-download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { User, Phone, Mail, Calendar, FileText, History, FileDown, CreditCard } from "lucide-react";
+import { User, Phone, Mail, Calendar, FileText, History, CreditCard } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function AdminRequestDetail() {
@@ -39,7 +39,6 @@ export default function AdminRequestDetail() {
   const showCountdown =
     request.paymentDeadline &&
     (request.status === "CALL_CONFIRMED" || request.status === "WAITING_AGENCY_PAYMENT");
-  const receiptUrl = `/api/rental-requests/${request.id}/receipt`;
   const canPrintReceipt = ["RESERVED", "CAR_DELIVERED", "RENTED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(request.status);
 
   const timelineEntries = (auditData?.logs || [])
@@ -69,12 +68,13 @@ export default function AdminRequestDetail() {
               onSuccess={handleSuccess}
             />
             {canPrintReceipt && (
-              <Button asChild variant="outline" className="gap-2">
-                <a href={receiptUrl} target="_blank" rel="noopener noreferrer">
-                  <FileDown className="w-4 h-4" />
-                  Imprimer le reçu
-                </a>
-              </Button>
+              <ReceiptDownloadButton
+                requestId={request.id}
+                filename={`receipt-${String(request.id).padStart(6, "0")}.pdf`}
+                className="w-full justify-center"
+              >
+                Imprimer le reçu
+              </ReceiptDownloadButton>
             )}
           </div>
         </div>
