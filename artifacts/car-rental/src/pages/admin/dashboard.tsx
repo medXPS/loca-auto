@@ -24,7 +24,7 @@ import {
   Legend,
 } from "recharts";
 
-const PIE_COLORS = ["#0284C7", "#7DD3FC", "#F59E0B", "#0C4A6E", "#38BDF8", "#BAE6FD", "#0369A1"];
+const PIE_COLORS = ["#EF4444", "#DC2626", "#B91C1C", "#1F2937", "#111827", "#374151", "#000000"];
 
 export default function AdminDashboard() {
   const { data: stats, isLoading: isStatsLoading } = useGetDashboardStats();
@@ -79,7 +79,7 @@ export default function AdminDashboard() {
           <CardContent className="p-6 flex flex-col justify-between h-full">
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm font-medium text-muted-foreground">Bénéfice net</p>
-              <div className="p-2 bg-accent/15 rounded-full text-accent">
+              <div className="p-2 bg-primary/10 rounded-full text-primary">
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>

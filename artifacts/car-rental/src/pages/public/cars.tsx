@@ -168,7 +168,7 @@ export default function Cars() {
         }}
       />
 
-      <div className="mb-6 rounded-[1.8rem] bg-[linear-gradient(180deg,hsl(214_90%_48%),hsl(223_45%_18%))] px-6 py-8 text-white md:px-8">
+      <div className="mb-6 rounded-[1.8rem] marketing-dark-panel px-6 py-8 text-white md:px-8">
         <div className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/86">
           <CarFront className="h-3.5 w-3.5" />
           Catalogue

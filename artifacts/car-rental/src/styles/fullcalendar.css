@@ -5,7 +5,7 @@
   --fc-page-bg-color: transparent;
   --fc-neutral-bg-color: hsl(var(--muted));
   --fc-list-event-hover-bg-color: hsl(var(--muted));
-  --fc-today-bg-color: rgba(21, 117, 80, 0.08);
+  --fc-today-bg-color: rgba(239, 68, 68, 0.08);
   --fc-button-text-color: hsl(var(--foreground));
   --fc-button-bg-color: hsl(var(--background));
   --fc-button-border-color: hsl(var(--border));
@@ -77,7 +77,7 @@
 }
 
 .fc .fc-day-today {
-  background: rgba(21, 117, 80, 0.06) !important;
+  background: rgba(239, 68, 68, 0.06) !important;
 }
 
 .fc .fc-event {
@@ -112,5 +112,5 @@
 
 .fc .fc-daygrid-day:hover,
 .fc .fc-timegrid-col:hover {
-  background: rgba(21, 117, 80, 0.03);
+  background: rgba(239, 68, 68, 0.03);
 }

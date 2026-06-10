@@ -197,7 +197,7 @@ export default function Home() {
 
       <section className="container mx-auto px-4 pt-8 lg:pt-10">
         <div className="grid gap-6 overflow-hidden rounded-[2.2rem] bg-white shadow-[0_28px_70px_-40px_rgba(16,23,34,0.22)] lg:grid-cols-[1.02fr_0.98fr]">
-          <div className="flex flex-col justify-between gap-8 bg-[linear-gradient(180deg,hsl(214_90%_48%),hsl(223_45%_18%))] p-6 text-white md:p-8 lg:p-10">
+          <div className="flex flex-col justify-between gap-8 marketing-dark-panel p-6 text-white md:p-8 lg:p-10">
             <div className="max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/90">
                 <Sparkles className="h-3.5 w-3.5" />
@@ -394,7 +394,7 @@ export default function Home() {
       </section>
 
       <section className="container mx-auto px-4 pb-16">
-        <div className="overflow-hidden rounded-[2rem] bg-[linear-gradient(180deg,hsl(214_90%_48%),hsl(223_45%_18%))] px-6 py-10 text-white md:px-8">
+        <div className="overflow-hidden rounded-[2rem] marketing-dark-panel px-6 py-10 text-white md:px-8">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_auto] lg:items-center">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/86">

@@ -65,7 +65,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const subtitle = isAgentMode ? "Opérations, calendrier et suivi des réservations." : "Pilotage financier, flotte et gouvernance.";
 
   return (
-    <div className={cn("min-h-screen flex", isAgentMode ? "bg-[linear-gradient(180deg,rgba(12,74,110,0.98),rgba(2,132,199,0.86))] text-white" : "bg-muted/30")}>
+    <div className={cn("min-h-screen flex", isAgentMode ? "bg-[linear-gradient(180deg,rgba(31,41,55,0.98),rgba(17,24,39,0.96))] text-white" : "bg-muted/30")}>
       {isSidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
@@ -76,7 +76,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 w-72 border-r flex flex-col transition-transform duration-200 ease-in-out md:translate-x-0 md:sticky md:top-0",
-          isAgentMode ? "bg-[linear-gradient(180deg,rgba(12,74,110,0.98),rgba(2,132,199,0.82))] border-white/10 text-white" : "bg-sidebar border-border md:bg-sidebar",
+          isAgentMode ? "bg-[linear-gradient(180deg,rgba(31,41,55,0.98),rgba(17,24,39,0.96))] border-white/10 text-white" : "bg-sidebar border-border md:bg-sidebar",
           isSidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -147,7 +147,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <header
           className={cn(
             "h-16 border-b flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 backdrop-blur",
-            isAgentMode ? "border-white/10 bg-[rgba(12,74,110,0.88)] text-white" : "bg-background",
+            isAgentMode ? "border-white/10 bg-[rgba(31,41,55,0.88)] text-white" : "bg-background",
           )}
         >
           <button className="md:hidden p-2 -ml-2" onClick={() => setIsSidebarOpen(true)}>
@@ -170,7 +170,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
         <main className={cn(
           "flex-1 p-4 sm:p-6 overflow-y-auto",
-          isAgentMode && "bg-[radial-gradient(circle_at_top_left,rgba(125,211,252,0.12),transparent_32%),linear-gradient(180deg,rgba(240,249,255,0.98),rgba(240,249,255,1))] text-foreground",
+          isAgentMode && "bg-[radial-gradient(circle_at_top_left,rgba(239,68,68,0.08),transparent_32%),linear-gradient(180deg,rgba(249,250,251,0.98),rgba(255,255,255,1))] text-foreground",
         )}>
           {children}
         </main>

@@ -247,7 +247,7 @@ export function DateRangeCalendar({
                 isCompact ? "flex h-6 items-center justify-center rounded-full text-[0.6rem] font-semibold uppercase text-muted-foreground" : "flex h-8 items-center justify-center rounded-full text-[0.72rem] font-semibold uppercase text-muted-foreground",
               week: isCompact ? "mt-[0.125rem] grid grid-cols-7 gap-[0.25rem]" : "mt-1 grid grid-cols-7 gap-1",
               day: "relative aspect-square min-w-0 select-none p-0 text-center",
-              today: "rounded-full border border-primary/20 bg-secondary/10 text-secondary",
+              today: "rounded-full border border-primary/20 bg-primary/10 text-primary",
               outside: "text-muted-foreground/45 aria-selected:text-muted-foreground/70",
               disabled: "rounded-full bg-muted/40 text-muted-foreground/50 opacity-100 line-through",
               range_start: "rounded-l-full bg-primary text-primary-foreground shadow-[0_10px_24px_-14px_hsl(var(--primary)/0.8)]",

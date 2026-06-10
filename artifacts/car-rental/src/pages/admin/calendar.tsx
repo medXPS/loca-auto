@@ -31,20 +31,20 @@ type CalendarEvent = EventInput & {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING: "#f59e0b",
-  UNDER_REVIEW: "#f59e0b",
-  CALL_ATTEMPTED: "#f59e0b",
-  CALL_CONFIRMED: "#0ea5e9",
-  WAITING_AGENCY_PAYMENT: "#0ea5e9",
-  RESERVED: "#2563eb",
-  CAR_DELIVERED: "#059669",
-  RENTED: "#059669",
-  CAR_RETURNED: "#16a34a",
-  RETURNED: "#16a34a",
-  COMPLETED: "#16a34a",
-  ABANDONED: "#dc2626",
-  CANCELLED: "#dc2626",
-  REJECTED: "#dc2626",
+  PENDING: "#EF4444",
+  UNDER_REVIEW: "#DC2626",
+  CALL_ATTEMPTED: "#B91C1C",
+  CALL_CONFIRMED: "#1F2937",
+  WAITING_AGENCY_PAYMENT: "#374151",
+  RESERVED: "#111827",
+  CAR_DELIVERED: "#4B5563",
+  RENTED: "#1F2937",
+  CAR_RETURNED: "#374151",
+  RETURNED: "#111827",
+  COMPLETED: "#000000",
+  ABANDONED: "#7F1D1D",
+  CANCELLED: "#991B1B",
+  REJECTED: "#B91C1C",
 };
 
 function addOneDay(date: string) {
@@ -76,7 +76,7 @@ export default function AdminCalendarPage() {
         return handledBy ? String(handledBy) === agentFilter : false;
       })
       .map<CalendarEvent>((request) => {
-        const color = STATUS_COLORS[request.status] ?? "#2563eb";
+        const color = STATUS_COLORS[request.status] ?? "#1F2937";
         const carLabel = request.car ? `${request.car.brand} ${request.car.model}` : `Véhicule #${request.carId}`;
         const amount = Number(request.finalPrice || request.estimatedTotalPrice || 0);
         const handledBy = request.paymentConfirmedBy ?? request.callConfirmedBy;
@@ -168,7 +168,7 @@ export default function AdminCalendarPage() {
 
   return (
     <div className="space-y-6">
-      <section className={cn("overflow-hidden rounded-[2rem] border px-6 py-7 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.22)]", isAgentMode ? "border-white/10 bg-white/5 text-slate-100" : "border-border bg-background")}>
+      <section className={cn("overflow-hidden rounded-[2rem] border px-6 py-7 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.22)]", isAgentMode ? "border-white/10 bg-white/5 text-white" : "border-border bg-background")}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-4 py-2 text-[11px] uppercase tracking-[0.2em] text-primary">
@@ -178,7 +178,7 @@ export default function AdminCalendarPage() {
             <h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
               Vue calendrier des réservations
             </h1>
-            <p className={cn("mt-3 max-w-2xl text-sm leading-7", isAgentMode ? "text-slate-300" : "text-muted-foreground")}>
+            <p className={cn("mt-3 max-w-2xl text-sm leading-7", isAgentMode ? "text-white/75" : "text-muted-foreground")}>
               Passez rapidement de la vue jour à la vue mois, filtrez par véhicule ou par agent, puis déplacez une réservation pour ajuster ses dates.
             </p>
           </div>
@@ -198,7 +198,7 @@ export default function AdminCalendarPage() {
       </section>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_0.55fr]">
-        <Card className={cn("border", isAgentMode ? "border-white/10 bg-white/5 text-slate-100" : "bg-background")}>
+        <Card className={cn("border", isAgentMode ? "border-white/10 bg-white/5 text-white" : "bg-background")}>
           <CardHeader className="flex flex-row items-center justify-between gap-4 border-b">
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-primary" />
@@ -250,7 +250,7 @@ export default function AdminCalendarPage() {
           </CardContent>
         </Card>
 
-        <Card className={cn("border", isAgentMode ? "border-white/10 bg-white/5 text-slate-100" : "bg-background")}>
+        <Card className={cn("border", isAgentMode ? "border-white/10 bg-white/5 text-white" : "bg-background")}>
           <CardHeader className="border-b">
             <CardTitle className="flex items-center gap-2">
               <CarFront className="h-5 w-5 text-primary" />
@@ -277,7 +277,7 @@ export default function AdminCalendarPage() {
         </Card>
       </div>
 
-      <Card className={cn("overflow-hidden", isAgentMode ? "border-white/10 bg-white/5 text-slate-100" : "bg-background")}>
+      <Card className={cn("overflow-hidden", isAgentMode ? "border-white/10 bg-white/5 text-white" : "bg-background")}>
         <CardContent className="p-4 md:p-6">
           <FullCalendar
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
