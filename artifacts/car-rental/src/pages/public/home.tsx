@@ -1,21 +1,15 @@
 import { Link, useLocation } from "wouter";
-import { useMemo, useState, type ComponentType, type FormEvent } from "react";
+import { useMemo, useState, type ComponentType } from "react";
 import { useListCars } from "@workspace/api-client-react";
 import { CarCard } from "@/components/car-card";
+import { ReservationSearchBar } from "@/components/reservation-search-bar";
 import { Seo } from "@/components/seo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowRight,
   BadgeCheck,
-  CalendarDays,
-  CarFront,
-  CheckCircle2,
   Clock3,
-  MapPin,
-  Search,
   ShieldCheck,
   Sparkles,
   Star,
@@ -69,7 +63,7 @@ const benefits = [
   {
     icon: ShieldCheck,
     title: "Assurance incluse",
-    description: "Des offres plus rassurantes avec les informations utiles affichées clairement.",
+    description: "Des offres rassurantes avec les informations utiles affichées clairement.",
   },
   {
     icon: Clock3,
@@ -79,7 +73,7 @@ const benefits = [
   {
     icon: Sparkles,
     title: "Réservation rapide",
-    description: "Un parcours court pour choisir et réserver sans perdre du temps.",
+    description: "Un parcours court pour choisir et réserver sans perdre de temps.",
   },
   {
     icon: BadgeCheck,
@@ -152,8 +146,7 @@ export default function Home() {
     return Array.from(values).sort((a, b) => a.localeCompare(b, "fr"));
   }, [citiesSource]);
 
-  const handleSearch = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSearch = () => {
     const params = new URLSearchParams();
 
     if (city) params.set("city", city);
@@ -161,6 +154,12 @@ export default function Home() {
     if (returnDate) params.set("returnDate", returnDate);
 
     setLocation(`/reservation${params.toString() ? `?${params.toString()}` : ""}`);
+  };
+
+  const handleResetSearch = () => {
+    setCity("");
+    setStartDate("");
+    setReturnDate("");
   };
 
   return (
@@ -209,61 +208,20 @@ export default function Home() {
               <p className="mt-4 max-w-lg text-base leading-8 text-white/84 md:text-lg">
                 Trouvez votre véhicule en quelques clics.
               </p>
-            </div>
-
-            <form onSubmit={handleSearch} className="space-y-4 rounded-[1.6rem] border border-white/14 bg-white/10 p-4 backdrop-blur">
-              <div className="grid gap-3 md:grid-cols-3">
-                <div className="md:col-span-1">
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-white/72">Ville</label>
-                  <Select value={city} onValueChange={setCity}>
-                    <SelectTrigger className="h-12 rounded-2xl border-white/16 bg-white/95 text-foreground">
-                      <SelectValue placeholder="Choisir une ville" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cities.map((item) => (
-                        <SelectItem key={item} value={item}>
-                          {item}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-white/72">Date départ</label>
-                  <Input
-                    type="date"
-                    value={startDate}
-                    onChange={(event) => setStartDate(event.target.value)}
-                    className="h-12 rounded-2xl border-white/16 bg-white/95 text-foreground"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-white/72">Date retour</label>
-                  <Input
-                    type="date"
-                    value={returnDate}
-                    min={startDate || undefined}
-                    onChange={(event) => setReturnDate(event.target.value)}
-                    className="h-12 rounded-2xl border-white/16 bg-white/95 text-foreground"
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Button type="submit" className="rounded-full bg-white px-6 text-primary hover:bg-white/95">
-                  <Search className="h-4 w-4" />
-                  Rechercher
-                </Button>
-                <Button asChild variant="outline" className="rounded-full border-white/16 bg-transparent px-6 text-white hover:bg-white/10 hover:text-white">
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button asChild className="rounded-full bg-white px-6 text-primary hover:bg-white/95">
                   <Link href="/voitures">
-                    Voir nos véhicules
+                    Voir les véhicules
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
+                <Button asChild variant="outline" className="rounded-full border-white/16 bg-transparent px-6 text-white hover:bg-white/10 hover:text-white">
+                  <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
+                    WhatsApp
+                  </a>
+                </Button>
               </div>
-            </form>
+            </div>
 
             <div className="flex flex-wrap gap-2 text-sm">
               {["Prix transparents", "Réservation rapide", "WhatsApp direct"].map((item) => (
@@ -292,12 +250,29 @@ export default function Home() {
                     <p className="mt-1 text-xl font-semibold text-foreground">Les voitures et les prix sont visibles dès le premier écran.</p>
                   </div>
                   <div className="hidden rounded-full bg-primary/10 p-3 text-primary md:block">
-                    <CarFront className="h-6 w-6" />
+                    <Sparkles className="h-6 w-6" />
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="-mt-10 flex justify-center px-2 sm:px-4">
+          <ReservationSearchBar
+            cities={cities}
+            city={city}
+            startDate={startDate}
+            returnDate={returnDate}
+            onCityChange={setCity}
+            onDatesChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+              setStartDate(nextStartDate);
+              setReturnDate(nextReturnDate);
+            }}
+            onSubmit={handleSearch}
+            onReset={handleResetSearch}
+            className="w-full max-w-5xl"
+          />
         </div>
       </section>
 

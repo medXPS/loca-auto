@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
 import { useListCars } from "@workspace/api-client-react";
 import { CarCard } from "@/components/car-card";
+import { ReservationSearchBar } from "@/components/reservation-search-bar";
 import { Seo } from "@/components/seo";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
@@ -41,12 +42,14 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
 }
 
 export default function Cars() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const isReservationRoute = location.startsWith("/reservation");
   const params = getSearchParams();
 
   const [brand, setBrand] = useState(params.get("brand") || params.get("search") || "");
   const [city, setCity] = useState(params.get("city") || "");
+  const [startDate, setStartDate] = useState(params.get("startDate") || "");
+  const [returnDate, setReturnDate] = useState(params.get("returnDate") || "");
   const [sortBy, setSortBy] = useState(params.get("sortBy") || "year_desc");
   const [transmission, setTransmission] = useState(params.get("transmission") || "all");
   const [fuelType, setFuelType] = useState(params.get("fuelType") || "all");
@@ -57,12 +60,19 @@ export default function Cars() {
     const next = getSearchParams();
     setBrand(next.get("brand") || next.get("search") || "");
     setCity(next.get("city") || "");
+    setStartDate(next.get("startDate") || "");
+    setReturnDate(next.get("returnDate") || "");
     setSortBy(next.get("sortBy") || "year_desc");
     setTransmission(next.get("transmission") || "all");
     setFuelType(next.get("fuelType") || "all");
   }, [location]);
 
-  const { data, isLoading } = useListCars({
+  const { data: cityData } = useListCars({
+    limit: 200,
+    sortBy: "year_desc",
+  });
+
+  const carQueryParams = {
     brand: brand || undefined,
     city: city || undefined,
     transmission: transmission !== "all" ? transmission : undefined,
@@ -71,7 +81,11 @@ export default function Cars() {
     maxPrice: priceRange[1] < 2000 ? priceRange[1] : undefined,
     sortBy,
     limit: 50,
-  });
+    startDate: startDate || undefined,
+    returnDate: returnDate || undefined,
+  } as any;
+
+  const { data, isLoading } = useListCars(carQueryParams);
 
   const pageTitle = isReservationRoute ? "Réservation de véhicule" : "Véhicules disponibles";
   const pageDescription = isReservationRoute
@@ -82,13 +96,41 @@ export default function Cars() {
     ? "https://demo-locationauto.shonenx.shop/reservation"
     : "https://demo-locationauto.shonenx.shop/voitures";
 
+  const cities = useMemo(() => {
+    const values = new Set<string>();
+    for (const car of cityData?.cars ?? []) {
+      if (car.city?.trim()) values.add(car.city.trim());
+    }
+    if (values.size === 0) {
+      ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"].forEach((item) => values.add(item));
+    }
+    return Array.from(values).sort((a, b) => a.localeCompare(b, "fr"));
+  }, [cityData]);
+
+  const handleSearch = () => {
+    const next = new URLSearchParams(window.location.search);
+    if (city) next.set("city", city);
+    else next.delete("city");
+
+    if (startDate) next.set("startDate", startDate);
+    else next.delete("startDate");
+
+    if (returnDate) next.set("returnDate", returnDate);
+    else next.delete("returnDate");
+
+    setLocation(`${isReservationRoute ? "/reservation" : "/voitures"}${next.toString() ? `?${next.toString()}` : ""}`);
+  };
+
   const handleReset = () => {
     setBrand("");
     setCity("");
+    setStartDate("");
+    setReturnDate("");
     setSortBy("year_desc");
     setTransmission("all");
     setFuelType("all");
     setPriceRange([0, 2000]);
+    setLocation(isReservationRoute ? "/reservation" : "/voitures");
   };
 
   const FilterContent = () => (
@@ -168,7 +210,7 @@ export default function Cars() {
         }}
       />
 
-      <div className="mb-6 rounded-[1.8rem] marketing-dark-panel px-6 py-8 text-white md:px-8">
+      <div className="rounded-[1.8rem] marketing-dark-panel px-6 py-8 text-white md:px-8">
         <div className="inline-flex items-center gap-2 rounded-full border border-white/16 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/86">
           <CarFront className="h-3.5 w-3.5" />
           Catalogue
@@ -186,6 +228,23 @@ export default function Cars() {
             </span>
           )}
         </div>
+      </div>
+
+      <div className="-mt-8 mb-8 flex justify-center px-2 sm:px-4">
+        <ReservationSearchBar
+          cities={cities}
+          city={city}
+          startDate={startDate}
+          returnDate={returnDate}
+          onCityChange={setCity}
+          onDatesChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+            setStartDate(nextStartDate);
+            setReturnDate(nextReturnDate);
+          }}
+          onSubmit={handleSearch}
+          onReset={handleReset}
+          className="w-full max-w-5xl"
+        />
       </div>
 
       <div className="grid gap-8 xl:grid-cols-[320px_minmax(0,1fr)]">

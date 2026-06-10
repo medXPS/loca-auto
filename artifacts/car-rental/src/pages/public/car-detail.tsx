@@ -23,6 +23,7 @@ import {
   Fuel,
   ImageIcon,
   MessageCircle,
+  MapPin,
   Settings2,
   ShieldCheck,
   Sparkles,
@@ -386,6 +387,9 @@ export default function CarDetail() {
   const pageTitle = `${car.brand} ${car.model}`;
   const pageDescription = `Réservez ${car.brand} ${car.model} au Maroc. Prix, caractéristiques et demande rapide en ligne.`;
   const canonical = `https://demo-locationauto.shonenx.shop/voitures/${car.id}`;
+  const mapLocation = `${car.city?.trim() || "Casablanca"}, Maroc`;
+  const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapLocation)}&z=13&output=embed`;
+  const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapLocation)}`;
 
   return (
     <div className="container mx-auto px-4 py-8 lg:py-10">
@@ -663,6 +667,61 @@ export default function CarDetail() {
           </Card>
         </aside>
       </div>
+
+      <section className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]">
+          <CardContent className="space-y-5 p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                  <MapPin className="h-3.5 w-3.5" />
+                  Localisation
+                </div>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Ou se situe l'agence ?</h2>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                  {car.city || "Casablanca"} et ses environs sont indiques sur la carte pour aider le client a se reperer rapidement.
+                </p>
+              </div>
+
+              <Button asChild variant="outline" className="rounded-full border-border/70 bg-white">
+                <a href={mapHref} target="_blank" rel="noopener noreferrer">
+                  Ouvrir dans Google Maps
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              </Button>
+            </div>
+
+            <div className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-muted">
+              <iframe
+                title={`Carte de ${mapLocation}`}
+                src={mapEmbedUrl}
+                className="h-[420px] w-full"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="h-fit overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]">
+          <CardContent className="space-y-4 p-6">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Adresse</p>
+              <p className="mt-2 text-xl font-semibold text-foreground">{car.city || "Casablanca"}</p>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                Verifiez l'emplacement exact de l'agence sur la carte avant de confirmer votre reservation.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Conseil</p>
+              <p className="mt-1 leading-7">
+                Utilisez la carte pour estimer le trajet jusqu'a l'agence et preparer votre arrivee.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-white/96 px-3 py-3 shadow-[0_-12px_36px_-24px_rgba(16,23,34,0.24)] backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-xl grid-cols-2 gap-3">
