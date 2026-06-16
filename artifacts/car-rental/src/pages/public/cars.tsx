@@ -2,16 +2,16 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useListCars } from "@workspace/api-client-react";
 import { formatDisplayDate } from "@workspace/api-client-react/availability";
-import { CarCard } from "@/components/car-card";
 import { DateRangeCalendar } from "@/components/date-range-calendar";
 import { Seo } from "@/components/seo";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Slider } from "@/components/ui/slider";
 import {
   ArrowRight,
   BadgeCheck,
@@ -19,38 +19,63 @@ import {
   CarFront,
   CircleCheckBig,
   Filter,
+  Grid3X3,
+  Heart,
   MapPin,
   MessageCircle,
+  Rows3,
+  Settings2,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
   Star,
+  Users,
+  Wind,
 } from "lucide-react";
-import { CATEGORY_TRANSLATIONS, cn } from "@/lib/utils";
+import { CATEGORY_TRANSLATIONS, cn, FUEL_TRANSLATIONS, formatPrice } from "@/lib/utils";
 
 const ALL_VALUE = "all";
 
+const categoryOptions = [
+  { value: "CITADINE", label: "Citadine" },
+  { value: "SUV", label: "SUV" },
+  { value: "BERLINE", label: "Berline" },
+  { value: "LUXE", label: "Luxe" },
+];
+
 const transmissionOptions = [
-  { value: ALL_VALUE, label: "Toutes" },
   { value: "MANUELLE", label: "Manuelle" },
   { value: "AUTOMATIQUE", label: "Automatique" },
 ];
 
 const fuelOptions = [
-  { value: ALL_VALUE, label: "Tous" },
-  { value: "DIESEL", label: "Diesel" },
   { value: "ESSENCE", label: "Essence" },
+  { value: "DIESEL", label: "Diesel" },
   { value: "HYBRIDE", label: "Hybride" },
   { value: "ELECTRIQUE", label: "Electrique" },
 ];
 
-const trustItems = [
-  { icon: ShieldCheck, title: "Assurance incluse", description: "Couverture complete des la prise en charge." },
-  { icon: BadgeCheck, title: "Prix transparents", description: "Aucun frais cache, prix clairs et justes." },
-  { icon: MessageCircle, title: "Support WhatsApp", description: "Reponse rapide pour toutes vos questions." },
-  { icon: Sparkles, title: "Reservation rapide", description: "Processus simple et 100% en ligne." },
-  { icon: CircleCheckBig, title: "Agence verifiee", description: "Agence locale fiable et certifiee." },
-  { icon: Star, title: "Avis clients", description: "4,8/5 sur +1200 clients satisfaits." },
+const trustCards = [
+  {
+    icon: ShieldCheck,
+    title: "Assurance incluse",
+    description: "Tous nos vehicules sont assures avec une couverture complete.",
+  },
+  {
+    icon: BadgeCheck,
+    title: "Prix transparents",
+    description: "Aucun frais cache. Le prix affiche est le prix que vous payez.",
+  },
+  {
+    icon: MessageCircle,
+    title: "Support WhatsApp",
+    description: "Notre equipe vous accompagne 7j/7 pour une experience fluide.",
+  },
+  {
+    icon: Sparkles,
+    title: "Reservation simple",
+    description: "Reservez en ligne en quelques clics, rapidement et facilement.",
+  },
 ];
 
 function getSearchParams() {
@@ -70,51 +95,194 @@ function parseVehicleKey(value: string) {
   return { brand, model };
 }
 
-function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
+function FilterSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-[1.25rem] border border-white/10 bg-slate-950/80 p-4 text-white shadow-[0_18px_45px_-28px_rgba(15,23,42,0.5)]">
-      <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">{title}</h3>
+    <section className="space-y-3 border-b border-slate-100 pb-5 last:border-b-0 last:pb-0">
+      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
       {children}
     </section>
   );
 }
 
+function FilterCheckRow({
+  checked,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center gap-3 text-sm text-slate-600">
+      <Checkbox checked={checked} onCheckedChange={(value) => onChange(Boolean(value))} />
+      <span>{label}</span>
+    </label>
+  );
+}
+
 function TrustCard({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
   return (
-    <div className="rounded-[1.5rem] border border-border/70 bg-white p-5 shadow-[0_16px_35px_-28px_rgba(16,23,34,0.12)]">
-      <Icon className="h-5 w-5 text-primary" />
-      <h3 className="mt-4 text-sm font-semibold text-foreground">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-    </div>
-  );
-}
-
-function HeroPill({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
-  return (
-    <div className="rounded-[1.2rem] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-sm">
-      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-white/55">
-        <Icon className="h-3.5 w-3.5" />
-        {label}
+    <div className="rounded-[1.4rem] border border-slate-200 bg-white p-5 shadow-[0_16px_38px_-28px_rgba(15,23,42,0.16)]">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FF4B43]/10 text-[#FF4B43]">
+        <Icon className="h-4.5 w-4.5" />
       </div>
-      <p className="mt-2 text-sm font-semibold text-white">{value}</p>
+      <h3 className="mt-4 text-sm font-semibold text-slate-900">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
     </div>
   );
 }
 
-function SectionTitle({
+function MetricPill({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="rounded-[1.3rem] border border-white/10 bg-white/5 px-4 py-4 text-white">
+      <p className="text-sm font-semibold">{title}</p>
+      <p className="mt-1 text-sm text-white/65">{description}</p>
+    </div>
+  );
+}
+
+function SectionHeading({
   eyebrow,
   title,
   description,
+  centered = false,
 }: {
   eyebrow: string;
   title: string;
   description: string;
+  centered?: boolean;
 }) {
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">{eyebrow}</p>
-      <h2 className="mt-3 font-serif text-3xl leading-tight text-slate-900 md:text-4xl">{title}</h2>
-      <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">{description}</p>
+    <div className={cn(centered ? "mx-auto max-w-2xl text-center" : "max-w-2xl")}>
+      <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#FF4B43]">{eyebrow}</p>
+      <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">{title}</h2>
+      <p className="mt-3 text-sm leading-7 text-slate-500 md:text-base">{description}</p>
+    </div>
+  );
+}
+
+function PopularCarCard({ car }: { car: any }) {
+  const transmissionLabel = car.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
+  const fuelLabel = FUEL_TRANSLATIONS[car.fuelType] || car.fuelType;
+
+  return (
+    <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-[0_16px_40px_-30px_rgba(15,23,42,0.12)]">
+      <div className="aspect-[5/3] overflow-hidden bg-slate-100">
+        {car.mainImageUrl ? (
+          <img src={car.mainImageUrl} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-slate-400">
+            <CarFront className="h-8 w-8" />
+          </div>
+        )}
+      </div>
+      <div className="space-y-3 p-4">
+        <div>
+          <h3 className="text-base font-semibold text-slate-900">
+            {car.brand} {car.model}
+          </h3>
+          <p className="text-xs text-slate-500">{CATEGORY_TRANSLATIONS[car.category] || car.category}</p>
+        </div>
+
+        <div className="grid gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-2">
+            <Settings2 className="h-3.5 w-3.5 text-[#FF4B43]" />
+            {transmissionLabel}
+          </div>
+          <div className="flex items-center gap-2">
+            <BadgeCheck className="h-3.5 w-3.5 text-[#FF4B43]" />
+            {fuelLabel}
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="h-3.5 w-3.5 text-[#FF4B43]" />
+            {car.seats} places
+          </div>
+        </div>
+
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">A partir de</p>
+            <p className="mt-1 text-2xl font-semibold text-[#FF4B43]">{formatPrice(car.dailyPrice)}</p>
+            <p className="text-xs text-slate-400">/ jour</p>
+          </div>
+          <Button asChild className="rounded-full bg-[#FF4B43] px-4 text-white hover:bg-[#f03b33]">
+            <Link href={`/voitures/${car.id}`}>Voir details</Link>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CatalogueCarRow({ car }: { car: any }) {
+  const transmissionLabel = car.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
+  const fuelLabel = FUEL_TRANSLATIONS[car.fuelType] || car.fuelType;
+
+  return (
+    <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_16px_42px_-32px_rgba(15,23,42,0.14)]">
+      <div className="grid gap-0 lg:grid-cols-[220px_minmax(0,1fr)_220px]">
+        <Link href={`/voitures/${car.id}`} className="block overflow-hidden bg-slate-100">
+          {car.mainImageUrl ? (
+            <img src={car.mainImageUrl} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full min-h-[180px] items-center justify-center text-slate-400">
+              <CarFront className="h-10 w-10" />
+            </div>
+          )}
+        </Link>
+
+        <div className="space-y-4 p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[#7C8CB5]">
+                {CATEGORY_TRANSLATIONS[car.category] || car.category}
+              </p>
+              <h3 className="mt-1 text-xl font-semibold text-slate-900">
+                {car.brand} {car.model}
+              </h3>
+            </div>
+            <button type="button" className="rounded-full border border-slate-200 p-2 text-slate-400 transition hover:text-[#FF4B43]">
+              <Heart className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-4 text-sm text-slate-500">
+            <span className="inline-flex items-center gap-2">
+              <Settings2 className="h-4 w-4 text-slate-400" />
+              {transmissionLabel}
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <BadgeCheck className="h-4 w-4 text-slate-400" />
+              {fuelLabel}
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Users className="h-4 w-4 text-slate-400" />
+              {car.seats} places
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Wind className="h-4 w-4 text-slate-400" />
+              Climatisation
+            </span>
+          </div>
+
+          <div className="inline-flex rounded-full bg-[#F4F7FF] px-3 py-1 text-xs font-medium text-[#7C8CB5]">
+            {car.city || "Casablanca"}
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-between border-t border-slate-100 p-5 lg:border-l lg:border-t-0">
+          <div className="text-right">
+            <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">A partir de</p>
+            <p className="mt-1 text-3xl font-semibold text-[#FF4B43]">{formatPrice(car.dailyPrice)}</p>
+            <p className="text-xs text-slate-400">/ jour</p>
+          </div>
+
+          <Button asChild className="rounded-full bg-[#FF4B43] text-white hover:bg-[#f03b33]">
+            <Link href={`/voitures/${car.id}?reserve=1`}>Reserver maintenant</Link>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -136,6 +304,7 @@ export default function Cars() {
   const [transmission, setTransmission] = useState(initialParams.get("transmission") || ALL_VALUE);
   const [fuelType, setFuelType] = useState(initialParams.get("fuelType") || ALL_VALUE);
   const [priceRange, setPriceRange] = useState([0, 2000]);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
@@ -211,23 +380,7 @@ export default function Cars() {
     return Array.from(values).sort((a, b) => a.localeCompare(b, "fr"));
   }, [allCarsData]);
 
-  const categoryTabs = useMemo(() => {
-    const counts = new Map<string, number>();
-
-    for (const car of allCarsData?.cars ?? []) {
-      const value = car.category?.trim();
-      if (!value) continue;
-      counts.set(value, (counts.get(value) || 0) + 1);
-    }
-
-    return ["all", "CITADINE", "BERLINE", "SUV", "LUXE"].map((value) => ({
-      value,
-      label: value === "all" ? "Tous" : CATEGORY_TRANSLATIONS[value] || value,
-      count: value === "all" ? allCarsData?.total || 0 : counts.get(value) || 0,
-    }));
-  }, [allCarsData]);
-
-  const featuredCars = (allCarsData?.cars ?? []).slice(0, 3);
+  const popularCars = (allCarsData?.cars ?? []).slice(0, 6);
   const totalLabel = `${data?.total || 0} vehicules`;
 
   const intervalLabel =
@@ -235,13 +388,7 @@ export default function Cars() {
       ? `${formatDisplayDate(startDate)} - ${formatDisplayDate(returnDate)}`
       : startDate
         ? `Depart ${formatDisplayDate(startDate)}`
-        : "Dates flexibles";
-
-  const activeFilterPills = [
-    city ? { label: "Agence", value: city } : null,
-    selectedVehicle ? { label: "Modele", value: selectedVehicle.label } : null,
-    (startDate || returnDate) ? { label: "Intervalle", value: intervalLabel } : null,
-  ].filter(Boolean) as { label: string; value: string }[];
+        : "Choisir vos dates";
 
   const applyFilters = (overrides?: Partial<{
     vehicleKey: string;
@@ -275,6 +422,7 @@ export default function Cars() {
     if (nextTransmission !== ALL_VALUE) next.set("transmission", nextTransmission);
     if (nextFuelType !== ALL_VALUE) next.set("fuelType", nextFuelType);
 
+    setCalendarOpen(false);
     setIsFilterOpen(false);
     setLocation(`/voitures${next.toString() ? `?${next.toString()}` : ""}`);
   };
@@ -289,15 +437,26 @@ export default function Cars() {
     setTransmission(ALL_VALUE);
     setFuelType(ALL_VALUE);
     setPriceRange([0, 2000]);
+    setCalendarOpen(false);
     setIsFilterOpen(false);
     setLocation("/voitures");
   };
 
-  const FilterContent = () => (
-    <div className="space-y-4">
-      <FilterGroup title="Agence">
+  const FilterPanel = () => (
+    <div className="space-y-5 rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_-34px_rgba(15,23,42,0.14)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="h-4 w-4 text-[#FF4B43]" />
+          <h2 className="text-lg font-semibold text-slate-900">Filtres</h2>
+        </div>
+        <button type="button" onClick={handleReset} className="text-xs font-medium text-[#FF4B43]">
+          Effacer tout
+        </button>
+      </div>
+
+      <FilterSection title="Agence">
         <Select value={city || ALL_VALUE} onValueChange={(value) => setCity(value === ALL_VALUE ? "" : value)}>
-          <SelectTrigger className="h-12 rounded-2xl border-white/10 bg-white/5 text-white">
+          <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white">
             <SelectValue placeholder="Choisir une agence" />
           </SelectTrigger>
           <SelectContent>
@@ -309,11 +468,11 @@ export default function Cars() {
             ))}
           </SelectContent>
         </Select>
-      </FilterGroup>
+      </FilterSection>
 
-      <FilterGroup title="Modele de voiture">
+      <FilterSection title="Modele de voiture">
         <Select value={vehicleKey} onValueChange={setVehicleKey}>
-          <SelectTrigger className="h-12 rounded-2xl border-white/10 bg-white/5 text-white">
+          <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white">
             <SelectValue placeholder="Choisir un modele" />
           </SelectTrigger>
           <SelectContent>
@@ -325,92 +484,68 @@ export default function Cars() {
             ))}
           </SelectContent>
         </Select>
-      </FilterGroup>
+      </FilterSection>
 
-      <FilterGroup title="Intervalle">
-        <DateRangeCalendar
-          label="Disponibilite"
-          startDate={startDate}
-          returnDate={returnDate}
-          onChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
-            setStartDate(nextStartDate);
-            setReturnDate(nextReturnDate);
-          }}
-          compact
-        />
-      </FilterGroup>
+      <FilterSection title="Categorie">
+        <div className="grid gap-3">
+          {categoryOptions.map((item) => (
+            <FilterCheckRow
+              key={item.value}
+              checked={category === item.value}
+              label={item.label}
+              onChange={(checked) => setCategory(checked ? item.value : ALL_VALUE)}
+            />
+          ))}
+        </div>
+      </FilterSection>
 
-      <FilterGroup title="Prix">
-        <div className="flex items-center justify-between text-sm text-white/70">
-          <span>Budget</span>
-          <span className="font-semibold text-white">
-            {priceRange[0]} - {priceRange[1] >= 2000 ? "2000+" : priceRange[1]} MAD
-          </span>
+      <FilterSection title="Boite de vitesse">
+        <div className="grid gap-3">
+          {transmissionOptions.map((item) => (
+            <FilterCheckRow
+              key={item.value}
+              checked={transmission === item.value}
+              label={item.label}
+              onChange={(checked) => setTransmission(checked ? item.value : ALL_VALUE)}
+            />
+          ))}
+        </div>
+      </FilterSection>
+
+      <FilterSection title="Carburant">
+        <div className="grid gap-3">
+          {fuelOptions.map((item) => (
+            <FilterCheckRow
+              key={item.value}
+              checked={fuelType === item.value}
+              label={item.label}
+              onChange={(checked) => setFuelType(checked ? item.value : ALL_VALUE)}
+            />
+          ))}
+        </div>
+      </FilterSection>
+
+      <FilterSection title="Budget par jour">
+        <div className="flex items-center justify-between text-sm text-slate-500">
+          <span>{priceRange[0]} MAD</span>
+          <span>{priceRange[1] >= 2000 ? "2000+ MAD" : `${priceRange[1]} MAD`}</span>
         </div>
         <Slider value={priceRange} onValueChange={setPriceRange} max={2000} step={50} />
-      </FilterGroup>
-
-      <FilterGroup title="Transmission">
-        <Select value={transmission} onValueChange={setTransmission}>
-          <SelectTrigger className="h-12 rounded-2xl border-white/10 bg-white/5 text-white">
-            <SelectValue placeholder="Transmission" />
-          </SelectTrigger>
-          <SelectContent>
-            {transmissionOptions.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FilterGroup>
-
-      <FilterGroup title="Carburant">
-        <Select value={fuelType} onValueChange={setFuelType}>
-          <SelectTrigger className="h-12 rounded-2xl border-white/10 bg-white/5 text-white">
-            <SelectValue placeholder="Carburant" />
-          </SelectTrigger>
-          <SelectContent>
-            {fuelOptions.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </FilterGroup>
+      </FilterSection>
 
       <div className="grid gap-3">
-        <Button className="w-full rounded-2xl bg-[#F04B45] text-white hover:bg-[#e63f39]" onClick={() => applyFilters()}>
+        <Button className="w-full rounded-full bg-[#FF4B43] text-white hover:bg-[#f03b33]" onClick={() => applyFilters()}>
           Appliquer les filtres
         </Button>
-        <Button variant="outline" className="w-full rounded-2xl border-white/15 bg-white/5 text-white hover:bg-white/10" onClick={handleReset}>
+        <Button variant="outline" className="w-full rounded-full border-slate-200 bg-white" onClick={handleReset}>
           Reinitialiser
         </Button>
       </div>
-
-      <Card className="overflow-hidden rounded-[1.5rem] border-0 bg-[linear-gradient(180deg,rgba(246,190,140,0.42),rgba(16,23,34,0.88))] text-white shadow-[0_22px_60px_-36px_rgba(16,23,34,0.45)]">
-        <CardContent className="space-y-4 p-5">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
-          <div>
-            <h4 className="text-xl font-semibold">Roulez en toute serenite au Maroc</h4>
-            <p className="mt-2 text-sm leading-6 text-white/78">Assurance, assistance 24/7 et vehicules verifies.</p>
-          </div>
-          <Button asChild className="w-full rounded-full bg-[#F04B45] text-white hover:bg-[#e63f39]">
-            <Link href="/contact">
-              En savoir plus
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 
   return (
-    <div className="flex flex-col bg-[radial-gradient(circle_at_top,rgba(244,244,245,0.9),rgba(255,255,255,1)_42%)]">
+    <div className="flex flex-col bg-[radial-gradient(circle_at_top,rgba(255,248,246,0.95),rgba(255,255,255,1)_42%)]">
       <Seo
         title="Vehicules"
         description="Parcourez les vehicules disponibles, comparez les prix et lancez une reservation en quelques clics."
@@ -420,207 +555,252 @@ export default function Cars() {
       />
 
       <section className="container mx-auto px-4 pt-6 lg:pt-8">
-        <div className="relative overflow-hidden rounded-[2.2rem] bg-slate-950 text-white shadow-[0_28px_70px_-40px_rgba(16,23,34,0.38)]">
-          <img
-            src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1800&q=80"
-            alt="Voiture premium sur route"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(8,15,28,0.92),rgba(8,15,28,0.72)_54%,rgba(8,15,28,0.32))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,75,69,0.26),transparent_26%)]" />
-
-          <div className="relative z-10 px-6 py-10 md:px-8 lg:px-10 lg:py-14">
-            <div className="max-w-4xl">
-              <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/56">Votre voyage, notre passion</p>
-              <h1 className="mt-4 font-serif text-5xl leading-[0.95] text-balance md:text-6xl lg:text-7xl">
-                Trouvez la bonne voiture
-                <span className="block text-[#F04B45]">sans formulaire geant.</span>
+        <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_28px_80px_-48px_rgba(15,23,42,0.22)]">
+          <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="relative z-10 bg-white px-6 py-10 md:px-8 lg:px-10 lg:py-14">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#FF4B43]">Catalogue premium</p>
+              <h1 className="mt-4 max-w-xl text-5xl font-semibold leading-[1.02] tracking-tight text-slate-900 md:text-6xl">
+                Reservez votre voiture au Maroc avec une experience simple et premium.
               </h1>
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-white/78 md:text-base">
-                Cette page reste un vrai catalogue. Les dates, l'agence et le modele se choisissent proprement
-                dans les filtres, avec un petit calendrier d'intervalle au lieu d'un gros bloc de reservation.
+              <p className="mt-5 max-w-lg text-sm leading-7 text-slate-500 md:text-base">
+                Large choix de vehicules recents, assurance tous risques, prix transparents et service client 7j/7.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button asChild className="rounded-full bg-white px-6 text-slate-950 hover:bg-white/95">
-                  <a href="#catalogue-filters">
-                    Voir les filtres
-                    <ArrowRight className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/8 px-6 text-white hover:bg-white/12 hover:text-white">
-                  <a href="https://wa.me/212600000000" target="_blank" rel="noreferrer">
-                    <MessageCircle className="h-4 w-4" />
-                    WhatsApp
-                  </a>
-                </Button>
+              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                <MetricPill title="Meilleurs prix garantis" description="Des tarifs clairs et competitifs." />
+                <MetricPill title="Assurance tous risques" description="Protection et serenite incluses." />
+                <MetricPill title="Annulation gratuite" description="Plus de flexibilite avant depart." />
+              </div>
+            </div>
+
+            <div className="relative min-h-[360px] overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1600&q=80"
+                alt="Voiture premium sur route"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.78),rgba(255,255,255,0.08)_34%,rgba(15,23,42,0.15))]" />
+            </div>
+          </div>
+
+          <div className="px-4 pb-4 md:px-8 md:pb-8">
+            <div className="-mt-8 rounded-[1.7rem] border border-slate-200 bg-white p-4 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.22)] md:p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                <CarFront className="h-4 w-4 text-[#FF4B43]" />
+                Trouver votre voiture
               </div>
 
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                <HeroPill icon={MapPin} label="Agence" value={city || "Toutes les villes"} />
-                <HeroPill icon={CalendarDays} label="Intervalle" value={intervalLabel} />
-                <HeroPill icon={CarFront} label="Modele" value={selectedVehicle?.label || "Tous les modeles"} />
+              <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(180px,0.9fr)_minmax(180px,0.9fr)_180px]">
+                <Select value={city || ALL_VALUE} onValueChange={(value) => setCity(value === ALL_VALUE ? "" : value)}>
+                  <SelectTrigger className="h-14 rounded-[1.1rem] border-slate-200 bg-[#FCFCFD] text-left">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <MapPin className="h-4 w-4 text-slate-400" />
+                      <div className="min-w-0 text-left">
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Lieu de prise en charge</p>
+                        <SelectValue placeholder="Ville ou aeroport" />
+                      </div>
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_VALUE}>Toutes les agences</SelectItem>
+                    {cities.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-14 flex-col items-start justify-center rounded-[1.1rem] border border-slate-200 bg-[#FCFCFD] px-4 text-left transition hover:border-slate-300"
+                    >
+                      <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Date de depart</span>
+                      <span className="mt-1 text-sm font-semibold text-slate-900">
+                        {startDate ? formatDisplayDate(startDate) : "Choisir"}
+                      </span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" sideOffset={12} className="w-[min(92vw,430px)] rounded-[1.5rem] border-slate-200 p-0 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.25)]">
+                    <DateRangeCalendar
+                      label="Calendrier"
+                      startDate={startDate}
+                      returnDate={returnDate}
+                      onChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+                        setStartDate(nextStartDate);
+                        setReturnDate(nextReturnDate);
+                      }}
+                      compact
+                      minimal
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <button
+                  type="button"
+                  onClick={() => setCalendarOpen(true)}
+                  className="flex h-14 flex-col items-start justify-center rounded-[1.1rem] border border-slate-200 bg-[#FCFCFD] px-4 text-left transition hover:border-slate-300"
+                >
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Date de retour</span>
+                  <span className="mt-1 text-sm font-semibold text-slate-900">
+                    {returnDate ? formatDisplayDate(returnDate) : "Choisir"}
+                  </span>
+                </button>
+
+                <Button className="h-14 rounded-[1.1rem] bg-[#FF4B43] text-base text-white hover:bg-[#f03b33]" onClick={() => applyFilters()}>
+                  Rechercher
+                </Button>
               </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 rounded-[1.6rem] bg-[#111A2C] px-4 py-4 text-white shadow-[0_20px_50px_-34px_rgba(15,23,42,0.38)] md:grid-cols-2 lg:grid-cols-4 md:px-5">
+              <MetricPill title="4,8/5" description="Note moyenne sur Google" />
+              <MetricPill title="Vehicules recents" description="Entretien regulier et securite assuree" />
+              <MetricPill title="Agence verifiee" description="Societe de location autorisee au Maroc" />
+              <MetricPill title="10k+" description="Clients satisfaits chaque annee" />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-6 lg:py-8">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {trustItems.map((item) => (
+      <section className="container mx-auto px-4 py-16">
+        <SectionHeading
+          eyebrow="Confiance"
+          title="Une reservation claire et rassurante"
+          description="Nous nous engageons pour votre tranquillite d'esprit a chaque etape de votre location."
+          centered
+        />
+
+        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {trustCards.map((item) => (
             <TrustCard key={item.title} {...item} />
           ))}
         </div>
       </section>
 
-      {featuredCars.length > 0 && (
-        <section className="container mx-auto px-4 pb-10 lg:pb-14">
-          <div className="flex items-end justify-between gap-4">
-            <SectionTitle
-              eyebrow="Selection populaire"
-              title="Nos voitures les plus demandees"
-              description="Une selection plus claire, avec un parcours catalogue qui laisse les filtres a leur vraie place."
-            />
-            <Link href="/voitures" className="hidden items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900 md:inline-flex">
-              Voir toutes les offres
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+      {popularCars.length > 0 && (
+        <section className="container mx-auto px-4 pb-16">
+          <SectionHeading
+            eyebrow="Vehicules populaires"
+            title="Les offres les plus demandees"
+            description="Une selection de vehicules recents et performants au meilleur prix."
+            centered
+          />
+
+          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            {popularCars.map((car) => (
+              <PopularCarCard key={car.id} car={car} />
+            ))}
           </div>
 
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
-            {featuredCars.map((car) => (
-              <CarCard key={car.id} car={car} />
-            ))}
+          <div className="mt-8 flex justify-center">
+            <Button asChild variant="outline" className="rounded-full border-slate-200 bg-white px-6">
+              <a href="#catalogue-list">
+                Voir tous les vehicules
+                <ArrowRight className="h-4 w-4" />
+              </a>
+            </Button>
           </div>
         </section>
       )}
 
-      <section className="container mx-auto px-4 pb-16 lg:pb-20" id="catalogue-filters">
-        <div className="grid gap-8 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <section className="container mx-auto px-4 pb-20" id="catalogue-list">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <SectionHeading
+            eyebrow="Catalogue"
+            title="Tous nos vehicules disponibles"
+            description="Affinez les resultats avec les bons filtres, sans saisie libre pour le modele."
+          />
+
+          <div className="flex items-center gap-3">
+            <Select value={sortBy} onValueChange={(value) => {
+              setSortBy(value);
+              applyFilters({ sortBy: value });
+            }}>
+              <SelectTrigger className="min-w-[240px] rounded-full border-slate-200 bg-white">
+                <SelectValue placeholder="Trier" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="year_desc">Prix : du plus bas au plus eleve</SelectItem>
+                <SelectItem value="price_asc">Prix croissant</SelectItem>
+                <SelectItem value="price_desc">Prix decroissant</SelectItem>
+                <SelectItem value="newest">Les plus recentes</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white p-1.5 md:flex">
+              <button type="button" className="rounded-full bg-[#FFF0EF] p-2 text-[#FF4B43]">
+                <Rows3 className="h-4 w-4" />
+              </button>
+              <button type="button" className="rounded-full p-2 text-slate-400">
+                <Grid3X3 className="h-4 w-4" />
+              </button>
+            </div>
+
+            <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="rounded-full border-slate-200 bg-white xl:hidden">
+                  <Filter className="h-4 w-4" />
+                  Filtres
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[min(100vw,420px)] overflow-y-auto bg-[#FAFBFF]">
+                <SheetHeader>
+                  <SheetTitle>Filtres</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6">
+                  <FilterPanel />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+
+        <div className="grid gap-8 xl:grid-cols-[300px_minmax(0,1fr)]">
           <aside className="hidden xl:block">
-            <div className="sticky top-24 rounded-[1.8rem] border border-slate-900/10 bg-slate-950 p-5 text-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.35)]">
-              <div className="mb-4 flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4 text-[#F04B45]" />
-                <h2 className="text-lg font-semibold">Filtres du catalogue</h2>
-              </div>
-              <FilterContent />
+            <div className="sticky top-24">
+              <FilterPanel />
             </div>
           </aside>
 
-          <div>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-medium text-slate-500">{totalLabel}</span>
-                {activeFilterPills.map((item) => (
-                  <span key={`${item.label}-${item.value}`} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                    {item.label}: {item.value}
-                  </span>
-                ))}
-              </div>
-
-              <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" className="rounded-full border-border/70 bg-white xl:hidden">
-                    <Filter className="h-4 w-4" />
-                    Filtres
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[min(100vw,420px)] overflow-y-auto bg-slate-950 text-white">
-                  <SheetHeader>
-                    <SheetTitle>Filtres</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6">
-                    <FilterContent />
-                  </div>
-                </SheetContent>
-              </Sheet>
-            </div>
-
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[1.6rem] border border-border/70 bg-white px-4 py-3 shadow-[0_16px_40px_-28px_rgba(16,23,34,0.16)]">
-              <div className="flex flex-wrap gap-2">
-                {categoryTabs.map((item) => {
-                  const active = category === item.value;
-
-                  return (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => {
-                        setCategory(item.value);
-                        applyFilters({ category: item.value });
-                      }}
-                      className={cn(
-                        "rounded-full border px-4 py-2 text-sm font-medium transition",
-                        active
-                          ? "border-[#F04B45] bg-[#F04B45] text-white"
-                          : "border-border/70 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white",
-                      )}
-                    >
-                      {item.label}
-                      <span className={cn("ml-2 text-xs", active ? "text-white/82" : "text-slate-400")}>({item.count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <Select
-                value={sortBy}
-                onValueChange={(value) => {
-                  setSortBy(value);
-                  applyFilters({ sortBy: value });
-                }}
-              >
-                <SelectTrigger className="min-w-[220px] rounded-full border-border/70">
-                  <SelectValue placeholder="Trier" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="year_desc">Recommande</SelectItem>
-                  <SelectItem value="price_asc">Prix croissant</SelectItem>
-                  <SelectItem value="price_desc">Prix decroissant</SelectItem>
-                  <SelectItem value="newest">Les plus recentes</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="grid gap-4">
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-white shadow-sm">
-                    <div className="grid gap-0 lg:grid-cols-[260px_minmax(0,1fr)_230px]">
-                      <Skeleton className="h-[240px] w-full rounded-none" />
-                      <div className="space-y-4 p-5">
-                        <Skeleton className="h-5 w-1/3" />
-                        <Skeleton className="h-7 w-2/3" />
-                        <Skeleton className="h-20 w-full" />
-                      </div>
-                      <div className="border-t border-border/70 p-5 lg:border-l lg:border-t-0">
-                        <Skeleton className="h-8 w-2/3" />
-                        <Skeleton className="mt-3 h-11 w-full rounded-full" />
-                        <Skeleton className="mt-2 h-11 w-full rounded-full" />
-                      </div>
+          <div className="space-y-4">
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                  <div className="grid gap-0 lg:grid-cols-[220px_minmax(0,1fr)_220px]">
+                    <Skeleton className="h-[220px] w-full rounded-none" />
+                    <div className="space-y-4 p-5">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-7 w-48" />
+                      <Skeleton className="h-16 w-full" />
+                    </div>
+                    <div className="border-t border-slate-100 p-5 lg:border-l lg:border-t-0">
+                      <Skeleton className="h-8 w-28" />
+                      <Skeleton className="mt-6 h-11 w-full rounded-full" />
                     </div>
                   </div>
-                ))
-              ) : data?.cars && data.cars.length > 0 ? (
-                data.cars.map((car) => <CarCard key={car.id} car={car} variant="compact" />)
-              ) : (
-                <Empty className="border border-dashed border-border/70 bg-white py-16">
-                  <EmptyHeader>
-                    <EmptyMedia variant="icon">
-                      <CarFront />
-                    </EmptyMedia>
-                    <EmptyTitle>Aucun vehicule pour le moment</EmptyTitle>
-                    <EmptyDescription>
-                      Aucun resultat pour ces filtres. Changez l'agence, l'intervalle ou le modele, puis relancez.
-                    </EmptyDescription>
-                  </EmptyHeader>
-                  <Button className="rounded-full bg-primary text-primary-foreground" onClick={handleReset}>
-                    Reinitialiser
-                  </Button>
-                </Empty>
-              )}
-            </div>
+                </div>
+              ))
+            ) : data?.cars && data.cars.length > 0 ? (
+              data.cars.map((car) => <CatalogueCarRow key={car.id} car={car} />)
+            ) : (
+              <Empty className="rounded-[1.6rem] border border-dashed border-slate-200 bg-white py-16">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <CarFront />
+                  </EmptyMedia>
+                  <EmptyTitle>Aucun vehicule pour ces filtres</EmptyTitle>
+                  <EmptyDescription>
+                    Changez l'agence, l'intervalle, le modele ou les options du catalogue pour retrouver des disponibilites.
+                  </EmptyDescription>
+                </EmptyHeader>
+                <Button className="rounded-full bg-[#FF4B43] text-white hover:bg-[#f03b33]" onClick={handleReset}>
+                  Reinitialiser
+                </Button>
+              </Empty>
+            )}
           </div>
         </div>
       </section>
