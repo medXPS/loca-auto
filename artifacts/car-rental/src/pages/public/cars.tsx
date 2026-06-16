@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useListCars } from "@workspace/api-client-react";
-import { formatDisplayDate } from "@workspace/api-client-react/availability";
 import { DateRangeCalendar } from "@/components/date-range-calendar";
 import { Seo } from "@/components/seo";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,20 +13,13 @@ import { Slider } from "@/components/ui/slider";
 import {
   ArrowRight,
   BadgeCheck,
-  CalendarDays,
   CarFront,
-  CircleCheckBig,
   Filter,
   Grid3X3,
   Heart,
-  MapPin,
-  MessageCircle,
   Rows3,
   Settings2,
-  ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
-  Star,
   Users,
   Wind,
 } from "lucide-react";
@@ -53,29 +44,6 @@ const fuelOptions = [
   { value: "DIESEL", label: "Diesel" },
   { value: "HYBRIDE", label: "Hybride" },
   { value: "ELECTRIQUE", label: "Electrique" },
-];
-
-const trustCards = [
-  {
-    icon: ShieldCheck,
-    title: "Assurance incluse",
-    description: "Tous nos vehicules sont assures avec une couverture complete.",
-  },
-  {
-    icon: BadgeCheck,
-    title: "Prix transparents",
-    description: "Aucun frais cache. Le prix affiche est le prix que vous payez.",
-  },
-  {
-    icon: MessageCircle,
-    title: "Support WhatsApp",
-    description: "Notre equipe vous accompagne 7j/7 pour une experience fluide.",
-  },
-  {
-    icon: Sparkles,
-    title: "Reservation simple",
-    description: "Reservez en ligne en quelques clics, rapidement et facilement.",
-  },
 ];
 
 function getSearchParams() {
@@ -121,27 +89,6 @@ function FilterCheckRow({
   );
 }
 
-function TrustCard({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
-  return (
-    <div className="rounded-[1.4rem] border border-slate-200 bg-white p-5 shadow-[0_16px_38px_-28px_rgba(15,23,42,0.16)]">
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FF4B43]/10 text-[#FF4B43]">
-        <Icon className="h-4.5 w-4.5" />
-      </div>
-      <h3 className="mt-4 text-sm font-semibold text-slate-900">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
-    </div>
-  );
-}
-
-function MetricPill({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="rounded-[1.3rem] border border-white/10 bg-white/5 px-4 py-4 text-white">
-      <p className="text-sm font-semibold">{title}</p>
-      <p className="mt-1 text-sm text-white/65">{description}</p>
-    </div>
-  );
-}
-
 function SectionHeading({
   eyebrow,
   title,
@@ -158,59 +105,6 @@ function SectionHeading({
       <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#FF4B43]">{eyebrow}</p>
       <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">{title}</h2>
       <p className="mt-3 text-sm leading-7 text-slate-500 md:text-base">{description}</p>
-    </div>
-  );
-}
-
-function PopularCarCard({ car }: { car: any }) {
-  const transmissionLabel = car.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
-  const fuelLabel = FUEL_TRANSLATIONS[car.fuelType] || car.fuelType;
-
-  return (
-    <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-[0_16px_40px_-30px_rgba(15,23,42,0.12)]">
-      <div className="aspect-[5/3] overflow-hidden bg-slate-100">
-        {car.mainImageUrl ? (
-          <img src={car.mainImageUrl} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full items-center justify-center text-slate-400">
-            <CarFront className="h-8 w-8" />
-          </div>
-        )}
-      </div>
-      <div className="space-y-3 p-4">
-        <div>
-          <h3 className="text-base font-semibold text-slate-900">
-            {car.brand} {car.model}
-          </h3>
-          <p className="text-xs text-slate-500">{CATEGORY_TRANSLATIONS[car.category] || car.category}</p>
-        </div>
-
-        <div className="grid gap-2 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <Settings2 className="h-3.5 w-3.5 text-[#FF4B43]" />
-            {transmissionLabel}
-          </div>
-          <div className="flex items-center gap-2">
-            <BadgeCheck className="h-3.5 w-3.5 text-[#FF4B43]" />
-            {fuelLabel}
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="h-3.5 w-3.5 text-[#FF4B43]" />
-            {car.seats} places
-          </div>
-        </div>
-
-        <div className="flex items-end justify-between gap-3">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">A partir de</p>
-            <p className="mt-1 text-2xl font-semibold text-[#FF4B43]">{formatPrice(car.dailyPrice)}</p>
-            <p className="text-xs text-slate-400">/ jour</p>
-          </div>
-          <Button asChild className="rounded-full bg-[#FF4B43] px-4 text-white hover:bg-[#f03b33]">
-            <Link href={`/voitures/${car.id}`}>Voir details</Link>
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -304,7 +198,6 @@ export default function Cars() {
   const [transmission, setTransmission] = useState(initialParams.get("transmission") || ALL_VALUE);
   const [fuelType, setFuelType] = useState(initialParams.get("fuelType") || ALL_VALUE);
   const [priceRange, setPriceRange] = useState([0, 2000]);
-  const [calendarOpen, setCalendarOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
@@ -380,15 +273,7 @@ export default function Cars() {
     return Array.from(values).sort((a, b) => a.localeCompare(b, "fr"));
   }, [allCarsData]);
 
-  const popularCars = (allCarsData?.cars ?? []).slice(0, 6);
   const totalLabel = `${data?.total || 0} vehicules`;
-
-  const intervalLabel =
-    startDate && returnDate
-      ? `${formatDisplayDate(startDate)} - ${formatDisplayDate(returnDate)}`
-      : startDate
-        ? `Depart ${formatDisplayDate(startDate)}`
-        : "Choisir vos dates";
 
   const applyFilters = (overrides?: Partial<{
     vehicleKey: string;
@@ -422,7 +307,6 @@ export default function Cars() {
     if (nextTransmission !== ALL_VALUE) next.set("transmission", nextTransmission);
     if (nextFuelType !== ALL_VALUE) next.set("fuelType", nextFuelType);
 
-    setCalendarOpen(false);
     setIsFilterOpen(false);
     setLocation(`/voitures${next.toString() ? `?${next.toString()}` : ""}`);
   };
@@ -437,7 +321,6 @@ export default function Cars() {
     setTransmission(ALL_VALUE);
     setFuelType(ALL_VALUE);
     setPriceRange([0, 2000]);
-    setCalendarOpen(false);
     setIsFilterOpen(false);
     setLocation("/voitures");
   };
@@ -554,159 +437,7 @@ export default function Cars() {
         type="website"
       />
 
-      <section className="container mx-auto px-4 pt-6 lg:pt-8">
-        <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_28px_80px_-48px_rgba(15,23,42,0.22)]">
-          <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="relative z-10 bg-white px-6 py-10 md:px-8 lg:px-10 lg:py-14">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#FF4B43]">Catalogue premium</p>
-              <h1 className="mt-4 max-w-xl text-5xl font-semibold leading-[1.02] tracking-tight text-slate-900 md:text-6xl">
-                Reservez votre voiture au Maroc avec une experience simple et premium.
-              </h1>
-              <p className="mt-5 max-w-lg text-sm leading-7 text-slate-500 md:text-base">
-                Large choix de vehicules recents, assurance tous risques, prix transparents et service client 7j/7.
-              </p>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                <MetricPill title="Meilleurs prix garantis" description="Des tarifs clairs et competitifs." />
-                <MetricPill title="Assurance tous risques" description="Protection et serenite incluses." />
-                <MetricPill title="Annulation gratuite" description="Plus de flexibilite avant depart." />
-              </div>
-            </div>
-
-            <div className="relative min-h-[360px] overflow-hidden">
-              <img
-                src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1600&q=80"
-                alt="Voiture premium sur route"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.78),rgba(255,255,255,0.08)_34%,rgba(15,23,42,0.15))]" />
-            </div>
-          </div>
-
-          <div className="px-4 pb-4 md:px-8 md:pb-8">
-            <div className="-mt-8 rounded-[1.7rem] border border-slate-200 bg-white p-4 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.22)] md:p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                <CarFront className="h-4 w-4 text-[#FF4B43]" />
-                Trouver votre voiture
-              </div>
-
-              <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(180px,0.9fr)_minmax(180px,0.9fr)_180px]">
-                <Select value={city || ALL_VALUE} onValueChange={(value) => setCity(value === ALL_VALUE ? "" : value)}>
-                  <SelectTrigger className="h-14 rounded-[1.1rem] border-slate-200 bg-[#FCFCFD] text-left">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <MapPin className="h-4 w-4 text-slate-400" />
-                      <div className="min-w-0 text-left">
-                        <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Lieu de prise en charge</p>
-                        <SelectValue placeholder="Ville ou aeroport" />
-                      </div>
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_VALUE}>Toutes les agences</SelectItem>
-                    {cities.map((item) => (
-                      <SelectItem key={item} value={item}>
-                        {item}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex h-14 flex-col items-start justify-center rounded-[1.1rem] border border-slate-200 bg-[#FCFCFD] px-4 text-left transition hover:border-slate-300"
-                    >
-                      <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Date de depart</span>
-                      <span className="mt-1 text-sm font-semibold text-slate-900">
-                        {startDate ? formatDisplayDate(startDate) : "Choisir"}
-                      </span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent align="start" sideOffset={12} className="w-[min(92vw,430px)] rounded-[1.5rem] border-slate-200 p-0 shadow-[0_30px_80px_-42px_rgba(15,23,42,0.25)]">
-                    <DateRangeCalendar
-                      label="Calendrier"
-                      startDate={startDate}
-                      returnDate={returnDate}
-                      onChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
-                        setStartDate(nextStartDate);
-                        setReturnDate(nextReturnDate);
-                      }}
-                      compact
-                      minimal
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                <button
-                  type="button"
-                  onClick={() => setCalendarOpen(true)}
-                  className="flex h-14 flex-col items-start justify-center rounded-[1.1rem] border border-slate-200 bg-[#FCFCFD] px-4 text-left transition hover:border-slate-300"
-                >
-                  <span className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Date de retour</span>
-                  <span className="mt-1 text-sm font-semibold text-slate-900">
-                    {returnDate ? formatDisplayDate(returnDate) : "Choisir"}
-                  </span>
-                </button>
-
-                <Button className="h-14 rounded-[1.1rem] bg-[#FF4B43] text-base text-white hover:bg-[#f03b33]" onClick={() => applyFilters()}>
-                  Rechercher
-                </Button>
-              </div>
-            </div>
-
-            <div className="mt-4 grid gap-3 rounded-[1.6rem] bg-[#111A2C] px-4 py-4 text-white shadow-[0_20px_50px_-34px_rgba(15,23,42,0.38)] md:grid-cols-2 lg:grid-cols-4 md:px-5">
-              <MetricPill title="4,8/5" description="Note moyenne sur Google" />
-              <MetricPill title="Vehicules recents" description="Entretien regulier et securite assuree" />
-              <MetricPill title="Agence verifiee" description="Societe de location autorisee au Maroc" />
-              <MetricPill title="10k+" description="Clients satisfaits chaque annee" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 py-16">
-        <SectionHeading
-          eyebrow="Confiance"
-          title="Une reservation claire et rassurante"
-          description="Nous nous engageons pour votre tranquillite d'esprit a chaque etape de votre location."
-          centered
-        />
-
-        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {trustCards.map((item) => (
-            <TrustCard key={item.title} {...item} />
-          ))}
-        </div>
-      </section>
-
-      {popularCars.length > 0 && (
-        <section className="container mx-auto px-4 pb-16">
-          <SectionHeading
-            eyebrow="Vehicules populaires"
-            title="Les offres les plus demandees"
-            description="Une selection de vehicules recents et performants au meilleur prix."
-            centered
-          />
-
-          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {popularCars.map((car) => (
-              <PopularCarCard key={car.id} car={car} />
-            ))}
-          </div>
-
-          <div className="mt-8 flex justify-center">
-            <Button asChild variant="outline" className="rounded-full border-slate-200 bg-white px-6">
-              <a href="#catalogue-list">
-                Voir tous les vehicules
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </Button>
-          </div>
-        </section>
-      )}
-
-      <section className="container mx-auto px-4 pb-20" id="catalogue-list">
+      <section className="container mx-auto px-4 py-10 lg:py-14" id="catalogue-list">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
             eyebrow="Catalogue"
