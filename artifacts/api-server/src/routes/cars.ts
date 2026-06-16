@@ -21,7 +21,7 @@ function formatCar(car: typeof schema.carsTable.$inferSelect) {
 router.get("/", async (req, res) => {
   try {
     await expireStaleAvailabilityLocks();
-    const { search, brand, category, city, transmission, fuelType, minPrice, maxPrice, seats, available, startDate, returnDate, startHour, returnHour, startAt, returnAt, sortBy, page = "1", limit = "12" } = req.query as Record<string, string>;
+    const { search, brand, model, category, city, transmission, fuelType, minPrice, maxPrice, seats, available, startDate, returnDate, startHour, returnHour, startAt, returnAt, sortBy, page = "1", limit = "12" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
 
@@ -32,6 +32,7 @@ router.get("/", async (req, res) => {
       );
     }
     if (brand) conditions.push(ilike(schema.carsTable.brand, `%${brand}%`));
+    if (model) conditions.push(ilike(schema.carsTable.model, `%${model}%`));
     if (category) conditions.push(eq(schema.carsTable.category, category as any));
     if (city) conditions.push(ilike(schema.carsTable.city, `%${city}%`));
     if (transmission) conditions.push(eq(schema.carsTable.transmission, transmission as any));

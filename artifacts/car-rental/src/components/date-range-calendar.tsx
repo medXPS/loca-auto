@@ -125,14 +125,14 @@ export function DateRangeCalendar({
       <div
         className={
           isCompact
-            ? "overflow-hidden rounded-2xl border border-primary/10 bg-card shadow-[0_10px_22px_-18px_hsl(var(--primary)/0.5)]"
+            ? "overflow-hidden rounded-[1.3rem] border border-primary/10 bg-card shadow-[0_10px_22px_-18px_hsl(var(--primary)/0.5)]"
             : "overflow-hidden rounded-[1.35rem] border border-primary/10 bg-card shadow-[0_18px_45px_-28px_hsl(var(--primary)/0.55)]"
         }
       >
         <div
           className={
             isCompact
-              ? "border-b border-primary/10 bg-gradient-to-br from-primary/10 via-background to-secondary/10 px-2.5 py-2.5"
+              ? "border-b border-primary/10 bg-gradient-to-br from-primary/10 via-background to-secondary/10 px-2 py-2"
               : "border-b border-primary/10 bg-gradient-to-br from-primary/10 via-background to-secondary/10 px-3 py-3 sm:px-4"
           }
         >
@@ -177,11 +177,11 @@ export function DateRangeCalendar({
             )}
           </div>
 
-          <div className={isCompact ? "mt-2 grid grid-cols-2 gap-1.5" : "mt-3 grid gap-2 sm:grid-cols-2"}>
+          <div className={isCompact ? "mt-1.5 grid grid-cols-2 gap-1.5" : "mt-3 grid gap-2 sm:grid-cols-2"}>
             <div
               className={
                 isCompact
-                  ? "rounded-xl border border-primary/10 bg-background/85 px-2 py-1.5 shadow-sm"
+                  ? "rounded-lg border border-primary/10 bg-background/85 px-2 py-1.5 shadow-sm"
                   : "rounded-2xl border border-primary/10 bg-background/85 px-3 py-2 shadow-sm"
               }
             >
@@ -200,7 +200,7 @@ export function DateRangeCalendar({
             <div
               className={
                 isCompact
-                  ? "rounded-xl border border-secondary/10 bg-background/85 px-2 py-1.5 shadow-sm"
+                  ? "rounded-lg border border-secondary/10 bg-background/85 px-2 py-1.5 shadow-sm"
                   : "rounded-2xl border border-secondary/10 bg-background/85 px-3 py-2 shadow-sm"
               }
             >
@@ -231,21 +231,21 @@ export function DateRangeCalendar({
             weekStartsOn={1}
             numberOfMonths={monthCount}
             showOutsideDays
-            className={isCompact ? "bg-transparent p-0 [--cell-size:1.22rem]" : "bg-transparent p-1 [--cell-size:2.35rem] sm:[--cell-size:2.55rem]"}
+            className={isCompact ? "bg-transparent p-0 [--cell-size:0.92rem]" : "bg-transparent p-1 [--cell-size:2.35rem] sm:[--cell-size:2.55rem]"}
             classNames={{
-              months: monthCount > 1 ? "grid gap-4 lg:grid-cols-2" : isCompact ? "grid gap-1.5" : "grid gap-4",
-              month: isCompact ? "flex min-w-0 flex-col gap-1.5" : "flex min-w-0 flex-col gap-3",
-              month_caption: isCompact ? "flex h-8 w-full items-center justify-center px-7" : "flex h-10 w-full items-center justify-center px-10",
-              caption_label: isCompact ? "text-[0.78rem] font-semibold text-foreground" : "text-sm font-semibold text-foreground",
+              months: monthCount > 1 ? "grid gap-4 lg:grid-cols-2" : isCompact ? "grid gap-1" : "grid gap-4",
+              month: isCompact ? "flex min-w-0 flex-col gap-1" : "flex min-w-0 flex-col gap-3",
+              month_caption: isCompact ? "flex h-7 w-full items-center justify-center px-6" : "flex h-10 w-full items-center justify-center px-10",
+              caption_label: isCompact ? "text-[0.74rem] font-semibold text-foreground" : "text-sm font-semibold text-foreground",
               nav: isCompact ? "absolute inset-x-0 top-0.5 flex items-center justify-between" : "absolute inset-x-1 top-1 flex items-center justify-between",
               button_previous:
-                isCompact ? "h-6 w-6 rounded-full border border-primary/10 bg-background/85 p-0 text-muted-foreground shadow-sm hover:bg-primary hover:text-primary-foreground" : "h-8 w-8 rounded-full border border-primary/10 bg-background/85 p-0 text-muted-foreground shadow-sm hover:bg-primary hover:text-primary-foreground",
+                isCompact ? "h-5 w-5 rounded-full border border-primary/10 bg-background/85 p-0 text-muted-foreground shadow-sm hover:bg-primary hover:text-primary-foreground" : "h-8 w-8 rounded-full border border-primary/10 bg-background/85 p-0 text-muted-foreground shadow-sm hover:bg-primary hover:text-primary-foreground",
               button_next:
-                isCompact ? "h-6 w-6 rounded-full border border-primary/10 bg-background/85 p-0 text-muted-foreground shadow-sm hover:bg-primary hover:text-primary-foreground" : "h-8 w-8 rounded-full border border-primary/10 bg-background/85 p-0 text-muted-foreground shadow-sm hover:bg-primary hover:text-primary-foreground",
-              weekdays: isCompact ? "grid grid-cols-7 gap-[0.25rem]" : "grid grid-cols-7 gap-1",
+                isCompact ? "h-5 w-5 rounded-full border border-primary/10 bg-background/85 p-0 text-muted-foreground shadow-sm hover:bg-primary hover:text-primary-foreground" : "h-8 w-8 rounded-full border border-primary/10 bg-background/85 p-0 text-muted-foreground shadow-sm hover:bg-primary hover:text-primary-foreground",
+              weekdays: isCompact ? "grid grid-cols-7 gap-[0.18rem]" : "grid grid-cols-7 gap-1",
               weekday:
-                isCompact ? "flex h-6 items-center justify-center rounded-full text-[0.6rem] font-semibold uppercase text-muted-foreground" : "flex h-8 items-center justify-center rounded-full text-[0.72rem] font-semibold uppercase text-muted-foreground",
-              week: isCompact ? "mt-[0.125rem] grid grid-cols-7 gap-[0.25rem]" : "mt-1 grid grid-cols-7 gap-1",
+                isCompact ? "flex h-5 items-center justify-center rounded-full text-[0.54rem] font-semibold uppercase text-muted-foreground" : "flex h-8 items-center justify-center rounded-full text-[0.72rem] font-semibold uppercase text-muted-foreground",
+              week: isCompact ? "mt-[0.1rem] grid grid-cols-7 gap-[0.18rem]" : "mt-1 grid grid-cols-7 gap-1",
               day: "relative aspect-square min-w-0 select-none p-0 text-center",
               today: "rounded-full border border-primary/20 bg-primary/10 text-primary",
               outside: "text-muted-foreground/45 aria-selected:text-muted-foreground/70",
@@ -259,7 +259,7 @@ export function DateRangeCalendar({
 
         {minimal ? (
           warningMessage && (
-            <div className="border-t border-primary/10 bg-muted/20 px-2.5 py-2.5">
+            <div className="border-t border-primary/10 bg-muted/20 px-2 py-2">
               <div className="rounded-2xl border border-destructive/20 bg-destructive/5 px-3 py-2 text-[11px] font-medium text-destructive">
                 {warningMessage}
               </div>

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useListCars } from "@workspace/api-client-react";
+import { formatDisplayDate } from "@workspace/api-client-react/availability";
 import { CarCard } from "@/components/car-card";
-import { ReservationSearchBar } from "@/components/reservation-search-bar";
+import { DateRangeCalendar } from "@/components/date-range-calendar";
 import { Seo } from "@/components/seo";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
@@ -15,31 +15,29 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowRight,
   BadgeCheck,
+  CalendarDays,
   CarFront,
   CircleCheckBig,
   Filter,
-  Heart,
+  MapPin,
   MessageCircle,
-  Search,
   ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Star,
-  SlidersHorizontal,
 } from "lucide-react";
 import { CATEGORY_TRANSLATIONS, cn } from "@/lib/utils";
 
-function getSearchParams() {
-  return new URLSearchParams(window.location.search);
-}
+const ALL_VALUE = "all";
 
 const transmissionOptions = [
-  { value: "all", label: "Toutes" },
+  { value: ALL_VALUE, label: "Toutes" },
   { value: "MANUELLE", label: "Manuelle" },
   { value: "AUTOMATIQUE", label: "Automatique" },
 ];
 
 const fuelOptions = [
-  { value: "all", label: "Tous" },
+  { value: ALL_VALUE, label: "Tous" },
   { value: "DIESEL", label: "Diesel" },
   { value: "ESSENCE", label: "Essence" },
   { value: "HYBRIDE", label: "Hybride" },
@@ -54,6 +52,23 @@ const trustItems = [
   { icon: CircleCheckBig, title: "Agence verifiee", description: "Agence locale fiable et certifiee." },
   { icon: Star, title: "Avis clients", description: "4,8/5 sur +1200 clients satisfaits." },
 ];
+
+function getSearchParams() {
+  if (typeof window === "undefined") {
+    return new URLSearchParams();
+  }
+
+  return new URLSearchParams(window.location.search);
+}
+
+function buildVehicleKey(brand: string, model: string) {
+  return `${brand}::${model}`;
+}
+
+function parseVehicleKey(value: string) {
+  const [brand = "", model = ""] = value.split("::");
+  return { brand, model };
+}
 
 function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -74,11 +89,14 @@ function TrustCard({ icon: Icon, title, description }: { icon: any; title: strin
   );
 }
 
-function StatPill({ label, value }: { label: string; value: string }) {
+function HeroPill({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
-    <div className="rounded-[1.25rem] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-sm">
-      <p className="text-[10px] uppercase tracking-[0.18em] text-white/55">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-white">{value}</p>
+    <div className="rounded-[1.2rem] border border-white/10 bg-white/10 px-4 py-3 backdrop-blur-sm">
+      <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-white/55">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </div>
+      <p className="mt-2 text-sm font-semibold text-white">{value}</p>
     </div>
   );
 }
@@ -102,39 +120,71 @@ function SectionTitle({
 }
 
 export default function Cars() {
-  const [, setLocation] = useLocation();
-  const params = getSearchParams();
+  const [location, setLocation] = useLocation();
+  const initialParams = getSearchParams();
+  const initialBrand = initialParams.get("brand") || "";
+  const initialModel = initialParams.get("model") || "";
 
-  const [brand, setBrand] = useState(params.get("brand") || params.get("search") || "");
-  const [category, setCategory] = useState(params.get("category") || "all");
-  const [city, setCity] = useState(params.get("city") || "");
-  const [startDate, setStartDate] = useState(params.get("startDate") || "");
-  const [returnDate, setReturnDate] = useState(params.get("returnDate") || "");
-  const [sortBy, setSortBy] = useState(params.get("sortBy") || "year_desc");
-  const [transmission, setTransmission] = useState(params.get("transmission") || "all");
-  const [fuelType, setFuelType] = useState(params.get("fuelType") || "all");
+  const [vehicleKey, setVehicleKey] = useState(
+    initialBrand || initialModel ? buildVehicleKey(initialBrand, initialModel) : ALL_VALUE,
+  );
+  const [category, setCategory] = useState(initialParams.get("category") || ALL_VALUE);
+  const [city, setCity] = useState(initialParams.get("city") || "");
+  const [startDate, setStartDate] = useState(initialParams.get("startDate") || "");
+  const [returnDate, setReturnDate] = useState(initialParams.get("returnDate") || "");
+  const [sortBy, setSortBy] = useState(initialParams.get("sortBy") || "year_desc");
+  const [transmission, setTransmission] = useState(initialParams.get("transmission") || ALL_VALUE);
+  const [fuelType, setFuelType] = useState(initialParams.get("fuelType") || ALL_VALUE);
   const [priceRange, setPriceRange] = useState([0, 2000]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     const next = getSearchParams();
-    setBrand(next.get("brand") || next.get("search") || "");
-    setCategory(next.get("category") || "all");
+    const nextBrand = next.get("brand") || "";
+    const nextModel = next.get("model") || "";
+
+    setVehicleKey(nextBrand || nextModel ? buildVehicleKey(nextBrand, nextModel) : ALL_VALUE);
+    setCategory(next.get("category") || ALL_VALUE);
     setCity(next.get("city") || "");
     setStartDate(next.get("startDate") || "");
     setReturnDate(next.get("returnDate") || "");
     setSortBy(next.get("sortBy") || "year_desc");
-    setTransmission(next.get("transmission") || "all");
-    setFuelType(next.get("fuelType") || "all");
+    setTransmission(next.get("transmission") || ALL_VALUE);
+    setFuelType(next.get("fuelType") || ALL_VALUE);
   }, [location]);
 
   const { data: allCarsData } = useListCars({ limit: 200, sortBy: "year_desc" });
+
+  const vehicleOptions = useMemo(() => {
+    const seen = new Set<string>();
+
+    return (allCarsData?.cars ?? [])
+      .map((car) => ({
+        key: buildVehicleKey(car.brand, car.model),
+        label: `${car.brand} ${car.model}`,
+        brand: car.brand,
+        model: car.model,
+      }))
+      .filter((item) => {
+        if (seen.has(item.key)) return false;
+        seen.add(item.key);
+        return true;
+      })
+      .sort((a, b) => a.label.localeCompare(b.label, "fr"));
+  }, [allCarsData]);
+
+  const selectedVehicle = useMemo(
+    () => vehicleOptions.find((item) => item.key === vehicleKey) ?? null,
+    [vehicleKey, vehicleOptions],
+  );
+
   const carQueryParams = {
-    brand: brand || undefined,
-    category: category !== "all" ? category : undefined,
+    brand: selectedVehicle?.brand || undefined,
+    model: selectedVehicle?.model || undefined,
+    category: category !== ALL_VALUE ? category : undefined,
     city: city || undefined,
-    transmission: transmission !== "all" ? transmission : undefined,
-    fuelType: fuelType !== "all" ? fuelType : undefined,
+    transmission: transmission !== ALL_VALUE ? transmission : undefined,
+    fuelType: fuelType !== ALL_VALUE ? fuelType : undefined,
     minPrice: priceRange[0],
     maxPrice: priceRange[1] < 2000 ? priceRange[1] : undefined,
     sortBy,
@@ -142,82 +192,116 @@ export default function Cars() {
     startDate: startDate || undefined,
     returnDate: returnDate || undefined,
   } as any;
+
   const { data, isLoading } = useListCars(carQueryParams);
 
   const cities = useMemo(() => {
     const values = new Set<string>();
-    for (const car of allCarsData?.cars ?? []) if (car.city?.trim()) values.add(car.city.trim());
-    if (values.size === 0) ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fes"].forEach((item) => values.add(item));
+
+    for (const car of allCarsData?.cars ?? []) {
+      if (car.city?.trim()) {
+        values.add(car.city.trim());
+      }
+    }
+
+    if (values.size === 0) {
+      ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fes"].forEach((item) => values.add(item));
+    }
+
     return Array.from(values).sort((a, b) => a.localeCompare(b, "fr"));
   }, [allCarsData]);
 
   const categoryTabs = useMemo(() => {
     const counts = new Map<string, number>();
+
     for (const car of allCarsData?.cars ?? []) {
       const value = car.category?.trim();
       if (!value) continue;
       counts.set(value, (counts.get(value) || 0) + 1);
     }
 
-    const visible = ["all", "CITADINE", "BERLINE", "SUV", "LUXE"].map((value) => ({
+    return ["all", "CITADINE", "BERLINE", "SUV", "LUXE"].map((value) => ({
       value,
       label: value === "all" ? "Tous" : CATEGORY_TRANSLATIONS[value] || value,
       count: value === "all" ? allCarsData?.total || 0 : counts.get(value) || 0,
     }));
-
-    return visible;
   }, [allCarsData]);
 
-  const featuredCars = (data?.cars ?? []).slice(0, 3);
-  const totalLabel = `${data?.total || 0} véhicules`;
+  const featuredCars = (allCarsData?.cars ?? []).slice(0, 3);
+  const totalLabel = `${data?.total || 0} vehicules`;
 
-  const handleSearch = () => {
+  const intervalLabel =
+    startDate && returnDate
+      ? `${formatDisplayDate(startDate)} - ${formatDisplayDate(returnDate)}`
+      : startDate
+        ? `Depart ${formatDisplayDate(startDate)}`
+        : "Dates flexibles";
+
+  const activeFilterPills = [
+    city ? { label: "Agence", value: city } : null,
+    selectedVehicle ? { label: "Modele", value: selectedVehicle.label } : null,
+    (startDate || returnDate) ? { label: "Intervalle", value: intervalLabel } : null,
+  ].filter(Boolean) as { label: string; value: string }[];
+
+  const applyFilters = (overrides?: Partial<{
+    vehicleKey: string;
+    category: string;
+    city: string;
+    startDate: string;
+    returnDate: string;
+    sortBy: string;
+    transmission: string;
+    fuelType: string;
+  }>) => {
+    const nextVehicleKey = overrides?.vehicleKey ?? vehicleKey;
+    const nextCategory = overrides?.category ?? category;
+    const nextCity = overrides?.city ?? city;
+    const nextStartDate = overrides?.startDate ?? startDate;
+    const nextReturnDate = overrides?.returnDate ?? returnDate;
+    const nextSortBy = overrides?.sortBy ?? sortBy;
+    const nextTransmission = overrides?.transmission ?? transmission;
+    const nextFuelType = overrides?.fuelType ?? fuelType;
+
     const next = new URLSearchParams();
-    if (brand) next.set("brand", brand);
-    if (category !== "all") next.set("category", category);
-    if (city) next.set("city", city);
-    if (startDate) next.set("startDate", startDate);
-    if (returnDate) next.set("returnDate", returnDate);
-    if (sortBy) next.set("sortBy", sortBy);
-    if (transmission !== "all") next.set("transmission", transmission);
-    if (fuelType !== "all") next.set("fuelType", fuelType);
+    const nextVehicle = nextVehicleKey !== ALL_VALUE ? parseVehicleKey(nextVehicleKey) : { brand: "", model: "" };
+
+    if (nextVehicle.brand) next.set("brand", nextVehicle.brand);
+    if (nextVehicle.model) next.set("model", nextVehicle.model);
+    if (nextCategory !== ALL_VALUE) next.set("category", nextCategory);
+    if (nextCity) next.set("city", nextCity);
+    if (nextStartDate) next.set("startDate", nextStartDate);
+    if (nextReturnDate) next.set("returnDate", nextReturnDate);
+    if (nextSortBy) next.set("sortBy", nextSortBy);
+    if (nextTransmission !== ALL_VALUE) next.set("transmission", nextTransmission);
+    if (nextFuelType !== ALL_VALUE) next.set("fuelType", nextFuelType);
+
+    setIsFilterOpen(false);
     setLocation(`/voitures${next.toString() ? `?${next.toString()}` : ""}`);
   };
 
   const handleReset = () => {
-    setBrand("");
-    setCategory("all");
+    setVehicleKey(ALL_VALUE);
+    setCategory(ALL_VALUE);
     setCity("");
     setStartDate("");
     setReturnDate("");
     setSortBy("year_desc");
-    setTransmission("all");
-    setFuelType("all");
+    setTransmission(ALL_VALUE);
+    setFuelType(ALL_VALUE);
     setPriceRange([0, 2000]);
+    setIsFilterOpen(false);
     setLocation("/voitures");
   };
 
   const FilterContent = () => (
     <div className="space-y-4">
-      <FilterGroup title="Marque">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-white/45" />
-          <Input
-            value={brand}
-            onChange={(event) => setBrand(event.target.value)}
-            placeholder="Toyota, Dacia, Renault..."
-            className="h-12 rounded-2xl border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/35"
-          />
-        </div>
-      </FilterGroup>
-
-      <FilterGroup title="Ville">
-        <Select value={city || "all"} onValueChange={(value) => setCity(value === "all" ? "" : value)}>
+      <FilterGroup title="Agence">
+        <Select value={city || ALL_VALUE} onValueChange={(value) => setCity(value === ALL_VALUE ? "" : value)}>
           <SelectTrigger className="h-12 rounded-2xl border-white/10 bg-white/5 text-white">
-            <SelectValue placeholder="Choisir une ville" />
+            <SelectValue placeholder="Choisir une agence" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes les villes</SelectItem>
+            <SelectItem value={ALL_VALUE}>Toutes les agences</SelectItem>
             {cities.map((item) => (
               <SelectItem key={item} value={item}>
                 {item}
@@ -227,11 +311,40 @@ export default function Cars() {
         </Select>
       </FilterGroup>
 
+      <FilterGroup title="Modele de voiture">
+        <Select value={vehicleKey} onValueChange={setVehicleKey}>
+          <SelectTrigger className="h-12 rounded-2xl border-white/10 bg-white/5 text-white">
+            <SelectValue placeholder="Choisir un modele" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_VALUE}>Tous les modeles</SelectItem>
+            {vehicleOptions.map((item) => (
+              <SelectItem key={item.key} value={item.key}>
+                {item.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FilterGroup>
+
+      <FilterGroup title="Intervalle">
+        <DateRangeCalendar
+          label="Disponibilite"
+          startDate={startDate}
+          returnDate={returnDate}
+          onChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+            setStartDate(nextStartDate);
+            setReturnDate(nextReturnDate);
+          }}
+          compact
+        />
+      </FilterGroup>
+
       <FilterGroup title="Prix">
         <div className="flex items-center justify-between text-sm text-white/70">
           <span>Budget</span>
           <span className="font-semibold text-white">
-            {priceRange[0]} - {priceRange[1] >= 2000 ? "2000+" : priceRange[1]}
+            {priceRange[0]} - {priceRange[1] >= 2000 ? "2000+" : priceRange[1]} MAD
           </span>
         </div>
         <Slider value={priceRange} onValueChange={setPriceRange} max={2000} step={50} />
@@ -267,9 +380,14 @@ export default function Cars() {
         </Select>
       </FilterGroup>
 
-      <Button variant="outline" className="w-full rounded-2xl border-white/15 bg-white/5 text-white hover:bg-white/10" onClick={handleReset}>
-        Reinitialiser
-      </Button>
+      <div className="grid gap-3">
+        <Button className="w-full rounded-2xl bg-[#F04B45] text-white hover:bg-[#e63f39]" onClick={() => applyFilters()}>
+          Appliquer les filtres
+        </Button>
+        <Button variant="outline" className="w-full rounded-2xl border-white/15 bg-white/5 text-white hover:bg-white/10" onClick={handleReset}>
+          Reinitialiser
+        </Button>
+      </div>
 
       <Card className="overflow-hidden rounded-[1.5rem] border-0 bg-[linear-gradient(180deg,rgba(246,190,140,0.42),rgba(16,23,34,0.88))] text-white shadow-[0_22px_60px_-36px_rgba(16,23,34,0.45)]">
         <CardContent className="space-y-4 p-5">
@@ -277,8 +395,8 @@ export default function Cars() {
             <ShieldCheck className="h-5 w-5" />
           </div>
           <div>
-            <h4 className="text-xl font-semibold">Roulez en toute sérénite au Maroc</h4>
-            <p className="mt-2 text-sm leading-6 text-white/78">Assurance, assistance 24/7 et véhicules vérifiés.</p>
+            <h4 className="text-xl font-semibold">Roulez en toute serenite au Maroc</h4>
+            <p className="mt-2 text-sm leading-6 text-white/78">Assurance, assistance 24/7 et vehicules verifies.</p>
           </div>
           <Button asChild className="w-full rounded-full bg-[#F04B45] text-white hover:bg-[#e63f39]">
             <Link href="/contact">
@@ -311,88 +429,37 @@ export default function Cars() {
           <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(8,15,28,0.92),rgba(8,15,28,0.72)_54%,rgba(8,15,28,0.32))]" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(240,75,69,0.26),transparent_26%)]" />
 
-          <div className="relative z-10 px-6 py-8 md:px-8 lg:px-10 lg:py-10">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F04B45] text-white shadow-[0_16px_32px_-20px_rgba(240,75,69,0.7)]">
-                  <CarFront className="h-6 w-6" />
-                </span>
-                <div>
-                  <p className="text-base font-semibold tracking-tight">Location Auto Maroc</p>
-                  <p className="text-[0.68rem] uppercase tracking-[0.28em] text-white/58">Location simple et rapide</p>
-                </div>
-              </div>
+          <div className="relative z-10 px-6 py-10 md:px-8 lg:px-10 lg:py-14">
+            <div className="max-w-4xl">
+              <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/56">Votre voyage, notre passion</p>
+              <h1 className="mt-4 font-serif text-5xl leading-[0.95] text-balance md:text-6xl lg:text-7xl">
+                Trouvez la bonne voiture
+                <span className="block text-[#F04B45]">sans formulaire geant.</span>
+              </h1>
+              <p className="mt-5 max-w-2xl text-sm leading-7 text-white/78 md:text-base">
+                Cette page reste un vrai catalogue. Les dates, l'agence et le modele se choisissent proprement
+                dans les filtres, avec un petit calendrier d'intervalle au lieu d'un gros bloc de reservation.
+              </p>
 
-              <nav className="hidden items-center gap-6 lg:flex">
-                {["Accueil", "Véhicules", "Offres", "Blog", "À propos", "Contact"].map((item) => (
-                  <a key={item} href={item === "Accueil" ? "/" : item === "Véhicules" ? "/voitures" : "#"} className="text-sm text-white/72 transition hover:text-white">
-                    {item}
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Button asChild className="rounded-full bg-white px-6 text-slate-950 hover:bg-white/95">
+                  <a href="#catalogue-filters">
+                    Voir les filtres
+                    <ArrowRight className="h-4 w-4" />
                   </a>
-                ))}
-              </nav>
-
-              <div className="flex items-center gap-3">
-                <Button asChild variant="outline" className="hidden rounded-full border-white/15 bg-white/8 px-4 text-white hover:bg-white/12 md:inline-flex">
+                </Button>
+                <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/8 px-6 text-white hover:bg-white/12 hover:text-white">
                   <a href="https://wa.me/212600000000" target="_blank" rel="noreferrer">
                     <MessageCircle className="h-4 w-4" />
                     WhatsApp
                   </a>
                 </Button>
-                <Button asChild className="rounded-full bg-[#F04B45] px-5 text-white hover:bg-[#e63f39]">
-                  <Link href="/voitures">Réserver</Link>
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid gap-8 py-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)] lg:items-center lg:py-16">
-              <div className="max-w-3xl">
-                <p className="text-xs font-medium uppercase tracking-[0.32em] text-white/56">Votre voyage, notre passion</p>
-                <h1 className="mt-4 font-serif text-5xl leading-[0.95] text-balance md:text-6xl lg:text-7xl">
-                  Roulez librement
-                  <span className="block text-[#F04B45]">vivez le Maroc.</span>
-                </h1>
-                <p className="mt-5 max-w-xl text-sm leading-7 text-white/78 md:text-base">
-                  Des véhicules sélectionnés avec soin, un service premium et des prix clairs. Réservez en quelques clics et profitez pleinement de chaque instant.
-                </p>
-
-                <div className="mt-8 flex flex-wrap items-center gap-4">
-                  <div className="flex items-center -space-x-2">
-                    {["A", "M", "K"].map((letter) => (
-                      <div key={letter} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/18 text-sm font-semibold text-white backdrop-blur-sm">
-                        {letter}
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                      <span>4,8/5</span>
-                      <span className="text-[#FFCC66]">★★★★★</span>
-                    </div>
-                    <p className="text-sm text-white/65">+1200 clients satisfaits</p>
-                  </div>
-                </div>
-
-                <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                  <StatPill label="Réservation" value="En 2 minutes" />
-                  <StatPill label="Disponibilité" value="Calcul temps réel" />
-                  <StatPill label="Paiement" value="À l'agence" />
-                </div>
               </div>
 
-              <div className="rounded-[1.9rem] border border-white/10 bg-slate-900/70 p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-                <ReservationSearchBar
-                  cities={cities}
-                  city={city}
-                  startDate={startDate}
-                  returnDate={returnDate}
-                  onCityChange={setCity}
-                  onDatesChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
-                    setStartDate(nextStartDate);
-                    setReturnDate(nextReturnDate);
-                  }}
-                  onSubmit={handleSearch}
-                  className="w-full"
-                />
+              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                <HeroPill icon={MapPin} label="Agence" value={city || "Toutes les villes"} />
+                <HeroPill icon={CalendarDays} label="Intervalle" value={intervalLabel} />
+                <HeroPill icon={CarFront} label="Modele" value={selectedVehicle?.label || "Tous les modeles"} />
               </div>
             </div>
           </div>
@@ -411,9 +478,9 @@ export default function Cars() {
         <section className="container mx-auto px-4 pb-10 lg:pb-14">
           <div className="flex items-end justify-between gap-4">
             <SectionTitle
-              eyebrow="Sélection populaire"
-              title="Nos voitures les plus demandées"
-              description="Une sélection plus visuelle, plus claire et plus proche du parcours que vous avez partagé."
+              eyebrow="Selection populaire"
+              title="Nos voitures les plus demandees"
+              description="Une selection plus claire, avec un parcours catalogue qui laisse les filtres a leur vraie place."
             />
             <Link href="/voitures" className="hidden items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900 md:inline-flex">
               Voir toutes les offres
@@ -429,21 +496,29 @@ export default function Cars() {
         </section>
       )}
 
-      <section className="container mx-auto px-4 pb-16 lg:pb-20">
+      <section className="container mx-auto px-4 pb-16 lg:pb-20" id="catalogue-filters">
         <div className="grid gap-8 xl:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="hidden xl:block">
             <div className="sticky top-24 rounded-[1.8rem] border border-slate-900/10 bg-slate-950 p-5 text-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.35)]">
               <div className="mb-4 flex items-center gap-2">
                 <SlidersHorizontal className="h-4 w-4 text-[#F04B45]" />
-                <h2 className="text-lg font-semibold">Affiner votre recherche</h2>
+                <h2 className="text-lg font-semibold">Filtres du catalogue</h2>
               </div>
               <FilterContent />
             </div>
           </aside>
 
           <div>
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-slate-500">{totalLabel}</span>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium text-slate-500">{totalLabel}</span>
+                {activeFilterPills.map((item) => (
+                  <span key={`${item.label}-${item.value}`} className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
+                    {item.label}: {item.value}
+                  </span>
+                ))}
+              </div>
+
               <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <SheetTrigger asChild>
                   <Button variant="outline" className="rounded-full border-border/70 bg-white xl:hidden">
@@ -451,7 +526,7 @@ export default function Cars() {
                     Filtres
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[min(100vw,420px)] bg-slate-950 text-white">
+                <SheetContent side="left" className="w-[min(100vw,420px)] overflow-y-auto bg-slate-950 text-white">
                   <SheetHeader>
                     <SheetTitle>Filtres</SheetTitle>
                   </SheetHeader>
@@ -466,11 +541,15 @@ export default function Cars() {
               <div className="flex flex-wrap gap-2">
                 {categoryTabs.map((item) => {
                   const active = category === item.value;
+
                   return (
                     <button
                       key={item.value}
                       type="button"
-                      onClick={() => setCategory(item.value)}
+                      onClick={() => {
+                        setCategory(item.value);
+                        applyFilters({ category: item.value });
+                      }}
                       className={cn(
                         "rounded-full border px-4 py-2 text-sm font-medium transition",
                         active
@@ -485,7 +564,13 @@ export default function Cars() {
                 })}
               </div>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select
+                value={sortBy}
+                onValueChange={(value) => {
+                  setSortBy(value);
+                  applyFilters({ sortBy: value });
+                }}
+              >
                 <SelectTrigger className="min-w-[220px] rounded-full border-border/70">
                   <SelectValue placeholder="Trier" />
                 </SelectTrigger>
@@ -526,7 +611,9 @@ export default function Cars() {
                       <CarFront />
                     </EmptyMedia>
                     <EmptyTitle>Aucun vehicule pour le moment</EmptyTitle>
-                    <EmptyDescription>Le catalogue est vide pour l'instant. Ajoutez des vehicules depuis l'espace admin.</EmptyDescription>
+                    <EmptyDescription>
+                      Aucun resultat pour ces filtres. Changez l'agence, l'intervalle ou le modele, puis relancez.
+                    </EmptyDescription>
                   </EmptyHeader>
                   <Button className="rounded-full bg-primary text-primary-foreground" onClick={handleReset}>
                     Reinitialiser

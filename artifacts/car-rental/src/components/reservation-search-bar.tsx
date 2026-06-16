@@ -125,7 +125,7 @@ export function ReservationSearchBar({
                 sideOffset={12}
                 className={cn(
                   "overflow-hidden rounded-[1.75rem] border-border/70 bg-background p-0 shadow-[0_30px_80px_-40px_rgba(16,23,34,0.25)]",
-                  isCompact ? "w-[min(94vw,720px)]" : "w-[min(96vw,960px)]",
+                  isCompact ? "w-[min(92vw,430px)]" : "w-[min(96vw,960px)]",
                 )}
               >
                 <DateRangeCalendar
