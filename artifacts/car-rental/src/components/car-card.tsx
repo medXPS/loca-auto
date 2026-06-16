@@ -4,7 +4,7 @@ import { Car } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatPrice, cn, FUEL_TRANSLATIONS } from "@/lib/utils";
-import { ArrowRight, Fuel, ImageIcon, Settings2, Users } from "lucide-react";
+import { ArrowRight, BarChart3, Fuel, Heart, ImageIcon, Settings2, Users } from "lucide-react";
 
 interface CarCardProps {
   car: Car;
@@ -54,27 +54,106 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
   const fuelLabel = FUEL_TRANSLATIONS[car.fuelType] || car.fuelType;
   const transmissionLabel = car.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
 
+  if (isCompact) {
+    return (
+      <Card className="group overflow-hidden rounded-[1.6rem] border border-border/70 bg-white shadow-[0_16px_35px_-28px_rgba(16,23,34,0.14)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_50px_-30px_rgba(16,23,34,0.18)]">
+        <div className="grid gap-0 lg:grid-cols-[240px_minmax(0,1fr)_220px]">
+          <Link
+            href={detailHref}
+            className="relative block min-h-[220px] overflow-hidden bg-muted lg:min-h-[190px]"
+            aria-label={`Voir la fiche de ${car.brand} ${car.model}`}
+          >
+            {car.mainImageUrl && !imageFailed ? (
+              <img
+                src={car.mainImageUrl}
+                alt={`${car.brand} ${car.model}`}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                onError={() => setImageFailed(true)}
+              />
+            ) : (
+              <div className="flex h-full min-h-[220px] items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <ImageIcon className="mx-auto h-11 w-11 opacity-45" />
+                  <p className="mt-2 text-sm">Aucune image</p>
+                </div>
+              </div>
+            )}
+
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,31,0.06),rgba(7,15,31,0.28))]" />
+          </Link>
+
+          <div className="flex flex-col justify-between p-5 lg:p-6">
+            <div>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <Link href={detailHref} className="inline-flex w-fit">
+                    <h3 className="text-2xl font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
+                      {car.brand} {car.model}
+                    </h3>
+                  </Link>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {car.city || "Maroc"} · {car.year} · {car.category}
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  Disponible
+                </span>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} />
+                <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} />
+                <SpecLine icon={Users} label="Places" value={`${car.seats} places`} />
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Prix par jour</p>
+                <p className="mt-1 text-3xl font-semibold text-primary">{formatPrice(car.dailyPrice)}</p>
+                <p className="mt-1 text-sm text-muted-foreground">Par jour</p>
+              </div>
+
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="outline" size="sm" className="rounded-full border-border/70 bg-white">
+                  <BarChart3 className="h-4 w-4" />
+                  Comparer
+                </Button>
+                <Button variant="outline" size="sm" className="rounded-full border-border/70 bg-white">
+                  <Heart className="h-4 w-4" />
+                  Favori
+                </Button>
+                <Button asChild className="rounded-full bg-[#F04B45] px-5 text-primary-foreground">
+                  <Link href={reserveHref}>
+                    Réserver
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
-    <Card
-      className={cn(
-        "group overflow-hidden rounded-[1.6rem] border border-border/70 bg-white shadow-[0_16px_35px_-28px_rgba(16,23,34,0.14)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_50px_-30px_rgba(16,23,34,0.18)]",
-        isCompact ? "lg:grid lg:grid-cols-[280px_minmax(0,1fr)_250px]" : "flex h-full flex-col",
-      )}
-    >
+    <Card className="group overflow-hidden rounded-[1.75rem] border border-slate-900/10 bg-slate-950 text-white shadow-[0_26px_60px_-36px_rgba(16,23,34,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_32px_70px_-34px_rgba(16,23,34,0.45)]">
       <Link
         href={detailHref}
-        className={cn("relative block overflow-hidden bg-muted", isCompact ? "min-h-[240px]" : "aspect-[16/10]")}
+        className="relative block aspect-[16/11] overflow-hidden bg-muted"
         aria-label={`Voir la fiche de ${car.brand} ${car.model}`}
       >
         {car.mainImageUrl && !imageFailed ? (
           <img
             src={car.mainImageUrl}
             alt={`${car.brand} ${car.model}`}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.05]"
             onError={() => setImageFailed(true)}
           />
         ) : (
-          <div className="flex h-full min-h-[240px] items-center justify-center text-muted-foreground">
+          <div className="flex h-full min-h-[220px] items-center justify-center text-muted-foreground">
             <div className="text-center">
               <ImageIcon className="mx-auto h-11 w-11 opacity-45" />
               <p className="mt-2 text-sm">Aucune image</p>
@@ -82,65 +161,45 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
           </div>
         )}
 
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,31,0.04),rgba(7,15,31,0.2))]" />
-      </Link>
-
-      <div className="flex flex-1 flex-col p-5 lg:p-6">
-        <div className="space-y-1.5">
-          <Link href={detailHref} className="inline-flex w-fit">
-            <h3 className="text-2xl font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02),rgba(0,0,0,0.6))]" />
+        <div className="absolute left-4 top-4 rounded-full bg-[#F04B45] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+          Disponible
+        </div>
+        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-white/70">{car.category}</p>
+            <h3 className="mt-1 text-2xl font-semibold tracking-tight text-white transition-colors group-hover:text-[#ffd3d0]">
               {car.brand} {car.model}
             </h3>
-          </Link>
-          <p className="text-sm text-muted-foreground">
-            {car.city || "Maroc"} · {car.year}
-          </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/65">À partir de</p>
+            <p className="text-3xl font-semibold text-[#F04B45]">{formatPrice(car.dailyPrice)}</p>
+          </div>
         </div>
+      </Link>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+      <div className="space-y-4 p-5">
+        <div className="grid gap-3 sm:grid-cols-3">
           <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} />
           <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} />
           <SpecLine icon={Users} label="Places" value={`${car.seats} places`} />
         </div>
 
-        {!isCompact && (
-          <div className="mt-5 rounded-2xl border border-border/70 bg-muted/15 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Prix par jour</p>
-            <p className="mt-1 text-3xl font-semibold text-primary">{formatPrice(car.dailyPrice)}</p>
-            <p className="mt-1 text-sm text-muted-foreground">Paiement à l'agence</p>
-          </div>
-        )}
-
-        {!isCompact && (
-          <div className="mt-auto pt-5">
-            <Button asChild className="rounded-full bg-primary px-5 text-primary-foreground">
-              <Link href={reserveHref}>
-                Réserver
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {isCompact && (
-        <div className="flex flex-col justify-between border-t border-border/70 bg-muted/15 p-5 lg:border-l lg:border-t-0">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Prix par jour</p>
-            <p className="mt-1 text-3xl font-semibold text-primary">{formatPrice(car.dailyPrice)}</p>
-            <p className="mt-1 text-sm text-muted-foreground">Paiement à l'agence</p>
-          </div>
-
-          <div className="mt-5">
-            <Button asChild className="w-full rounded-full bg-primary px-5 text-primary-foreground">
-              <Link href={reserveHref}>
-                Réserver
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
+        <div className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/82">
+          <span>Disponible à {car.city || "Maroc"}</span>
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">Réservation rapide</span>
         </div>
-      )}
+
+        <div className="flex gap-2">
+          <Button asChild className="flex-1 rounded-full bg-white text-slate-950 hover:bg-white/95">
+            <Link href={reserveHref}>
+              Réserver
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      </div>
     </Card>
   );
 }

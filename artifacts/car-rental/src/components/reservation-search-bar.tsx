@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, MapPin, Search, Route, ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, CalendarDays, MapPin, Route, Search } from "lucide-react";
 import { formatDisplayDate } from "@workspace/api-client-react/availability";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -18,18 +18,6 @@ type ReservationSearchBarProps = {
   className?: string;
 };
 
-function formatRangeLabel(startDate: string, returnDate: string) {
-  if (startDate && returnDate) {
-    return `${formatDisplayDate(startDate)} - ${formatDisplayDate(returnDate)}`;
-  }
-
-  if (startDate) {
-    return `Départ ${formatDisplayDate(startDate)}`;
-  }
-
-  return "Choisir vos dates";
-}
-
 export function ReservationSearchBar({
   cities,
   city,
@@ -42,7 +30,6 @@ export function ReservationSearchBar({
 }: ReservationSearchBarProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [tripType, setTripType] = useState<"oneway" | "roundtrip">("oneway");
-  const selectedDateLabel = formatRangeLabel(startDate, returnDate);
 
   const handleCityChange = (value: string) => {
     onCityChange(value === "all" ? "" : value);
@@ -84,15 +71,18 @@ export function ReservationSearchBar({
 
         <div className="grid gap-3 p-4">
           <div className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Ville de depart</p>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Ville de départ</p>
             <Select value={city || "all"} onValueChange={handleCityChange}>
-              <SelectTrigger className="h-auto border-0 bg-transparent px-0 py-1 text-left text-lg font-semibold text-white shadow-none focus:ring-0 [&>svg]:hidden">
+              <SelectTrigger className="h-auto border-0 bg-transparent px-0 py-1 text-left text-lg font-semibold text-white shadow-none focus:ring-0">
+                <MapPin className="mr-2 h-4 w-4 text-white/65" />
                 <SelectValue placeholder="Casablanca" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes les villes</SelectItem>
                 {cities.map((item) => (
-                  <SelectItem key={item} value={item}>{item}</SelectItem>
+                  <SelectItem key={item} value={item}>
+                    {item}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -102,7 +92,8 @@ export function ReservationSearchBar({
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
                 <button type="button" className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4 text-left transition hover:bg-white/12">
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Date de depart</p>
+                  <CalendarDays className="h-4 w-4 text-white/55" />
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Date de départ</p>
                   <p className="mt-1 text-sm font-semibold text-white">{startDate ? formatDisplayDate(startDate) : "Choisir"}</p>
                 </button>
               </PopoverTrigger>
@@ -112,6 +103,7 @@ export function ReservationSearchBar({
             </Popover>
 
             <button type="button" className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4 text-left transition hover:bg-white/12" onClick={() => setCalendarOpen(true)}>
+              <CalendarDays className="h-4 w-4 text-white/55" />
               <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Date de retour</p>
               <p className="mt-1 text-sm font-semibold text-white">{returnDate ? formatDisplayDate(returnDate) : "Choisir"}</p>
             </button>
@@ -122,7 +114,7 @@ export function ReservationSearchBar({
             Rechercher
           </Button>
 
-          <p className="text-center text-xs text-white/55">Reservation en 2 minutes · Aucune carte requise</p>
+          <p className="text-center text-xs text-white/55">Réservation en 2 minutes · Aucune carte requise</p>
         </div>
       </div>
     </form>
