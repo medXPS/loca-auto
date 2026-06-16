@@ -10,6 +10,7 @@ import {
   useVerifyEmail,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
+import { createPendingReservation } from "@/lib/pending-reservation";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -71,7 +72,7 @@ export default function Register() {
     );
   };
 
-  const completeLogin = (res: any) => {
+  const completeLogin = async (res: any) => {
     setAuthToken(res.token);
     setAuthTokenGetter(() => res.token);
 
@@ -79,6 +80,22 @@ export default function Register() {
       title: "Email verifie",
       description: "Bienvenue sur Location Auto Maroc",
     });
+
+    if (res.user.role === "CUSTOMER") {
+      try {
+        const pendingRequest = await createPendingReservation();
+        if (pendingRequest?.id) {
+          setLocation(`/dashboard/demandes/${pendingRequest.id}`);
+          return;
+        }
+      } catch (error: any) {
+        toast({
+          title: "Email verifie",
+          description: error?.message || "Compte cree, mais la reservation doit etre relancee.",
+          variant: "destructive",
+        });
+      }
+    }
 
     if (res.user.role === "ADMIN") {
       setLocation("/admin");
@@ -97,7 +114,7 @@ export default function Register() {
       { data: { email: verificationEmail, code: verificationCode } },
       {
         onSuccess: (res) => {
-          completeLogin(res);
+          void completeLogin(res);
         },
         onError: (error: any) => {
           toast({

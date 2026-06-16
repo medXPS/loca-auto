@@ -9,15 +9,22 @@ interface StatusBadgeProps {
 
 function getRentalTone(status: string) {
   switch (status) {
+    case "DOCUMENT_SUBMISSION_WINDOW":
+      return "bg-amber-500/12 text-amber-700 hover:bg-amber-500/18 border-amber-200";
+    case "PENDING_CALL_CONFIRMATION":
+      return "bg-sky-500/12 text-sky-700 hover:bg-sky-500/18 border-sky-200";
     case "PENDING":
     case "UNDER_REVIEW":
     case "CALL_ATTEMPTED":
       return "bg-yellow-500/12 text-yellow-700 hover:bg-yellow-500/18 border-yellow-200";
     case "CALL_CONFIRMED":
+    case "EXTENDED_PAYMENT_DEADLINE":
     case "WAITING_AGENCY_PAYMENT":
       return "bg-sky-500/12 text-sky-700 hover:bg-sky-500/18 border-sky-200";
     case "RESERVED":
       return "bg-primary/10 text-primary hover:bg-primary/18 border-primary/15";
+    case "PAID":
+    case "ACTIVE_RENTAL":
     case "CAR_DELIVERED":
     case "RENTED":
     case "CAR_RETURNED":

@@ -7,10 +7,15 @@ import { createNotification } from "../lib/notify";
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 import {
+  combineDateAndHour,
   createTemporaryHold,
   expireStaleAvailabilityLocks,
   getPaymentDeadlineHours,
+  getRequestAvailabilityEndAt,
+  getRequestStartAt,
   hasActiveAvailabilityOverlap,
+  markRequestCallConfirmed,
+  markRequestPendingCallConfirmation,
   markRequestReserved,
   releaseRequestAvailabilityBlocks,
 } from "../lib/availability";
@@ -19,6 +24,11 @@ const router = Router();
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "En attente",
+  DOCUMENT_SUBMISSION_WINDOW: "Documents requis",
+  PENDING_CALL_CONFIRMATION: "Documents recus",
+  EXTENDED_PAYMENT_DEADLINE: "Delai prolonge",
+  PAID: "Payee",
+  ACTIVE_RENTAL: "En cours de location",
   UNDER_REVIEW: "En attente",
   CALL_ATTEMPTED: "En attente",
   CALL_CONFIRMED: "Appel confirmé",
@@ -59,6 +69,14 @@ function normalizeAmount(amount: unknown) {
   if (amount === undefined || amount === null || amount === "") return null;
   const numeric = Number(amount);
   return Number.isFinite(numeric) ? numeric : null;
+}
+
+function resolveRentalTimes(body: any) {
+  const startDate = String(body.startDate ?? "");
+  const returnDate = String(body.returnDate ?? "");
+  const startAt = body.startAt ? new Date(body.startAt) : combineDateAndHour(startDate, body.startHour ?? "09:00");
+  const returnAt = body.returnAt ? new Date(body.returnAt) : combineDateAndHour(returnDate, body.returnHour ?? "18:00");
+  return { startDate, returnDate, startAt, returnAt };
 }
 
 function formatMoney(amount: number) {
@@ -338,9 +356,16 @@ router.get("/", authMiddleware, async (req, res) => {
 router.post("/", authMiddleware, async (req, res) => {
   try {
     await expireStaleAvailabilityLocks();
-    const { carId, fullName, phone, email, cinOrPassport, drivingLicenseNumber, startDate, returnDate, pickupLocation, returnLocation, estimatedTotalPrice, notes } = req.body;
+    const { carId, fullName, phone, email, cinOrPassport, drivingLicenseNumber, pickupLocation, returnLocation, estimatedTotalPrice, notes } = req.body;
+    const { startDate, returnDate, startAt, returnAt } = resolveRentalTimes(req.body);
 
-    if (await hasActiveAvailabilityOverlap(Number(carId), startDate, returnDate)) {
+    if (!startDate || !returnDate || Number.isNaN(startAt.getTime()) || Number.isNaN(returnAt.getTime()) || returnAt <= startAt) {
+      res.status(400).json({ error: "Dates ou heures de reservation invalides." });
+      return;
+    }
+
+    const availabilityEndAt = new Date(returnAt.getTime() + 30 * 60 * 1000);
+    if (await hasActiveAvailabilityOverlap(Number(carId), startDate, returnDate, undefined, startAt, availabilityEndAt)) {
       res.status(409).json({ error: "Cette voiture est deja reservee ou bloquee sur cette periode." });
       return;
     }
@@ -363,11 +388,13 @@ router.post("/", authMiddleware, async (req, res) => {
         drivingLicenseNumber,
         startDate,
         returnDate,
+        startAt,
+        returnAt,
         pickupLocation,
         returnLocation,
         estimatedTotalPrice: String(estimatedTotalPrice),
         notes,
-        status: "PENDING",
+        status: "DOCUMENT_SUBMISSION_WINDOW",
       })
       .returning();
     await createTemporaryHold(request);
@@ -392,7 +419,7 @@ router.post("/check-expired", authMiddleware, requireRole("ADMIN", "AGENT"), asy
       .from(schema.rentalRequestsTable)
       .where(
         and(
-          sql`status IN ('CALL_CONFIRMED', 'WAITING_AGENCY_PAYMENT')`,
+          sql`status IN ('CALL_CONFIRMED', 'EXTENDED_PAYMENT_DEADLINE', 'WAITING_AGENCY_PAYMENT')`,
           lt(schema.rentalRequestsTable.paymentDeadline, now),
         ),
       );
@@ -435,7 +462,34 @@ router.get("/:id", authMiddleware, async (req, res) => {
 // PATCH /api/rental-requests/:id
 router.patch("/:id", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
-    const { fullName, phone, email, cinOrPassport, drivingLicenseNumber, startDate, returnDate, pickupLocation, returnLocation, finalPrice, notes } = req.body;
+    const { fullName, phone, email, cinOrPassport, drivingLicenseNumber, pickupLocation, returnLocation, finalPrice, notes } = req.body;
+    const requestId = parseInt(String(req.params.id), 10);
+    const [existing] = await db.select().from(schema.rentalRequestsTable).where(eq(schema.rentalRequestsTable.id, requestId)).limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Demande non trouvÃ©e" });
+      return;
+    }
+
+    const hasDateUpdate = req.body.startDate || req.body.returnDate || req.body.startAt || req.body.returnAt || req.body.startHour || req.body.returnHour;
+    const dateUpdate = hasDateUpdate
+      ? resolveRentalTimes({
+          ...req.body,
+          startDate: req.body.startDate ?? existing.startDate,
+          returnDate: req.body.returnDate ?? existing.returnDate,
+        })
+      : null;
+    if (dateUpdate && await hasActiveAvailabilityOverlap(
+      existing.carId,
+      dateUpdate.startDate,
+      dateUpdate.returnDate,
+      existing.id,
+      dateUpdate.startAt,
+      new Date(dateUpdate.returnAt.getTime() + 30 * 60 * 1000),
+    )) {
+      res.status(409).json({ error: "Cette voiture est deja bloquee sur cette periode." });
+      return;
+    }
+
     const [updated] = await db
       .update(schema.rentalRequestsTable)
       .set({
@@ -444,15 +498,33 @@ router.patch("/:id", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, 
         email,
         cinOrPassport,
         drivingLicenseNumber,
-        startDate,
-        returnDate,
+        ...(dateUpdate && {
+          startDate: dateUpdate.startDate,
+          returnDate: dateUpdate.returnDate,
+          startAt: dateUpdate.startAt,
+          returnAt: dateUpdate.returnAt,
+        }),
         pickupLocation,
         returnLocation,
         ...(finalPrice !== undefined && finalPrice !== null && { finalPrice: String(finalPrice) }),
         notes,
       })
-      .where(eq(schema.rentalRequestsTable.id, parseInt(String(req.params.id), 10)))
+      .where(eq(schema.rentalRequestsTable.id, requestId))
       .returning();
+    if (dateUpdate && updated) {
+      const endAt = getRequestAvailabilityEndAt(updated);
+      await db.update(schema.carAvailabilityBlocksTable)
+        .set({
+          startDate: updated.startDate,
+          endDate: endAt.toISOString().slice(0, 10),
+          startAt: getRequestStartAt(updated),
+          endAt,
+        })
+        .where(and(
+          eq(schema.carAvailabilityBlocksTable.rentalRequestId, updated.id),
+          eq(schema.carAvailabilityBlocksTable.status, "ACTIVE"),
+        ));
+    }
     if (!updated) {
       res.status(404).json({ error: "Demande non trouvée" });
       return;
@@ -478,6 +550,9 @@ router.patch("/:id/status", authMiddleware, requireRole("ADMIN", "AGENT"), async
       res.status(404).json({ error: "Demande non trouvée" });
       return;
     }
+    if (["ABANDONED", "CANCELLED", "REJECTED"].includes(status)) {
+      await releaseRequestAvailabilityBlocks(updated.id, status === "ABANDONED" ? "EXPIRED" : "RELEASED");
+    }
     await logAudit({ userId: req.user!.userId, action: `STATUS_CHANGE_${status}`, entityType: "rental_request", entityId: updated.id, details: notes });
     const result = await fetchRequestWithCar(updated.id);
     res.json(result);
@@ -494,7 +569,7 @@ router.patch("/:id/confirm-call", authMiddleware, requireRole("ADMIN", "AGENT"),
     const now = new Date();
 
     const [settings] = await db.select().from(schema.companySettingsTable).limit(1);
-    const deadlineHours = getPaymentDeadlineHours(settings?.paymentDeadlineHours ?? 24);
+    const deadlineHours = getPaymentDeadlineHours(settings?.paymentDeadlineHours ?? 12);
     const paymentDeadline = new Date(now.getTime() + deadlineHours * 60 * 60 * 1000);
 
     const [updated] = await db
@@ -513,6 +588,8 @@ router.patch("/:id/confirm-call", authMiddleware, requireRole("ADMIN", "AGENT"),
       res.status(404).json({ error: "Demande non trouvée" });
       return;
     }
+
+    await markRequestCallConfirmed(updated);
 
     if (updated.customerId) {
       const [customer] = await db.select().from(schema.customersTable).where(eq(schema.customersTable.id, updated.customerId)).limit(1);
@@ -534,6 +611,54 @@ router.patch("/:id/confirm-call", authMiddleware, requireRole("ADMIN", "AGENT"),
   }
 });
 
+// PATCH /api/rental-requests/:id/extend-payment-deadline
+router.patch("/:id/extend-payment-deadline", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
+  try {
+    await expireStaleAvailabilityLocks();
+    const hours = Number(req.body.hours);
+    if (![12, 24].includes(hours)) {
+      res.status(400).json({ error: "Extension autorisee: 12 ou 24 heures." });
+      return;
+    }
+
+    const [existing] = await db.select().from(schema.rentalRequestsTable)
+      .where(eq(schema.rentalRequestsTable.id, parseInt(String(req.params.id), 10)))
+      .limit(1);
+    if (!existing) {
+      res.status(404).json({ error: "Demande non trouvee" });
+      return;
+    }
+    if (!["CALL_CONFIRMED", "EXTENDED_PAYMENT_DEADLINE", "WAITING_AGENCY_PAYMENT"].includes(existing.status)) {
+      res.status(409).json({ error: "Le delai ne peut etre prolonge qu'apres confirmation par appel." });
+      return;
+    }
+
+    const baseDeadline = existing.paymentDeadline && existing.paymentDeadline > new Date()
+      ? existing.paymentDeadline
+      : new Date();
+    const paymentDeadline = new Date(baseDeadline.getTime() + hours * 60 * 60 * 1000);
+
+    const [updated] = await db.update(schema.rentalRequestsTable)
+      .set({
+        status: "EXTENDED_PAYMENT_DEADLINE",
+        paymentDeadline,
+        paymentDeadlineExtendedAt: new Date(),
+        paymentDeadlineExtendedBy: req.user!.userId,
+        paymentDeadlineExtensionHours: hours,
+      })
+      .where(eq(schema.rentalRequestsTable.id, existing.id))
+      .returning();
+
+    await markRequestCallConfirmed(updated, true);
+    await logAudit({ userId: req.user!.userId, action: `EXTEND_PAYMENT_DEADLINE_${hours}H`, entityType: "rental_request", entityId: updated.id });
+    const result = await fetchRequestWithCar(updated.id);
+    res.json(result);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 // PATCH /api/rental-requests/:id/confirm-payment
 router.patch("/:id/confirm-payment", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
@@ -543,7 +668,7 @@ router.patch("/:id/confirm-payment", authMiddleware, requireRole("ADMIN", "AGENT
     const [updated] = await db
       .update(schema.rentalRequestsTable)
       .set({
-        status: "RESERVED",
+        status: "PAID",
         paymentStatus: "PAID_AT_AGENCY",
         paymentMethod: paymentMethod ?? "CASH_AT_AGENCY",
         paidAtAgencyAt: now,
@@ -559,7 +684,7 @@ router.patch("/:id/confirm-payment", authMiddleware, requireRole("ADMIN", "AGENT
     }
 
     await markRequestReserved(updated);
-    await db.update(schema.carsTable).set({ status: "RESERVED" }).where(eq(schema.carsTable.id, updated.carId));
+    await db.update(schema.carsTable).set({ status: "RENTED" }).where(eq(schema.carsTable.id, updated.carId));
 
     if (updated.customerId) {
       const [customer] = await db.select().from(schema.customersTable).where(eq(schema.customersTable.id, updated.customerId)).limit(1);

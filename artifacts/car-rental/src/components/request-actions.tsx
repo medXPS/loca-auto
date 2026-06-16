@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Phone, Check, CreditCard, Ban, Key, Undo2, Flag } from "lucide-react";
-import { useUpdateRentalRequestStatus, useConfirmCall, useConfirmPayment } from "@workspace/api-client-react";
+import { Phone, Check, CreditCard, Ban, Key, Undo2, Flag, TimerReset } from "lucide-react";
+import { customFetch, useUpdateRentalRequestStatus, useConfirmCall, useConfirmPayment } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -109,6 +109,23 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
     );
   };
 
+  const handleExtendDeadline = async (hours: 12 | 24) => {
+    try {
+      await customFetch(`/api/rental-requests/${requestId}/extend-payment-deadline`, {
+        method: "PATCH",
+        body: JSON.stringify({ hours }),
+      });
+      toast({ title: `Delai prolonge de ${hours}h` });
+      onSuccess();
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de prolonger le delai.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const executeAction = () => {
     if (
       currentAction === "REJECTED" ||
@@ -138,7 +155,7 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
   return (
     <>
       <div className="flex flex-wrap gap-2">
-        {(status === "PENDING" || status === "UNDER_REVIEW") && (
+        {(status === "PENDING" || status === "UNDER_REVIEW" || status === "PENDING_CALL_CONFIRMATION") && (
           <>
             <Button size="sm" variant="outline" onClick={() => openDialog("CALL_ATTEMPTED")} className="gap-2">
               <Phone className="w-4 h-4" /> Appel tenté
@@ -163,10 +180,16 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
           </>
         )}
 
-        {(status === "CALL_CONFIRMED" || status === "WAITING_AGENCY_PAYMENT") && (
+        {(status === "CALL_CONFIRMED" || status === "EXTENDED_PAYMENT_DEADLINE" || status === "WAITING_AGENCY_PAYMENT") && (
           <>
             <Button size="sm" onClick={() => openDialog("PAYMENT_CONFIRMED")} className="gap-2">
               <CreditCard className="w-4 h-4" /> Enregistrer paiement
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handleExtendDeadline(12)} className="gap-2">
+              <TimerReset className="w-4 h-4" /> +12h
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handleExtendDeadline(24)} className="gap-2">
+              <TimerReset className="w-4 h-4" /> +24h
             </Button>
             <Button size="sm" variant="destructive" onClick={() => openDialog("ABANDONED")} className="gap-2">
               <Flag className="w-4 h-4" /> Marquer abandonné
@@ -174,7 +197,7 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
           </>
         )}
 
-        {status === "RESERVED" && (
+        {(status === "RESERVED" || status === "PAID") && (
           <>
             <Button size="sm" onClick={() => openDialog("CAR_DELIVERED")} className="gap-2">
               <Key className="w-4 h-4" /> Remettre le véhicule

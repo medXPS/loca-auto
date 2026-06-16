@@ -31,12 +31,18 @@ type CalendarEvent = EventInput & {
 };
 
 const STATUS_COLORS: Record<string, string> = {
+  AVAILABLE: "#16A34A",
+  DOCUMENT_SUBMISSION_WINDOW: "#F59E0B",
+  PENDING_CALL_CONFIRMATION: "#0EA5E9",
   PENDING: "#EF4444",
   UNDER_REVIEW: "#DC2626",
   CALL_ATTEMPTED: "#B91C1C",
   CALL_CONFIRMED: "#1F2937",
+  EXTENDED_PAYMENT_DEADLINE: "#6366F1",
   WAITING_AGENCY_PAYMENT: "#374151",
   RESERVED: "#111827",
+  PAID: "#047857",
+  ACTIVE_RENTAL: "#047857",
   CAR_DELIVERED: "#4B5563",
   RENTED: "#1F2937",
   CAR_RETURNED: "#374151",
@@ -47,10 +53,18 @@ const STATUS_COLORS: Record<string, string> = {
   REJECTED: "#B91C1C",
 };
 
-function addOneDay(date: string) {
-  const result = new Date(`${date}T00:00:00`);
-  result.setDate(result.getDate() + 1);
-  return result;
+function getEventStart(request: any) {
+  return request.startAt || `${request.startDate}T09:00:00`;
+}
+
+function getEventEnd(request: any) {
+  const returnAt = request.returnAt ? new Date(request.returnAt) : new Date(`${request.returnDate}T18:00:00`);
+  return new Date(returnAt.getTime() + 30 * 60 * 1000).toISOString();
+}
+
+function getVisualStatus(request: any) {
+  if (request.status === "PAID" || request.status === "ACTIVE_RENTAL") return "ACTIVE_RENTAL";
+  return request.status;
 }
 
 export default function AdminCalendarPage() {
@@ -76,22 +90,23 @@ export default function AdminCalendarPage() {
         return handledBy ? String(handledBy) === agentFilter : false;
       })
       .map<CalendarEvent>((request) => {
-        const color = STATUS_COLORS[request.status] ?? "#1F2937";
+        const visualStatus = getVisualStatus(request);
+        const color = STATUS_COLORS[visualStatus] ?? "#1F2937";
         const carLabel = request.car ? `${request.car.brand} ${request.car.model}` : `Véhicule #${request.carId}`;
         const amount = Number(request.finalPrice || request.estimatedTotalPrice || 0);
         const handledBy = request.paymentConfirmedBy ?? request.callConfirmedBy;
         return {
           id: String(request.id),
           title: `${carLabel} • ${request.fullName}`,
-          start: request.startDate,
-          end: addOneDay(request.returnDate).toISOString(),
-          allDay: true,
+          start: getEventStart(request),
+          end: getEventEnd(request),
+          allDay: false,
           backgroundColor: color,
           borderColor: color,
           textColor: "#ffffff",
           extendedProps: {
             requestId: request.id,
-            status: request.status,
+            status: visualStatus,
             carId: request.carId,
             carLabel,
             clientName: request.fullName,
@@ -106,7 +121,7 @@ export default function AdminCalendarPage() {
   const unavailableCars = useMemo(() => {
     const activeCarIds = new Set(
       requests
-        .filter((request) => ["CALL_CONFIRMED", "WAITING_AGENCY_PAYMENT", "RESERVED", "CAR_DELIVERED", "RENTED"].includes(request.status))
+        .filter((request) => ["DOCUMENT_SUBMISSION_WINDOW", "PENDING_CALL_CONFIRMATION", "CALL_CONFIRMED", "EXTENDED_PAYMENT_DEADLINE", "WAITING_AGENCY_PAYMENT", "PAID", "ACTIVE_RENTAL", "RESERVED", "CAR_DELIVERED", "RENTED"].includes(request.status))
         .map((request) => request.carId),
     );
     return cars.filter((car) => car.status !== "AVAILABLE" || activeCarIds.has(car.id));
@@ -122,12 +137,15 @@ export default function AdminCalendarPage() {
   }, [requests]);
 
   const updateDates = async (requestId: number, start: Date, end: Date) => {
+    const returnAt = new Date(end.getTime() - 30 * 60 * 1000);
     await customFetch(`/api/rental-requests/${requestId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         startDate: start.toISOString().slice(0, 10),
-        returnDate: new Date(end.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+        returnDate: returnAt.toISOString().slice(0, 10),
+        startAt: start.toISOString(),
+        returnAt: returnAt.toISOString(),
       }),
     });
 
@@ -241,10 +259,12 @@ export default function AdminCalendarPage() {
             <div className="space-y-2">
               <p className="text-sm font-medium text-foreground">Légende</p>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">En attente</Badge>
-                <Badge variant="outline">Appel confirmé</Badge>
-                <Badge variant="outline">Réservé</Badge>
-                <Badge variant="outline">En cours</Badge>
+                <Badge variant="outline">Documents 1h</Badge>
+                <Badge variant="outline">Appel a confirmer</Badge>
+                <Badge variant="outline">Paiement 12h</Badge>
+                <Badge variant="outline">Delai prolonge</Badge>
+                <Badge variant="outline">Location active</Badge>
+                <Badge variant="outline">Abandonnee</Badge>
               </div>
             </div>
           </CardContent>

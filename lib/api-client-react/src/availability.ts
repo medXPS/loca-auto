@@ -3,6 +3,8 @@ import type { AvailabilityBlock } from "./generated/api.schemas";
 export interface AvailabilityRange {
   startDate: string;
   endDate: string;
+  startAt?: string | Date;
+  endAt?: string | Date;
 }
 
 export const MONTHS_FR = [
@@ -54,6 +56,27 @@ export function calculateRentalDays(startDate: string, endDate: string): number 
   return Math.ceil((end - start) / 86400000);
 }
 
+export function combineIsoDateAndHour(isoDate: string, hour = "09:00"): Date {
+  return new Date(`${isoDate}T${hour}:00`);
+}
+
+export function addMinutes(date: Date, minutes: number): Date {
+  return new Date(date.getTime() + minutes * 60 * 1000);
+}
+
+export function toDateTimeInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function asDate(value: string | Date): Date {
+  return value instanceof Date ? value : new Date(value);
+}
+
 export function isIsoRangeValid(startDate: string, endDate: string): boolean {
   return calculateRentalDays(startDate, endDate) > 0;
 }
@@ -67,12 +90,16 @@ export function isIsoDateBlocked(
 
 export function doesIsoRangeOverlapBlocked(
   range: AvailabilityRange,
-  blocks: Pick<AvailabilityBlock, "startDate" | "endDate">[],
+  blocks: Pick<AvailabilityBlock, "startDate" | "endDate" | "startAt" | "endAt">[],
 ): boolean {
   if (!range.startDate || !range.endDate) return false;
-  return blocks.some(
-    (block) => range.startDate <= block.endDate && range.endDate >= block.startDate,
-  );
+  const requestedStart = range.startAt ? asDate(range.startAt) : combineIsoDateAndHour(range.startDate, "00:00");
+  const requestedEnd = range.endAt ? asDate(range.endAt) : combineIsoDateAndHour(range.endDate, "23:59");
+  return blocks.some((block) => {
+    const blockStart = block.startAt ? new Date(block.startAt) : combineIsoDateAndHour(block.startDate, "00:00");
+    const blockEnd = block.endAt ? new Date(block.endAt) : combineIsoDateAndHour(block.endDate, "23:59");
+    return requestedStart < blockEnd && requestedEnd > blockStart;
+  });
 }
 
 export function getBlockedIsoDates(

@@ -8,7 +8,9 @@ import { customersTable } from "./customers";
 export const rentalStatusEnum = pgEnum("rental_status", [
   "PENDING", "UNDER_REVIEW", "CALL_ATTEMPTED", "CALL_CONFIRMED",
   "WAITING_AGENCY_PAYMENT", "RESERVED", "REJECTED", "WAITING_DOCUMENTS",
-  "CAR_DELIVERED", "CAR_RETURNED", "CANCELLED", "ABANDONED", "COMPLETED"
+  "CAR_DELIVERED", "CAR_RETURNED", "CANCELLED", "ABANDONED", "COMPLETED",
+  "DOCUMENT_SUBMISSION_WINDOW", "PENDING_CALL_CONFIRMATION",
+  "EXTENDED_PAYMENT_DEADLINE", "PAID", "ACTIVE_RENTAL"
 ]);
 
 export const paymentStatusEnum = pgEnum("payment_status", [
@@ -30,6 +32,8 @@ export const rentalRequestsTable = pgTable("rental_requests", {
   drivingLicenseNumber: text("driving_license_number"),
   startDate: date("start_date", { mode: "string" }).notNull(),
   returnDate: date("return_date", { mode: "string" }).notNull(),
+  startAt: timestamp("start_at", { withTimezone: true }),
+  returnAt: timestamp("return_at", { withTimezone: true }),
   pickupLocation: text("pickup_location"),
   returnLocation: text("return_location"),
   estimatedTotalPrice: numeric("estimated_total_price", { precision: 10, scale: 2 }).notNull(),
@@ -38,7 +42,11 @@ export const rentalRequestsTable = pgTable("rental_requests", {
   status: rentalStatusEnum("status").notNull().default("PENDING"),
   paymentStatus: paymentStatusEnum("payment_status").notNull().default("UNPAID"),
   paymentMethod: paymentMethodEnum("payment_method").notNull().default("CASH_AT_AGENCY"),
+  documentDeadline: timestamp("document_deadline", { withTimezone: true }),
   paymentDeadline: timestamp("payment_deadline", { withTimezone: true }),
+  paymentDeadlineExtendedAt: timestamp("payment_deadline_extended_at", { withTimezone: true }),
+  paymentDeadlineExtendedBy: integer("payment_deadline_extended_by").references(() => usersTable.id),
+  paymentDeadlineExtensionHours: integer("payment_deadline_extension_hours"),
   callConfirmedAt: timestamp("call_confirmed_at", { withTimezone: true }),
   callConfirmedBy: integer("call_confirmed_by").references(() => usersTable.id),
   paidAtAgencyAt: timestamp("paid_at_agency_at", { withTimezone: true }),

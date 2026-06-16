@@ -63,7 +63,7 @@ async function seed() {
     city: "Casablanca",
     primaryColor: "#B45309",
     secondaryColor: "#0F172A",
-    paymentDeadlineHours: 24,
+    paymentDeadlineHours: 12,
   }).onConflictDoNothing();
 
   // ── 3. Cars ───────────────────────────────────────────────────────────────

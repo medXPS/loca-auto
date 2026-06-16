@@ -234,8 +234,14 @@ export interface AvailabilityBlock {
   rentalRequestId?: number | null;
   startDate: string;
   endDate: string;
+  /** @nullable */
+  startAt?: string | null;
+  /** @nullable */
+  endAt?: string | null;
   type: string;
   status: string;
+  /** @nullable */
+  visualState?: string | null;
   /** @nullable */
   expiresAt?: string | null;
 }
@@ -255,6 +261,10 @@ export interface RentalRequest {
   startDate: string;
   returnDate: string;
   /** @nullable */
+  startAt?: string | null;
+  /** @nullable */
+  returnAt?: string | null;
+  /** @nullable */
   pickupLocation?: string | null;
   /** @nullable */
   returnLocation?: string | null;
@@ -267,7 +277,15 @@ export interface RentalRequest {
   paymentStatus: string;
   paymentMethod?: string;
   /** @nullable */
+  documentDeadline?: string | null;
+  /** @nullable */
   paymentDeadline?: string | null;
+  /** @nullable */
+  paymentDeadlineExtendedAt?: string | null;
+  /** @nullable */
+  paymentDeadlineExtendedBy?: number | null;
+  /** @nullable */
+  paymentDeadlineExtensionHours?: number | null;
   /** @nullable */
   callConfirmedAt?: string | null;
   /** @nullable */
@@ -295,6 +313,10 @@ export interface RentalRequestInput {
   drivingLicenseNumber?: string;
   startDate: string;
   returnDate: string;
+  startAt?: string;
+  returnAt?: string;
+  startHour?: string;
+  returnHour?: string;
   pickupLocation?: string;
   returnLocation?: string;
   estimatedTotalPrice: number;
@@ -309,6 +331,10 @@ export interface RentalRequestUpdate {
   drivingLicenseNumber?: string;
   startDate?: string;
   returnDate?: string;
+  startAt?: string;
+  returnAt?: string;
+  startHour?: string;
+  returnHour?: string;
   pickupLocation?: string;
   returnLocation?: string;
   finalPrice?: number;
@@ -624,6 +650,12 @@ minPrice?: number;
 maxPrice?: number;
 seats?: number;
 available?: boolean;
+startDate?: string;
+returnDate?: string;
+startHour?: string;
+returnHour?: string;
+startAt?: string;
+returnAt?: string;
 sortBy?: string;
 page?: number;
 limit?: number;
@@ -675,4 +707,3 @@ export type ListAuditLogsParams = {
 page?: number;
 limit?: number;
 };
-

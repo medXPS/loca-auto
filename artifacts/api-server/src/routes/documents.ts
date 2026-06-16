@@ -2,7 +2,7 @@ import { Router } from "express";
 import { and, eq, sql } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware } from "../lib/auth";
-import { expireStaleAvailabilityLocks } from "../lib/availability";
+import { expireStaleAvailabilityLocks, markRequestPendingCallConfirmation } from "../lib/availability";
 
 const router = Router();
 
@@ -75,18 +75,48 @@ router.post("/", authMiddleware, async (req, res) => {
       }).returning();
     }
 
+    const [profileDocument] = await db.select().from(schema.documentsTable)
+      .where(and(
+        eq(schema.documentsTable.customerId, customerId),
+        eq(schema.documentsTable.type, type),
+        sql`${schema.documentsTable.rentalRequestId} IS NULL`,
+      ))
+      .limit(1);
+
+    if (profileDocument) {
+      await db.update(schema.documentsTable)
+        .set({
+          fileUrl,
+          status: "PENDING",
+          uploadedAt: new Date(),
+        })
+        .where(eq(schema.documentsTable.id, profileDocument.id));
+    } else {
+      await db.insert(schema.documentsTable).values({
+        customerId,
+        rentalRequestId: null,
+        type,
+        fileUrl,
+        status: "PENDING",
+      });
+    }
+
     if (requestId) {
       const docs = await db.select().from(schema.documentsTable)
         .where(eq(schema.documentsTable.rentalRequestId, requestId));
       const hasCin = docs.some((item) => item.type === "CIN" || item.type === "PASSPORT");
       const hasDrivingLicense = docs.some((item) => item.type === "PERMIS_CONDUIRE");
       if (hasCin && hasDrivingLicense) {
-        await db.update(schema.rentalRequestsTable)
-          .set({ status: "UNDER_REVIEW" })
+        const [updated] = await db.update(schema.rentalRequestsTable)
+          .set({ status: "PENDING_CALL_CONFIRMATION" })
           .where(and(
             eq(schema.rentalRequestsTable.id, requestId),
-            eq(schema.rentalRequestsTable.status, "WAITING_DOCUMENTS"),
-          ));
+            sql`${schema.rentalRequestsTable.status} IN ('DOCUMENT_SUBMISSION_WINDOW', 'WAITING_DOCUMENTS', 'PENDING')`,
+          ))
+          .returning();
+        if (updated) {
+          await markRequestPendingCallConfirmation(updated);
+        }
       }
     }
 

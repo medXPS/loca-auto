@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { customFetch, useLogin, setAuthTokenGetter } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
+import { createPendingReservation } from "@/lib/pending-reservation";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -45,7 +46,7 @@ export default function Login() {
 
   const loginMutation = useLogin();
 
-  const completeLogin = (res: any) => {
+  const completeLogin = async (res: any) => {
     setAuthToken(res.token);
     setAuthTokenGetter(() => res.token);
 
@@ -53,6 +54,22 @@ export default function Login() {
       title: "Connexion réussie",
       description: "Bienvenue sur Location Auto Maroc",
     });
+
+    if (res.user.role === "CUSTOMER") {
+      try {
+        const pendingRequest = await createPendingReservation();
+        if (pendingRequest?.id) {
+          setLocation(`/dashboard/demandes/${pendingRequest.id}`);
+          return;
+        }
+      } catch (error: any) {
+        toast({
+          title: "Connexion reussie",
+          description: error?.message || "Connecte, mais la reservation doit etre relancee.",
+          variant: "destructive",
+        });
+      }
+    }
 
     if (res.user.role === "ADMIN") {
       setLocation("/admin");
@@ -76,7 +93,7 @@ export default function Login() {
           });
           return;
         }
-        completeLogin(response);
+        void completeLogin(response);
         return;
         setAuthToken(res.token);
         setAuthTokenGetter(() => res.token);
@@ -114,7 +131,7 @@ export default function Login() {
         method: "POST",
         body: JSON.stringify({ mfaToken, code: mfaCode }),
       });
-      completeLogin(res);
+      void completeLogin(res);
     } catch (error: any) {
       toast({
         title: "Code invalide",

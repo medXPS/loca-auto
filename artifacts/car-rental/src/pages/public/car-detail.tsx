@@ -7,7 +7,7 @@ import {
   useGetCar,
   useGetCarAvailability,
 } from "@workspace/api-client-react";
-import { calculateRentalDays, doesIsoRangeOverlapBlocked, formatDisplayDate, todayIso } from "@workspace/api-client-react/availability";
+import { addMinutes, calculateRentalDays, combineIsoDateAndHour, doesIsoRangeOverlapBlocked, formatDisplayDate, todayIso } from "@workspace/api-client-react/availability";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { Seo } from "@/components/seo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { savePendingReservation } from "@/lib/pending-reservation";
 import { FUEL_TRANSLATIONS, formatPrice } from "@/lib/utils";
 import {
   ArrowLeft,
@@ -186,6 +187,8 @@ export default function CarDetail() {
 
   const startDateFromQuery = searchParams.get("startDate") || "";
   const returnDateFromQuery = searchParams.get("returnDate") || "";
+  const startHourFromQuery = searchParams.get("startHour") || "09:00";
+  const returnHourFromQuery = searchParams.get("returnHour") || "18:00";
   const shouldFocusReservation = searchParams.get("reserve") === "1" || (typeof window !== "undefined" && window.location.hash === "#reservation");
 
   const { data: car, isLoading } = useGetCar(id, {
@@ -201,6 +204,8 @@ export default function CarDetail() {
   const [email, setEmail] = useState(user?.email || "");
   const [startDate, setStartDate] = useState(startDateFromQuery);
   const [returnDate, setReturnDate] = useState(returnDateFromQuery);
+  const [startHour, setStartHour] = useState(startHourFromQuery);
+  const [returnHour, setReturnHour] = useState(returnHourFromQuery);
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -212,7 +217,9 @@ export default function CarDetail() {
   useEffect(() => {
     setStartDate(startDateFromQuery);
     setReturnDate(returnDateFromQuery);
-  }, [startDateFromQuery, returnDateFromQuery]);
+    setStartHour(startHourFromQuery);
+    setReturnHour(returnHourFromQuery);
+  }, [returnDateFromQuery, returnHourFromQuery, startDateFromQuery, startHourFromQuery]);
 
   const rentalDays = useMemo(() => {
     if (!startDate || !returnDate) return 0;
@@ -269,34 +276,33 @@ export default function CarDetail() {
       return;
     }
 
-    if (calculateRentalDays(startDate, returnDate) <= 0) {
+    const startAt = combineIsoDateAndHour(startDate, startHour);
+    const returnAt = combineIsoDateAndHour(returnDate, returnHour);
+
+    if (returnAt <= startAt) {
       setFormError("La date de retour doit être après la date de départ.");
       return;
     }
 
-    if (doesIsoRangeOverlapBlocked({ startDate, endDate: returnDate }, availabilityBlocks)) {
+    if (doesIsoRangeOverlapBlocked({
+      startDate,
+      endDate: returnDate,
+      startAt,
+      endAt: addMinutes(returnAt, 30),
+    }, availabilityBlocks)) {
       setFormError("La période sélectionnée contient des dates indisponibles.");
       return;
     }
 
     setFormError(null);
-  }, [availabilityBlocks, returnDate, startDate]);
+  }, [availabilityBlocks, returnDate, returnHour, startDate, startHour]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!car) return;
 
-    if (!isAuthenticated) {
-      toast({
-        title: "Connexion requise",
-        description: "Connectez-vous pour envoyer votre demande de réservation.",
-      });
-      setLocation("/connexion");
-      return;
-    }
-
-    if (!fullName.trim() || !phone.trim() || !email.trim() || !startDate || !returnDate) {
+    if (!fullName.trim() || !phone.trim() || !email.trim() || !startDate || !returnDate || !startHour || !returnHour) {
       setFormError("Merci de compléter les champs essentiels.");
       toast({
         title: "Informations manquantes",
@@ -315,25 +321,39 @@ export default function CarDetail() {
       return;
     }
 
+    const reservationPayload = {
+      carId: car.id,
+      fullName: fullName.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+      startDate,
+      returnDate,
+      startHour,
+      returnHour,
+      estimatedTotalPrice,
+    };
+
+    if (!isAuthenticated) {
+      savePendingReservation(reservationPayload);
+      toast({
+        title: "Compte requis",
+        description: "Creez votre compte pour demarrer la reservation et televerser vos documents.",
+      });
+      setLocation("/inscription?reservation=1");
+      return;
+    }
+
     createRequest.mutate(
       {
-        data: {
-          carId: car.id,
-          fullName: fullName.trim(),
-          phone: phone.trim(),
-          email: email.trim(),
-          startDate,
-          returnDate,
-          estimatedTotalPrice,
-        },
+        data: reservationPayload as any,
       },
       {
-        onSuccess: () => {
+        onSuccess: (request: any) => {
           toast({
             title: "Demande envoyée",
             description: "Notre équipe vous contactera très rapidement.",
           });
-          setLocation("/dashboard/demandes");
+          setLocation(`/dashboard/demandes/${request.id}`);
         },
         onError: (error: any) => {
           toast({
@@ -547,6 +567,35 @@ export default function CarDetail() {
                     />
                   </div>
 
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground" htmlFor="startHour">
+                        Heure depart
+                      </label>
+                      <Input
+                        id="startHour"
+                        type="time"
+                        value={startHour}
+                        onChange={(event) => setStartHour(event.target.value)}
+                        className="h-12 rounded-2xl border-border/70"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground" htmlFor="returnHour">
+                        Heure retour
+                      </label>
+                      <Input
+                        id="returnHour"
+                        type="time"
+                        value={returnHour}
+                        onChange={(event) => setReturnHour(event.target.value)}
+                        className="h-12 rounded-2xl border-border/70"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
                   <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-3">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Infos utiles</p>
                     <div className="mt-2 grid gap-2 text-sm text-muted-foreground">

@@ -38,6 +38,11 @@ export function formatDate(date: string | Date | null | undefined): string {
 
 export const STATUS_TRANSLATIONS: Record<string, string> = {
   PENDING: "En attente",
+  DOCUMENT_SUBMISSION_WINDOW: "Documents requis",
+  PENDING_CALL_CONFIRMATION: "Appel a confirmer",
+  EXTENDED_PAYMENT_DEADLINE: "Delai prolonge",
+  PAID: "Payee",
+  ACTIVE_RENTAL: "Location active",
   UNDER_REVIEW: "En attente",
   CALL_ATTEMPTED: "En attente",
   CALL_CONFIRMED: "Appel confirmé",
@@ -55,6 +60,11 @@ export const STATUS_TRANSLATIONS: Record<string, string> = {
 
 export const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-800",
+  DOCUMENT_SUBMISSION_WINDOW: "bg-amber-100 text-amber-800",
+  PENDING_CALL_CONFIRMATION: "bg-sky-100 text-sky-800",
+  EXTENDED_PAYMENT_DEADLINE: "bg-indigo-100 text-indigo-800",
+  PAID: "bg-emerald-100 text-emerald-800",
+  ACTIVE_RENTAL: "bg-emerald-100 text-emerald-800",
   UNDER_REVIEW: "bg-yellow-100 text-yellow-800",
   CALL_ATTEMPTED: "bg-yellow-100 text-yellow-800",
   CALL_CONFIRMED: "bg-sky-100 text-sky-800",
@@ -72,11 +82,16 @@ export const STATUS_COLORS: Record<string, string> = {
 
 export const RENTAL_ACTIVE_STATUSES = new Set([
   "PENDING",
+  "DOCUMENT_SUBMISSION_WINDOW",
+  "PENDING_CALL_CONFIRMATION",
   "UNDER_REVIEW",
   "CALL_ATTEMPTED",
   "CALL_CONFIRMED",
+  "EXTENDED_PAYMENT_DEADLINE",
   "WAITING_AGENCY_PAYMENT",
   "RESERVED",
+  "PAID",
+  "ACTIVE_RENTAL",
   "CAR_DELIVERED",
   "RENTED",
 ]);

@@ -83,11 +83,12 @@ export default function CustomerRequestDetail() {
 
   if (!request) return <div className="p-6 text-center">Demande introuvable</div>;
 
-  const showCountdown =
+  const showPaymentCountdown =
     request.paymentDeadline &&
-    (request.status === "CALL_CONFIRMED" || request.status === "WAITING_AGENCY_PAYMENT");
+    (request.status === "CALL_CONFIRMED" || request.status === "EXTENDED_PAYMENT_DEADLINE" || request.status === "WAITING_AGENCY_PAYMENT");
+  const showDocumentCountdown = request.documentDeadline && request.status === "DOCUMENT_SUBMISSION_WINDOW";
 
-  const canCancel = request.status === "PENDING" || request.status === "CALL_ATTEMPTED";
+  const canCancel = request.status === "PENDING" || request.status === "DOCUMENT_SUBMISSION_WINDOW" || request.status === "CALL_ATTEMPTED";
 
   const cinDocument = documents?.find((doc) => doc.type === "CIN" || doc.type === "PASSPORT");
   const licenseDocument = documents?.find((doc) => doc.type === "PERMIS_CONDUIRE");
@@ -133,11 +134,27 @@ export default function CustomerRequestDetail() {
         </div>
       </div>
 
-      {showCountdown && request.paymentDeadline && (
+      {showDocumentCountdown && request.documentDeadline && (
+        <CountdownTimer deadline={request.documentDeadline} onExpire={handleSuccess} className="mb-8" />
+      )}
+
+      {showPaymentCountdown && request.paymentDeadline && (
         <CountdownTimer deadline={request.paymentDeadline} onExpire={handleSuccess} className="mb-8" />
       )}
 
-      {request.status === "CALL_CONFIRMED" && (
+      {request.status === "DOCUMENT_SUBMISSION_WINDOW" && (
+        <div className="mb-6 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          <FileText className="mt-0.5 h-6 w-6 shrink-0" />
+          <div>
+            <h3 className="font-bold">Documents requis sous 1 heure</h3>
+            <p className="mt-1 text-sm">
+              Televersez votre CIN ou passeport et votre permis de conduire pour garder le vehicule bloque.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {(request.status === "CALL_CONFIRMED" || request.status === "EXTENDED_PAYMENT_DEADLINE") && (
         <div className="mb-6 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-800">
           <Clock className="mt-0.5 h-6 w-6 shrink-0" />
           <div>
@@ -186,11 +203,11 @@ export default function CustomerRequestDetail() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="mb-1 text-sm text-muted-foreground">Depart</p>
-                <p className="text-lg font-medium">{new Date(request.startDate).toLocaleDateString("fr-MA")}</p>
+                <p className="text-lg font-medium">{formatDateTime((request as any).startAt || request.startDate)}</p>
               </div>
               <div>
                 <p className="mb-1 text-sm text-muted-foreground">Retour</p>
-                <p className="text-lg font-medium">{new Date(request.returnDate).toLocaleDateString("fr-MA")}</p>
+                <p className="text-lg font-medium">{formatDateTime((request as any).returnAt || request.returnDate)}</p>
               </div>
             </div>
 

@@ -3,7 +3,7 @@ import { eq, and, ilike, gte, lte, sql, asc, desc, notInArray } from "drizzle-or
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { logAudit } from "../lib/audit";
-import { expireStaleAvailabilityLocks } from "../lib/availability";
+import { combineDateAndHour, expireStaleAvailabilityLocks } from "../lib/availability";
 
 const router = Router();
 
@@ -21,7 +21,7 @@ function formatCar(car: typeof schema.carsTable.$inferSelect) {
 router.get("/", async (req, res) => {
   try {
     await expireStaleAvailabilityLocks();
-    const { search, brand, category, city, transmission, fuelType, minPrice, maxPrice, seats, available, startDate, returnDate, sortBy, page = "1", limit = "12" } = req.query as Record<string, string>;
+    const { search, brand, category, city, transmission, fuelType, minPrice, maxPrice, seats, available, startDate, returnDate, startHour, returnHour, startAt, returnAt, sortBy, page = "1", limit = "12" } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page));
     const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
 
@@ -42,12 +42,16 @@ router.get("/", async (req, res) => {
     if (available === "true") conditions.push(eq(schema.carsTable.status, "AVAILABLE"));
     if (startDate && returnDate) {
       const now = new Date();
+      const requestedStartAt = startAt ? new Date(startAt) : combineDateAndHour(startDate, startHour ?? "09:00");
+      const requestedEndAt = returnAt ? new Date(returnAt) : new Date(combineDateAndHour(returnDate, returnHour ?? "18:00").getTime() + 30 * 60 * 1000);
       const blockedRows = await db.selectDistinct({ carId: schema.carAvailabilityBlocksTable.carId })
         .from(schema.carAvailabilityBlocksTable)
         .where(and(
           eq(schema.carAvailabilityBlocksTable.status, "ACTIVE"),
           lte(schema.carAvailabilityBlocksTable.startDate, returnDate),
           gte(schema.carAvailabilityBlocksTable.endDate, startDate),
+          sql`coalesce(${schema.carAvailabilityBlocksTable.startAt}, (${schema.carAvailabilityBlocksTable.startDate}::text || 'T00:00:00')::timestamptz) < ${requestedEndAt}`,
+          sql`coalesce(${schema.carAvailabilityBlocksTable.endAt}, (${schema.carAvailabilityBlocksTable.endDate}::text || 'T23:59:00')::timestamptz) > ${requestedStartAt}`,
           sql`(${schema.carAvailabilityBlocksTable.expiresAt} IS NULL OR ${schema.carAvailabilityBlocksTable.expiresAt} > ${now})`,
         ));
       const blockedCarIds = blockedRows.map((row) => row.carId);

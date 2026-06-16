@@ -14,10 +14,33 @@ async function main() {
 
   try {
     await client.query(`
+      alter type rental_status add value if not exists 'DOCUMENT_SUBMISSION_WINDOW';
+      alter type rental_status add value if not exists 'PENDING_CALL_CONFIRMATION';
+      alter type rental_status add value if not exists 'EXTENDED_PAYMENT_DEADLINE';
+      alter type rental_status add value if not exists 'PAID';
+      alter type rental_status add value if not exists 'ACTIVE_RENTAL';
+    `);
+
+    await client.query(`
       alter table if exists users
         add column if not exists email_verified_at timestamptz,
         add column if not exists email_verification_code_hash text,
         add column if not exists email_verification_expires_at timestamptz;
+    `);
+
+    await client.query(`
+      alter table if exists rental_requests
+        add column if not exists start_at timestamptz,
+        add column if not exists return_at timestamptz,
+        add column if not exists document_deadline timestamptz,
+        add column if not exists payment_deadline_extended_at timestamptz,
+        add column if not exists payment_deadline_extended_by integer references users(id),
+        add column if not exists payment_deadline_extension_hours integer;
+
+      alter table if exists car_availability_blocks
+        add column if not exists start_at timestamptz,
+        add column if not exists end_at timestamptz,
+        add column if not exists visual_state text;
     `);
 
     const tableCheck = await client.query(`
