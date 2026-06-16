@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import authRouter from "./auth";
+import agenciesRouter from "./agencies";
+import brandsRouter from "./brands";
 import carsRouter from "./cars";
 import rentalRequestsRouter from "./rental-requests";
 import customersRouter from "./customers";
@@ -11,11 +13,14 @@ import notificationsRouter from "./notifications";
 import dashboardRouter from "./dashboard";
 import settingsRouter from "./settings";
 import documentsRouter, { uploadRouter } from "./documents";
+import ratingsRouter from "./ratings";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
 router.use("/auth", authRouter);
+router.use("/agencies", agenciesRouter);
+router.use("/brands", brandsRouter);
 router.use("/cars", carsRouter);
 router.use("/rental-requests", rentalRequestsRouter);
 router.use("/customers", customersRouter);
@@ -27,5 +32,6 @@ router.use("/dashboard", dashboardRouter);
 router.use("/settings", settingsRouter);
 router.use("/documents", documentsRouter);
 router.use("/upload", uploadRouter);
+router.use("/ratings", ratingsRouter);
 
 export default router;

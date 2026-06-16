@@ -1,6 +1,8 @@
 import { pgTable, text, serial, integer, timestamp, boolean, numeric, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { agenciesTable } from "./agencies";
+import { carBrandsTable } from "./car-brands";
 
 export const carStatusEnum = pgEnum("car_status", [
   "ACTIVE", "INACTIVE", "AVAILABLE", "TEMPORARILY_HELD", "RESERVED", "RENTED", "MAINTENANCE"
@@ -14,6 +16,7 @@ export const carCategoryEnum = pgEnum("car_category", [
 export const carsTable = pgTable("cars", {
   id: serial("id").primaryKey(),
   brand: text("brand").notNull(),
+  brandId: integer("brand_id").references(() => carBrandsTable.id, { onDelete: "set null" }),
   model: text("model").notNull(),
   year: integer("year").notNull(),
   category: carCategoryEnum("category").notNull().default("BERLINE"),
@@ -28,6 +31,7 @@ export const carsTable = pgTable("cars", {
   depositAmount: numeric("deposit_amount", { precision: 10, scale: 2 }),
   mileageLimit: integer("mileage_limit"),
   city: text("city").notNull().default("Casablanca"),
+  agencyId: integer("agency_id").references(() => agenciesTable.id, { onDelete: "set null" }),
   internalReference: text("internal_reference"),
   licensePlate: text("license_plate"),
   description: text("description"),

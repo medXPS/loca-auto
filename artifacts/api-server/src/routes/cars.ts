@@ -1,13 +1,21 @@
 import { Router } from "express";
-import { eq, and, ilike, gte, lte, sql, asc, desc, notInArray } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, lte, notInArray, sql } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { logAudit } from "../lib/audit";
 import { combineDateAndHour, expireStaleAvailabilityLocks } from "../lib/availability";
+import {
+  ensureCatalogueBackfill,
+  formatAgency,
+  formatBrand,
+  getCarRelations,
+  resolveAgencyForCar,
+  resolveBrandForCar,
+} from "../lib/catalog";
 
 const router = Router();
 
-function formatCar(car: typeof schema.carsTable.$inferSelect) {
+function formatCarBase(car: typeof schema.carsTable.$inferSelect) {
   return {
     ...car,
     dailyPrice: Number(car.dailyPrice),
@@ -17,35 +25,118 @@ function formatCar(car: typeof schema.carsTable.$inferSelect) {
   };
 }
 
+function attachCarRelations(
+  car: typeof schema.carsTable.$inferSelect,
+  relations: Awaited<ReturnType<typeof getCarRelations>>,
+) {
+  const brand = car.brandId
+    ? relations.brandsById.get(car.brandId)
+    : relations.brandsByName.get(car.brand.trim().toLowerCase());
+  const agency = car.agencyId
+    ? relations.agenciesById.get(car.agencyId)
+    : relations.agenciesByCity.get(car.city.trim().toLowerCase());
+  const rating = relations.ratingsByCarId.get(car.id);
+
+  return {
+    ...formatCarBase(car),
+    brandMeta: brand ? formatBrand(brand) : null,
+    agency: agency ? formatAgency(agency) : null,
+    ratingSummary: {
+      average: rating ? Number(rating.average) : 0,
+      count: rating?.count ?? 0,
+    },
+  };
+}
+
+async function enrichCars(cars: Array<typeof schema.carsTable.$inferSelect>) {
+  if (cars.length === 0) return [];
+  const relations = await getCarRelations(cars);
+  return cars.map((car) => attachCarRelations(car, relations));
+}
+
+async function getCarRatings(carId: number) {
+  const rows = await db
+    .select({
+      rating: schema.carRatingsTable,
+      user: schema.usersTable,
+    })
+    .from(schema.carRatingsTable)
+    .innerJoin(schema.customersTable, eq(schema.carRatingsTable.customerId, schema.customersTable.id))
+    .innerJoin(schema.usersTable, eq(schema.customersTable.userId, schema.usersTable.id))
+    .where(eq(schema.carRatingsTable.carId, carId))
+    .orderBy(desc(schema.carRatingsTable.createdAt))
+    .limit(8);
+
+  return rows.map(({ rating, user }) => ({
+    id: rating.id,
+    rentalRequestId: rating.rentalRequestId,
+    score: rating.score,
+    comment: rating.comment,
+    createdAt: rating.createdAt,
+    customerName: user.fullName,
+  }));
+}
+
 // GET /api/cars
 router.get("/", async (req, res) => {
   try {
+    await ensureCatalogueBackfill();
     await expireStaleAvailabilityLocks();
-    const { search, brand, model, category, city, transmission, fuelType, minPrice, maxPrice, seats, available, startDate, returnDate, startHour, returnHour, startAt, returnAt, sortBy, page = "1", limit = "12" } = req.query as Record<string, string>;
-    const pageNum = Math.max(1, parseInt(page));
-    const limitNum = Math.min(50, Math.max(1, parseInt(limit)));
 
-    const conditions = [];
+    const {
+      search,
+      brand,
+      model,
+      category,
+      city,
+      transmission,
+      fuelType,
+      minPrice,
+      maxPrice,
+      seats,
+      available,
+      startDate,
+      returnDate,
+      startHour,
+      returnHour,
+      startAt,
+      returnAt,
+      sortBy,
+      agencyId,
+      page = "1",
+      limit = "12",
+    } = req.query as Record<string, string>;
+
+    const pageNum = Math.max(1, parseInt(page, 10));
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10)));
+
+    const conditions: any[] = [];
     if (search) {
       conditions.push(
-        sql`(${ilike(schema.carsTable.brand, `%${search}%`)} OR ${ilike(schema.carsTable.model, `%${search}%`)} OR ${ilike(schema.carsTable.city, `%${search}%`)})`
+        sql`(${ilike(schema.carsTable.brand, `%${search}%`)} OR ${ilike(schema.carsTable.model, `%${search}%`)} OR ${ilike(schema.carsTable.city, `%${search}%`)})`,
       );
     }
     if (brand) conditions.push(ilike(schema.carsTable.brand, `%${brand}%`));
     if (model) conditions.push(ilike(schema.carsTable.model, `%${model}%`));
     if (category) conditions.push(eq(schema.carsTable.category, category as any));
     if (city) conditions.push(ilike(schema.carsTable.city, `%${city}%`));
+    if (agencyId && Number.isInteger(Number(agencyId))) conditions.push(eq(schema.carsTable.agencyId, Number(agencyId)));
     if (transmission) conditions.push(eq(schema.carsTable.transmission, transmission as any));
     if (fuelType) conditions.push(eq(schema.carsTable.fuelType, fuelType as any));
     if (minPrice) conditions.push(gte(schema.carsTable.dailyPrice, minPrice));
     if (maxPrice) conditions.push(lte(schema.carsTable.dailyPrice, maxPrice));
-    if (seats) conditions.push(eq(schema.carsTable.seats, parseInt(seats)));
+    if (seats) conditions.push(eq(schema.carsTable.seats, parseInt(seats, 10)));
     if (available === "true") conditions.push(eq(schema.carsTable.status, "AVAILABLE"));
+
     if (startDate && returnDate) {
       const now = new Date();
       const requestedStartAt = startAt ? new Date(startAt) : combineDateAndHour(startDate, startHour ?? "09:00");
-      const requestedEndAt = returnAt ? new Date(returnAt) : new Date(combineDateAndHour(returnDate, returnHour ?? "18:00").getTime() + 30 * 60 * 1000);
-      const blockedRows = await db.selectDistinct({ carId: schema.carAvailabilityBlocksTable.carId })
+      const requestedEndAt = returnAt
+        ? new Date(returnAt)
+        : new Date(combineDateAndHour(returnDate, returnHour ?? "18:00").getTime() + 30 * 60 * 1000);
+
+      const blockedRows = await db
+        .selectDistinct({ carId: schema.carAvailabilityBlocksTable.carId })
         .from(schema.carAvailabilityBlocksTable)
         .where(and(
           eq(schema.carAvailabilityBlocksTable.status, "ACTIVE"),
@@ -55,6 +146,7 @@ router.get("/", async (req, res) => {
           sql`coalesce(${schema.carAvailabilityBlocksTable.endAt}, (${schema.carAvailabilityBlocksTable.endDate}::text || 'T23:59:00')::timestamptz) > ${requestedStartAt}`,
           sql`(${schema.carAvailabilityBlocksTable.expiresAt} IS NULL OR ${schema.carAvailabilityBlocksTable.expiresAt} > ${now})`,
         ));
+
       const blockedCarIds = blockedRows.map((row) => row.carId);
       if (blockedCarIds.length > 0) {
         conditions.push(notInArray(schema.carsTable.id, blockedCarIds));
@@ -65,17 +157,37 @@ router.get("/", async (req, res) => {
 
     let orderBy;
     switch (sortBy) {
-      case "price_asc": orderBy = asc(schema.carsTable.dailyPrice); break;
-      case "price_desc": orderBy = desc(schema.carsTable.dailyPrice); break;
-      case "year_desc": orderBy = desc(schema.carsTable.year); break;
-      case "newest": orderBy = desc(schema.carsTable.createdAt); break;
-      default: orderBy = asc(schema.carsTable.id);
+      case "price_asc":
+        orderBy = asc(schema.carsTable.dailyPrice);
+        break;
+      case "price_desc":
+        orderBy = desc(schema.carsTable.dailyPrice);
+        break;
+      case "year_desc":
+        orderBy = desc(schema.carsTable.year);
+        break;
+      case "newest":
+        orderBy = desc(schema.carsTable.createdAt);
+        break;
+      default:
+        orderBy = asc(schema.carsTable.id);
     }
 
     const [{ total }] = await db.select({ total: sql<number>`count(*)::int` }).from(schema.carsTable).where(where);
-    const cars = await db.select().from(schema.carsTable).where(where).orderBy(orderBy).limit(limitNum).offset((pageNum - 1) * limitNum);
+    const cars = await db
+      .select()
+      .from(schema.carsTable)
+      .where(where)
+      .orderBy(orderBy)
+      .limit(limitNum)
+      .offset((pageNum - 1) * limitNum);
 
-    res.json({ cars: cars.map(formatCar), total, page: pageNum, limit: limitNum });
+    res.json({
+      cars: await enrichCars(cars),
+      total,
+      page: pageNum,
+      limit: limitNum,
+    });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Erreur serveur" });
@@ -85,9 +197,17 @@ router.get("/", async (req, res) => {
 // POST /api/cars
 router.post("/", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
-    const [car] = await db.insert(schema.carsTable).values(req.body).returning();
+    const brandPayload = await resolveBrandForCar(req.body);
+    const agencyPayload = await resolveAgencyForCar(req.body);
+    const [car] = await db.insert(schema.carsTable).values({
+      ...req.body,
+      ...brandPayload,
+      ...agencyPayload,
+    }).returning();
+
     await logAudit({ userId: req.user!.userId, action: "CREATE_CAR", entityType: "car", entityId: car.id });
-    res.status(201).json(formatCar(car));
+    const [enriched] = await enrichCars([car]);
+    res.status(201).json(enriched);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Erreur serveur" });
@@ -97,10 +217,27 @@ router.post("/", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res)
 // GET /api/cars/:id
 router.get("/:id", async (req, res) => {
   try {
-    const [car] = await db.select().from(schema.carsTable).where(eq(schema.carsTable.id, parseInt(String(req.params.id), 10))).limit(1);
-    if (!car) { res.status(404).json({ error: "Voiture non trouvée" }); return; }
+    await ensureCatalogueBackfill();
+
+    const [car] = await db
+      .select()
+      .from(schema.carsTable)
+      .where(eq(schema.carsTable.id, parseInt(String(req.params.id), 10)))
+      .limit(1);
+
+    if (!car) {
+      res.status(404).json({ error: "Voiture non trouvee" });
+      return;
+    }
+
     const images = await db.select().from(schema.carImagesTable).where(eq(schema.carImagesTable.carId, car.id));
-    res.json({ ...formatCar(car), images });
+    const [enriched] = await enrichCars([car]);
+
+    res.json({
+      ...enriched,
+      images,
+      ratings: await getCarRatings(car.id),
+    });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Erreur serveur" });
@@ -110,10 +247,22 @@ router.get("/:id", async (req, res) => {
 // PATCH /api/cars/:id
 router.patch("/:id", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
   try {
-    const [car] = await db.update(schema.carsTable).set(req.body).where(eq(schema.carsTable.id, parseInt(String(req.params.id), 10))).returning();
-    if (!car) { res.status(404).json({ error: "Voiture non trouvée" }); return; }
+    const brandPayload = await resolveBrandForCar(req.body);
+    const agencyPayload = await resolveAgencyForCar(req.body);
+    const [car] = await db.update(schema.carsTable).set({
+      ...req.body,
+      ...brandPayload,
+      ...agencyPayload,
+    }).where(eq(schema.carsTable.id, parseInt(String(req.params.id), 10))).returning();
+
+    if (!car) {
+      res.status(404).json({ error: "Voiture non trouvee" });
+      return;
+    }
+
     await logAudit({ userId: req.user!.userId, action: "UPDATE_CAR", entityType: "car", entityId: car.id });
-    res.json(formatCar(car));
+    const [enriched] = await enrichCars([car]);
+    res.json(enriched);
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Erreur serveur" });
@@ -141,6 +290,7 @@ router.post("/:id/images", authMiddleware, requireRole("ADMIN", "AGENT"), async 
       res.status(400).json({ error: "URL ou fichier requis" });
       return;
     }
+
     const [media] = await db.insert(schema.carImagesTable).values({
       carId,
       url,
@@ -150,9 +300,11 @@ router.post("/:id/images", authMiddleware, requireRole("ADMIN", "AGENT"), async 
       mediaType,
       sourceType,
     }).returning();
+
     if (media.isMain && media.mediaType === "IMAGE") {
       await db.update(schema.carsTable).set({ mainImageUrl: media.url }).where(eq(schema.carsTable.id, carId));
     }
+
     res.status(201).json(media);
   } catch (err) {
     req.log.error(err);

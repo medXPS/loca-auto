@@ -3,7 +3,7 @@ import { useMemo, useState, type ComponentType } from "react";
 import { Car } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { formatPrice, cn, FUEL_TRANSLATIONS } from "@/lib/utils";
+import { formatPrice, FUEL_TRANSLATIONS } from "@/lib/utils";
 import { ArrowRight, BarChart3, Fuel, Heart, ImageIcon, Settings2, Users } from "lucide-react";
 
 interface CarCardProps {
@@ -53,6 +53,9 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
 
   const fuelLabel = FUEL_TRANSLATIONS[car.fuelType] || car.fuelType;
   const transmissionLabel = car.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
+  const ratingSummary = (car as any).ratingSummary;
+  const brandMeta = (car as any).brandMeta;
+  const agency = (car as any).agency;
 
   if (isCompact) {
     return (
@@ -86,14 +89,24 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
             <div>
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <Link href={detailHref} className="inline-flex w-fit">
+                  <Link href={detailHref} className="inline-flex w-fit items-center gap-2">
+                    {brandMeta?.logoUrl && (
+                      <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border bg-white p-1">
+                        <img src={brandMeta.logoUrl} alt={car.brand} className="max-h-full max-w-full object-contain" />
+                      </span>
+                    )}
                     <h3 className="text-2xl font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
                       {car.brand} {car.model}
                     </h3>
                   </Link>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {car.city || "Maroc"} · {car.year} · {car.category}
+                    {agency?.name || car.city || "Maroc"} - {car.year} - {car.category}
                   </p>
+                  {ratingSummary?.count > 0 && (
+                    <p className="mt-1 text-xs font-medium text-amber-600">
+                      {ratingSummary.average}/5 - {ratingSummary.count} avis verifies
+                    </p>
+                  )}
                 </div>
 
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -126,7 +139,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
                 </Button>
                 <Button asChild className="rounded-full bg-[#F04B45] px-5 text-primary-foreground">
                   <Link href={reserveHref}>
-                    Réserver
+                    Reserver
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -162,18 +175,31 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
         )}
 
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02),rgba(0,0,0,0.6))]" />
-        <div className="absolute left-4 top-4 rounded-full bg-[#F04B45] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-          Disponible
+        <div className="absolute left-4 top-4 flex items-center gap-2">
+          <div className="rounded-full bg-[#F04B45] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+            Disponible
+          </div>
+          {brandMeta?.logoUrl && (
+            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/92 p-1">
+              <img src={brandMeta.logoUrl} alt={car.brand} className="max-h-full max-w-full object-contain" />
+            </span>
+          )}
         </div>
+        {ratingSummary?.count > 0 && (
+          <div className="absolute right-4 top-4 rounded-full bg-white/92 px-3 py-1 text-xs font-semibold text-slate-900 shadow-sm">
+            {ratingSummary.average}/5
+          </div>
+        )}
         <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-white/70">{car.category}</p>
             <h3 className="mt-1 text-2xl font-semibold tracking-tight text-white transition-colors group-hover:text-[#ffd3d0]">
               {car.brand} {car.model}
             </h3>
+            <p className="mt-1 text-xs text-white/70">{agency?.name || car.city || "Maroc"}</p>
           </div>
           <div className="text-right">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white/65">À partir de</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/65">A partir de</p>
             <p className="text-3xl font-semibold text-[#F04B45]">{formatPrice(car.dailyPrice)}</p>
           </div>
         </div>
@@ -187,14 +213,14 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
         </div>
 
         <div className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/82">
-          <span>Disponible à {car.city || "Maroc"}</span>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">Réservation rapide</span>
+          <span>Disponible a {agency?.name || car.city || "Maroc"}</span>
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">Reservation rapide</span>
         </div>
 
         <div className="flex gap-2">
           <Button asChild className="flex-1 rounded-full bg-white text-slate-950 hover:bg-white/95">
             <Link href={reserveHref}>
-              Réserver
+              Reserver
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>

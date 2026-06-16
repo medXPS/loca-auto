@@ -1,8 +1,16 @@
-import { useLocation, useRoute } from "wouter";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useRoute } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { customFetch, useUpdateCar, useGetCar, useUploadCarImage, getListCarsQueryKey, getGetCarQueryKey } from "@workspace/api-client-react";
+import {
+  customFetch,
+  useUpdateCar,
+  useGetCar,
+  useUploadCarImage,
+  getListCarsQueryKey,
+  getGetCarQueryKey,
+} from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -15,15 +23,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ImagePlus, Trash2 } from "lucide-react";
-import { Link } from "wouter";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from "react";
+import { Label } from "@/components/ui/label";
+import { fetchAgencies, fetchBrands } from "@/lib/fleet-catalog";
+
+const NO_VALUE = "__none__";
 
 const carSchema = z.object({
+  brandId: z.coerce.number().optional(),
+  agencyId: z.coerce.number().optional(),
   brand: z.string().min(1, "Requis"),
   model: z.string().min(1, "Requis"),
   year: z.coerce.number().min(2000),
@@ -43,12 +55,23 @@ const carSchema = z.object({
 type CarFormValues = z.infer<typeof carSchema>;
 
 export default function AdminEditCar() {
-  const [, params] = useRoute("/admin/voitures/:id");
+  const [, adminParams] = useRoute("/admin/voitures/:id");
+  const [, agentParams] = useRoute("/agent/voitures/:id");
+  const params = adminParams ?? agentParams;
   const id = Number(params?.id);
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const basePath = location.startsWith("/agent") ? "/agent" : "/admin";
   const { toast } = useToast();
-  
+
   const { data: car, isLoading } = useGetCar(id, { query: { enabled: !!id, queryKey: getGetCarQueryKey(id) } });
+  const { data: brands = [] } = useQuery({
+    queryKey: ["brands"],
+    queryFn: fetchBrands,
+  });
+  const { data: agencies = [] } = useQuery({
+    queryKey: ["agencies"],
+    queryFn: fetchAgencies,
+  });
   const updateCar = useUpdateCar();
   const uploadMedia = useUploadCarImage();
   const queryClient = useQueryClient();
@@ -62,6 +85,8 @@ export default function AdminEditCar() {
   const form = useForm<CarFormValues>({
     resolver: zodResolver(carSchema),
     defaultValues: {
+      brandId: undefined,
+      agencyId: undefined,
       brand: "",
       model: "",
       year: new Date().getFullYear(),
@@ -80,37 +105,45 @@ export default function AdminEditCar() {
   });
 
   useEffect(() => {
-    if (car) {
-      form.reset({
-        brand: car.brand,
-        model: car.model,
-        year: car.year,
-        category: car.category,
-        fuelType: car.fuelType,
-        transmission: car.transmission,
-        seats: car.seats,
-        doors: car.doors,
-        dailyPrice: car.dailyPrice,
-        city: car.city || "Casablanca",
-        status: car.status,
-        licensePlate: car.licensePlate || "",
-        description: car.description || "",
-        mainImageUrl: car.mainImageUrl || "",
-      });
-    }
-  }, [car, form]);
+    if (!car) return;
+
+    const resolvedBrandId = (car as any).brandId ?? brands.find((brand) => brand.name.toLowerCase() === car.brand.toLowerCase())?.id;
+    const resolvedAgencyId = (car as any).agencyId ?? agencies.find((agency) => agency.city.toLowerCase() === (car.city || "").toLowerCase())?.id;
+
+    form.reset({
+      brandId: resolvedBrandId,
+      agencyId: resolvedAgencyId,
+      brand: car.brand,
+      model: car.model,
+      year: car.year,
+      category: car.category,
+      fuelType: car.fuelType,
+      transmission: car.transmission,
+      seats: car.seats,
+      doors: car.doors,
+      dailyPrice: car.dailyPrice,
+      city: car.city || "Casablanca",
+      status: car.status,
+      licensePlate: car.licensePlate || "",
+      description: car.description || "",
+      mainImageUrl: car.mainImageUrl || "",
+    });
+  }, [agencies, brands, car, form]);
+
+  const selectedAgencyId = form.watch("agencyId");
+  const selectedBrandId = form.watch("brandId");
 
   const onSubmit = (data: CarFormValues) => {
-    updateCar.mutate({ id, data }, {
+    updateCar.mutate({ id, data: data as any }, {
       onSuccess: () => {
-        toast({ title: "Véhicule mis à jour avec succès" });
+        toast({ title: "Vehicule mis a jour avec succes" });
         queryClient.invalidateQueries({ queryKey: getListCarsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetCarQueryKey(id) });
-        setLocation("/admin/voitures");
+        setLocation(`${basePath}/voitures`);
       },
       onError: (error: any) => {
         toast({ title: "Erreur", description: error.message, variant: "destructive" });
-      }
+      },
     });
   };
 
@@ -146,7 +179,7 @@ export default function AdminEditCar() {
         isMain: isMainMedia && mediaType === "IMAGE",
         mediaType,
         sourceType,
-        sortOrder: (car?.images?.length ?? 0) + 1,
+        sortOrder: ((car as any)?.images?.length ?? 0) + 1,
       } as any,
     }, {
       onSuccess: () => {
@@ -173,38 +206,113 @@ export default function AdminEditCar() {
   if (isLoading) return <div className="p-6"><Skeleton className="h-[600px] w-full max-w-4xl mx-auto rounded-xl" /></div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
       <div className="flex items-center gap-4">
-        <Link href="/admin/voitures">
+        <Link href={`${basePath}/voitures`}>
           <Button variant="ghost" size="icon">
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Modifier le véhicule #{id}</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Modifier le vehicule #{id}</h1>
+          <p className="text-sm text-muted-foreground">Ajustez la marque, l'agence, les medias et la disponibilite depuis la meme fiche.</p>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Détails du véhicule</CardTitle>
+          <CardTitle>Details du vehicule</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="brandId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Marque catalogue</FormLabel>
+                      <Select
+                        value={field.value ? String(field.value) : NO_VALUE}
+                        onValueChange={(value) => {
+                          const nextId = value === NO_VALUE ? undefined : Number(value);
+                          field.onChange(nextId);
+                          const selected = brands.find((brand) => brand.id === nextId);
+                          if (selected) {
+                            form.setValue("brand", selected.name, { shouldValidate: true });
+                          }
+                        }}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choisir une marque" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={NO_VALUE}>Aucune</SelectItem>
+                          {brands.map((brand) => (
+                            <SelectItem key={brand.id} value={String(brand.id)}>
+                              {brand.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="agencyId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Agence</FormLabel>
+                      <Select
+                        value={field.value ? String(field.value) : NO_VALUE}
+                        onValueChange={(value) => {
+                          const nextId = value === NO_VALUE ? undefined : Number(value);
+                          field.onChange(nextId);
+                          const selected = agencies.find((agency) => agency.id === nextId);
+                          if (selected) {
+                            form.setValue("city", selected.city, { shouldValidate: true });
+                          }
+                        }}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choisir une agence" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={NO_VALUE}>Aucune</SelectItem>
+                          {agencies.map((agency) => (
+                            <SelectItem key={agency.id} value={String(agency.id)}>
+                              {agency.name} - {agency.city}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField control={form.control} name="brand" render={({ field }) => (
-                  <FormItem><FormLabel>Marque</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Marque affichee</FormLabel><FormControl><Input {...field} disabled={Boolean(selectedBrandId)} className={selectedBrandId ? "bg-muted" : ""} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="model" render={({ field }) => (
-                  <FormItem><FormLabel>Modèle</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Modele</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="year" render={({ field }) => (
-                  <FormItem><FormLabel>Année</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Annee</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="city" render={({ field }) => (
-                  <FormItem><FormLabel>Ville</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Ville</FormLabel><FormControl><Input {...field} disabled={Boolean(selectedAgencyId)} className={selectedAgencyId ? "bg-muted" : ""} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="licensePlate" render={({ field }) => (
-                  <FormItem><FormLabel>Matricule (Optionnel)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Matricule (optionnel)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="dailyPrice" render={({ field }) => (
                   <FormItem><FormLabel>Prix journalier (MAD)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
@@ -214,12 +322,12 @@ export default function AdminEditCar() {
                   <FormItem>
                     <FormLabel>Statut</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="AVAILABLE">Disponible</SelectItem>
                         <SelectItem value="TEMPORARILY_HELD">En attente de paiement</SelectItem>
-                        <SelectItem value="RESERVED">Réservée</SelectItem>
-                        <SelectItem value="RENTED">Louée</SelectItem>
+                        <SelectItem value="RESERVED">Reservee</SelectItem>
+                        <SelectItem value="RENTED">Louee</SelectItem>
                         <SelectItem value="MAINTENANCE">En maintenance</SelectItem>
                       </SelectContent>
                     </Select>
@@ -229,9 +337,9 @@ export default function AdminEditCar() {
 
                 <FormField control={form.control} name="category" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Catégorie</FormLabel>
+                    <FormLabel>Categorie</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="CITADINE">Citadine</SelectItem>
                         <SelectItem value="BERLINE">Berline</SelectItem>
@@ -251,12 +359,12 @@ export default function AdminEditCar() {
                   <FormItem>
                     <FormLabel>Carburant</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="ESSENCE">Essence</SelectItem>
                         <SelectItem value="DIESEL">Diesel</SelectItem>
                         <SelectItem value="HYBRIDE">Hybride</SelectItem>
-                        <SelectItem value="ELECTRIQUE">Électrique</SelectItem>
+                        <SelectItem value="ELECTRIQUE">Electrique</SelectItem>
                         <SelectItem value="GPL">GPL</SelectItem>
                       </SelectContent>
                     </Select>
@@ -266,9 +374,9 @@ export default function AdminEditCar() {
 
                 <FormField control={form.control} name="transmission" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Boîte de vitesses</FormLabel>
+                    <FormLabel>Boite de vitesses</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Sélectionnez" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger><SelectValue placeholder="Selectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="MANUELLE">Manuelle</SelectItem>
                         <SelectItem value="AUTOMATIQUE">Automatique</SelectItem>
@@ -302,7 +410,7 @@ export default function AdminEditCar() {
                 <CardContent className="space-y-4">
                   <div className="grid gap-3 md:grid-cols-3">
                     <div className="space-y-2">
-                      <FormLabel>Type</FormLabel>
+                      <Label>Type</Label>
                       <Select value={mediaType} onValueChange={(value) => setMediaType(value as typeof mediaType)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -313,7 +421,7 @@ export default function AdminEditCar() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <FormLabel>Source</FormLabel>
+                      <Label>Source</Label>
                       <Select value={sourceType} onValueChange={(value) => setSourceType(value as typeof sourceType)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -323,7 +431,7 @@ export default function AdminEditCar() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <FormLabel>Texte alternatif</FormLabel>
+                      <Label>Texte alternatif</Label>
                       <Input value={mediaAlt} onChange={(event) => setMediaAlt(event.target.value)} placeholder="Ex: interieur, profil..." />
                     </div>
                   </div>
@@ -351,7 +459,7 @@ export default function AdminEditCar() {
                   </div>
 
                   <div className="grid gap-3 md:grid-cols-2">
-                    {(car?.images ?? []).map((media: any) => (
+                    {((car as any)?.images ?? []).map((media: any) => (
                       <div key={media.id} className="flex gap-3 rounded-xl border bg-background p-3">
                         <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg bg-muted">
                           {media.mediaType === "VIDEO" ? (
@@ -382,7 +490,7 @@ export default function AdminEditCar() {
               )} />
 
               <div className="flex justify-end gap-4 border-t pt-6">
-                <Link href="/admin/voitures">
+                <Link href={`${basePath}/voitures`}>
                   <Button variant="outline" type="button">Annuler</Button>
                 </Link>
                 <Button type="submit" disabled={updateCar.isPending}>

@@ -1,6 +1,7 @@
 import { useMemo, useState, type ComponentType } from "react";
 import { Link, useLocation } from "wouter";
 import { useListCars } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { CarCard } from "@/components/car-card";
 import { ReservationSearchBar } from "@/components/reservation-search-bar";
 import { Seo } from "@/components/seo";
@@ -14,6 +15,7 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+import { fetchBrands } from "@/lib/fleet-catalog";
 
 function FeaturePill({
   icon: Icon,
@@ -78,6 +80,10 @@ export default function Home() {
     limit: 200,
     sortBy: "year_desc",
   });
+  const { data: brands = [] } = useQuery({
+    queryKey: ["brands"],
+    queryFn: fetchBrands,
+  });
 
   const cities = useMemo(() => {
     const values = new Set<string>();
@@ -94,6 +100,27 @@ export default function Home() {
 
     return Array.from(values).sort((a, b) => a.localeCompare(b, "fr"));
   }, [citiesSource]);
+
+  const brandShowcase = useMemo(() => {
+    const seen = new Set<string>();
+    const items: Array<{ key: string; name: string; logoUrl?: string | null }> = [];
+
+    for (const brand of brands) {
+      const key = brand.name.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      items.push({ key, name: brand.name, logoUrl: brand.logoUrl });
+    }
+
+    for (const car of featuredCars?.cars ?? []) {
+      const key = car.brand.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      items.push({ key, name: car.brand, logoUrl: (car as any).brandMeta?.logoUrl });
+    }
+
+    return items;
+  }, [brands, featuredCars]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -224,6 +251,42 @@ export default function Home() {
         </div>
       </section>
 
+      {brandShowcase.length > 0 && (
+        <section className="container mx-auto px-4 pt-10">
+          <div className="overflow-hidden rounded-[1.8rem] border border-slate-200/80 bg-white px-5 py-5 shadow-[0_20px_55px_-36px_rgba(16,23,34,0.18)]">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#F04B45]">Marques disponibles</p>
+                <p className="mt-1 text-sm text-slate-500">Un bandeau vivant avec les logos deja presentes dans votre flotte.</p>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden">
+              <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-white to-transparent" />
+              <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white to-transparent" />
+              <div
+                className="flex min-w-max items-center gap-4"
+                style={{ animation: "home-brand-marquee 28s linear infinite" }}
+              >
+                {[...brandShowcase, ...brandShowcase].map((brand, index) => (
+                  <div
+                    key={`${brand.key}-${index}`}
+                    className="flex h-16 min-w-[180px] items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-[#FAFBFF] px-5"
+                  >
+                    {brand.logoUrl ? (
+                      <img src={brand.logoUrl} alt={brand.name} className="h-8 max-w-[82px] object-contain" />
+                    ) : (
+                      <span className="text-sm font-semibold text-slate-900">{brand.name}</span>
+                    )}
+                    <span className="text-sm font-medium text-slate-500">{brand.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="container mx-auto px-4 pb-16 pt-16 lg:pb-20 lg:pt-20">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
@@ -252,6 +315,13 @@ export default function Home() {
             : featuredCars?.cars?.slice(0, 3).map((car) => <CarCard key={car.id} car={car} />)}
         </div>
       </section>
+
+      <style>{`
+        @keyframes home-brand-marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
     </div>
   );
 }

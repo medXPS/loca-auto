@@ -8,7 +8,8 @@ export function getDocumentHoldMinutes() {
 }
 
 export function getPaymentDeadlineHours(defaultHours = 12) {
-  return Number(process.env.PAYMENT_DEADLINE_HOURS ?? defaultHours);
+  const parsed = Number(process.env.PAYMENT_DEADLINE_HOURS ?? defaultHours);
+  return Number.isFinite(parsed) && parsed >= defaultHours ? parsed : defaultHours;
 }
 
 export function getReturnBufferMinutes() {

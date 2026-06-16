@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useListCars } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { DateRangeCalendar } from "@/components/date-range-calendar";
 import { Seo } from "@/components/seo";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,6 +25,7 @@ import {
   Wind,
 } from "lucide-react";
 import { CATEGORY_TRANSLATIONS, cn, FUEL_TRANSLATIONS, formatPrice } from "@/lib/utils";
+import { fetchAgencies } from "@/lib/fleet-catalog";
 
 const ALL_VALUE = "all";
 
@@ -112,6 +114,8 @@ function SectionHeading({
 function CatalogueCarRow({ car }: { car: any }) {
   const transmissionLabel = car.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
   const fuelLabel = FUEL_TRANSLATIONS[car.fuelType] || car.fuelType;
+  const agency = car.agency;
+  const ratingSummary = car.ratingSummary;
 
   return (
     <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_16px_42px_-32px_rgba(15,23,42,0.14)]">
@@ -135,6 +139,11 @@ function CatalogueCarRow({ car }: { car: any }) {
               <h3 className="mt-1 text-xl font-semibold text-slate-900">
                 {car.brand} {car.model}
               </h3>
+              {ratingSummary?.count > 0 && (
+                <p className="mt-1 text-xs font-medium text-amber-600">
+                  {ratingSummary.average}/5 - {ratingSummary.count} avis
+                </p>
+              )}
             </div>
             <button type="button" className="rounded-full border border-slate-200 p-2 text-slate-400 transition hover:text-[#FF4B43]">
               <Heart className="h-4 w-4" />
@@ -161,7 +170,7 @@ function CatalogueCarRow({ car }: { car: any }) {
           </div>
 
           <div className="inline-flex rounded-full bg-[#F4F7FF] px-3 py-1 text-xs font-medium text-[#7C8CB5]">
-            {car.city || "Casablanca"}
+            {agency?.name || car.city || "Casablanca"}
           </div>
         </div>
 
@@ -186,10 +195,12 @@ export default function Cars() {
   const initialParams = getSearchParams();
   const initialBrand = initialParams.get("brand") || "";
   const initialModel = initialParams.get("model") || "";
+  const initialAgencyId = initialParams.get("agencyId") || ALL_VALUE;
 
   const [vehicleKey, setVehicleKey] = useState(
     initialBrand || initialModel ? buildVehicleKey(initialBrand, initialModel) : ALL_VALUE,
   );
+  const [agencyId, setAgencyId] = useState(initialAgencyId);
   const [category, setCategory] = useState(initialParams.get("category") || ALL_VALUE);
   const [city, setCity] = useState(initialParams.get("city") || "");
   const [startDate, setStartDate] = useState(initialParams.get("startDate") || "");
@@ -206,6 +217,7 @@ export default function Cars() {
     const nextModel = next.get("model") || "";
 
     setVehicleKey(nextBrand || nextModel ? buildVehicleKey(nextBrand, nextModel) : ALL_VALUE);
+    setAgencyId(next.get("agencyId") || ALL_VALUE);
     setCategory(next.get("category") || ALL_VALUE);
     setCity(next.get("city") || "");
     setStartDate(next.get("startDate") || "");
@@ -216,6 +228,18 @@ export default function Cars() {
   }, [location]);
 
   const { data: allCarsData } = useListCars({ limit: 200, sortBy: "year_desc" });
+  const { data: agencies = [] } = useQuery({
+    queryKey: ["agencies"],
+    queryFn: fetchAgencies,
+  });
+
+  useEffect(() => {
+    if (agencyId !== ALL_VALUE || !city || agencies.length === 0) return;
+    const matchedAgency = agencies.find((agency) => agency.city.toLowerCase() === city.toLowerCase());
+    if (matchedAgency) {
+      setAgencyId(String(matchedAgency.id));
+    }
+  }, [agencies, agencyId, city]);
 
   const vehicleOptions = useMemo(() => {
     const seen = new Set<string>();
@@ -243,6 +267,7 @@ export default function Cars() {
   const carQueryParams = {
     brand: selectedVehicle?.brand || undefined,
     model: selectedVehicle?.model || undefined,
+    agencyId: agencyId !== ALL_VALUE ? agencyId : undefined,
     category: category !== ALL_VALUE ? category : undefined,
     city: city || undefined,
     transmission: transmission !== ALL_VALUE ? transmission : undefined,
@@ -277,6 +302,7 @@ export default function Cars() {
 
   const applyFilters = (overrides?: Partial<{
     vehicleKey: string;
+    agencyId: string;
     category: string;
     city: string;
     startDate: string;
@@ -286,6 +312,7 @@ export default function Cars() {
     fuelType: string;
   }>) => {
     const nextVehicleKey = overrides?.vehicleKey ?? vehicleKey;
+    const nextAgencyId = overrides?.agencyId ?? agencyId;
     const nextCategory = overrides?.category ?? category;
     const nextCity = overrides?.city ?? city;
     const nextStartDate = overrides?.startDate ?? startDate;
@@ -296,11 +323,14 @@ export default function Cars() {
 
     const next = new URLSearchParams();
     const nextVehicle = nextVehicleKey !== ALL_VALUE ? parseVehicleKey(nextVehicleKey) : { brand: "", model: "" };
+    const nextAgency = nextAgencyId !== ALL_VALUE ? agencies.find((agency) => String(agency.id) === String(nextAgencyId)) : null;
 
     if (nextVehicle.brand) next.set("brand", nextVehicle.brand);
     if (nextVehicle.model) next.set("model", nextVehicle.model);
+    if (nextAgencyId !== ALL_VALUE) next.set("agencyId", nextAgencyId);
     if (nextCategory !== ALL_VALUE) next.set("category", nextCategory);
-    if (nextCity) next.set("city", nextCity);
+    if (nextAgency?.city) next.set("city", nextAgency.city);
+    else if (nextCity) next.set("city", nextCity);
     if (nextStartDate) next.set("startDate", nextStartDate);
     if (nextReturnDate) next.set("returnDate", nextReturnDate);
     if (nextSortBy) next.set("sortBy", nextSortBy);
@@ -313,6 +343,7 @@ export default function Cars() {
 
   const handleReset = () => {
     setVehicleKey(ALL_VALUE);
+    setAgencyId(ALL_VALUE);
     setCategory(ALL_VALUE);
     setCity("");
     setStartDate("");
@@ -338,19 +369,44 @@ export default function Cars() {
       </div>
 
       <FilterSection title="Agence">
-        <Select value={city || ALL_VALUE} onValueChange={(value) => setCity(value === ALL_VALUE ? "" : value)}>
+        <Select
+          value={agencyId}
+          onValueChange={(value) => {
+            setAgencyId(value);
+            const selectedAgency = agencies.find((agency) => String(agency.id) === value);
+            setCity(value === ALL_VALUE ? "" : selectedAgency?.city || "");
+          }}
+        >
           <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white">
             <SelectValue placeholder="Choisir une agence" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL_VALUE}>Toutes les agences</SelectItem>
-            {cities.map((item) => (
-              <SelectItem key={item} value={item}>
-                {item}
+            {agencies.length > 0 ? agencies.map((agency) => (
+              <SelectItem key={agency.id} value={String(agency.id)}>
+                {agency.name} - {agency.city}
               </SelectItem>
-            ))}
+            )) : (
+              <SelectItem value="no-agency" disabled>
+                Aucune agence disponible
+              </SelectItem>
+            )}
           </SelectContent>
         </Select>
+      </FilterSection>
+
+      <FilterSection title="Intervalle">
+        <DateRangeCalendar
+          label="Disponibilite"
+          startDate={startDate}
+          returnDate={returnDate}
+          onChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+            setStartDate(nextStartDate);
+            setReturnDate(nextReturnDate);
+          }}
+          minimal
+          compact
+        />
       </FilterSection>
 
       <FilterSection title="Modele de voiture">

@@ -29,6 +29,7 @@ import {
   Settings2,
   ShieldCheck,
   Sparkles,
+  Star,
   Users,
   Wind,
 } from "lucide-react";
@@ -283,6 +284,9 @@ export default function CarDetail() {
   const transmissionLabel = car?.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
   const fuelLabel = car ? FUEL_TRANSLATIONS[car.fuelType] || car.fuelType : "";
   const hasAirConditioning = Boolean(car?.airConditioning);
+  const agency = car ? (car as any).agency : null;
+  const ratingSummary = car ? (car as any).ratingSummary : null;
+  const carRatings = car ? ((car as any).ratings ?? []) : [];
   const images = useMemo(
     () =>
       car
@@ -415,9 +419,12 @@ export default function CarDetail() {
   const pageTitle = `${car.brand} ${car.model}`;
   const pageDescription = `Reservez ${car.brand} ${car.model} au Maroc. Prix, caracteristiques et demande rapide en ligne.`;
   const canonical = `https://demo-locationauto.shonenx.shop/voitures/${car.id}`;
-  const mapLocation = `${car.city?.trim() || "Casablanca"}, Maroc`;
-  const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapLocation)}&z=13&output=embed`;
-  const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapLocation)}`;
+  const mapLocation = agency?.address?.trim() || `${agency?.name || car.city?.trim() || "Casablanca"}, ${agency?.city || "Maroc"}`;
+  const mapQuery = agency?.latitude != null && agency?.longitude != null
+    ? `${agency.latitude},${agency.longitude}`
+    : mapLocation;
+  const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=13&output=embed`;
+  const mapHref = agency?.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
 
   return (
     <div className="container mx-auto px-4 py-8 lg:py-10">
@@ -474,6 +481,53 @@ export default function CarDetail() {
             <StatPill icon={Users} label="Places" value={`${car.seats} places`} />
             <StatPill icon={Wind} label="Climatisation" value={hasAirConditioning ? "Oui" : "Non"} />
           </div>
+
+          <Card className="overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]">
+            <CardContent className="space-y-5 p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                    <Star className="h-3.5 w-3.5" />
+                    Avis clients
+                  </div>
+                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Notes verifiees</h2>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    Seuls les clients ayant termine leur location peuvent publier un avis.
+                  </p>
+                </div>
+
+                <div className="rounded-[1.4rem] border border-amber-200 bg-amber-50 px-4 py-4 text-right md:min-w-[180px]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700/70">Note moyenne</p>
+                  <p className="mt-1 text-3xl font-semibold text-amber-700">
+                    {ratingSummary?.count ? `${ratingSummary.average}/5` : "Nouveau"}
+                  </p>
+                  <p className="mt-1 text-sm text-amber-700/80">
+                    {ratingSummary?.count ? `${ratingSummary.count} avis verifies` : "Pas encore d'avis"}
+                  </p>
+                </div>
+              </div>
+
+              {carRatings.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {carRatings.map((rating: any) => (
+                    <div key={rating.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="font-semibold">{rating.customerName}</div>
+                        <div className="text-sm font-medium text-amber-600">{rating.score}/5</div>
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {rating.comment || "Une note a ete laissee sans commentaire detaille."}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 py-6 text-sm text-muted-foreground">
+                  Ce vehicule n'a pas encore recu d'avis client.
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <Card
             className="overflow-hidden rounded-[1.9rem] border border-slate-900/10 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]"

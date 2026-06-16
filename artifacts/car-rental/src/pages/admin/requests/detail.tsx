@@ -38,7 +38,7 @@ export default function AdminRequestDetail() {
 
   const showCountdown =
     request.paymentDeadline &&
-    (request.status === "CALL_CONFIRMED" || request.status === "WAITING_AGENCY_PAYMENT");
+    (request.status === "CALL_CONFIRMED" || request.status === "WAITING_AGENCY_PAYMENT" || request.status === "EXTENDED_PAYMENT_DEADLINE");
   const canPrintReceipt = ["RESERVED", "CAR_DELIVERED", "RENTED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(request.status);
 
   const timelineEntries = (auditData?.logs || [])

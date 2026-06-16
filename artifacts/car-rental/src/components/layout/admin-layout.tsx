@@ -17,6 +17,8 @@ import {
   X,
   CalendarDays,
   Shield,
+  MapPinned,
+  BadgeCheck,
 } from "lucide-react";
 import { useMemo, useState, type ComponentType } from "react";
 import { cn } from "@/lib/utils";
@@ -38,31 +40,35 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const links = useMemo<NavLink[]>(() => {
     if (isAgentMode) {
       return [
-        { href: `${basePath}`, label: "Vue d'ensemble", icon: LayoutDashboard },
+        { href: `${basePath}`, label: "Tableau de bord", icon: LayoutDashboard },
         { href: `${basePath}/calendrier`, label: "Calendrier", icon: CalendarDays },
-        { href: `${basePath}/voitures`, label: "Véhicules", icon: Car },
-        { href: `${basePath}/demandes`, label: "Réservations", icon: FileText },
+        { href: `${basePath}/voitures`, label: "Vehicules", icon: Car },
+        { href: `${basePath}/demandes`, label: "Reservations", icon: FileText },
         { href: `${basePath}/clients`, label: "Clients", icon: Users },
         { href: `${basePath}/blog`, label: "Blog", icon: BookOpen },
       ];
     }
 
     return [
-      { href: `${basePath}`, label: "Dashboard BI", icon: LayoutDashboard },
+      { href: `${basePath}`, label: "Tableau de bord", icon: LayoutDashboard },
       { href: `${basePath}/calendrier`, label: "Calendrier", icon: CalendarDays },
-      { href: `${basePath}/voitures`, label: "Véhicules", icon: Car },
-      { href: `${basePath}/demandes`, label: "Réservations", icon: FileText },
+      { href: `${basePath}/voitures`, label: "Vehicules", icon: Car },
+      { href: `${basePath}/demandes`, label: "Reservations", icon: FileText },
       { href: `${basePath}/clients`, label: "Clients", icon: Users },
       { href: `${basePath}/agents`, label: "Agents", icon: UserCircle },
       { href: `${basePath}/charges`, label: "Charges", icon: Receipt },
+      { href: `${basePath}/agences`, label: "Agences", icon: MapPinned },
+      { href: `${basePath}/marques`, label: "Marques", icon: BadgeCheck },
       { href: `${basePath}/blog`, label: "Blog", icon: BookOpen },
-      { href: `${basePath}/parametres`, label: "Paramètres", icon: Settings },
+      { href: `${basePath}/parametres`, label: "Parametres", icon: Settings },
       { href: `${basePath}/audit`, label: "Audit", icon: History },
     ];
   }, [basePath, isAgentMode]);
 
   const title = isAgentMode ? "Espace agent" : "Centre admin";
-  const subtitle = isAgentMode ? "Opérations, calendrier et suivi des réservations." : "Pilotage financier, flotte et gouvernance.";
+  const subtitle = isAgentMode
+    ? "Operations, calendrier et suivi des reservations."
+    : "Pilotage financier, flotte et gouvernance.";
 
   return (
     <div className={cn("min-h-screen flex", isAgentMode ? "bg-[linear-gradient(180deg,rgba(31,41,55,0.98),rgba(17,24,39,0.96))] text-white" : "bg-muted/30")}>
@@ -83,7 +89,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <div className="px-6 py-5 border-b border-white/10">
           <div className="flex items-center justify-between gap-3">
             <Link href={basePath} className="flex items-center gap-3">
-              <span className={cn("flex h-11 w-11 items-center justify-center rounded-2xl shadow-[0_18px_35px_-24px_hsl(var(--primary)/0.55)]", isAgentMode ? "bg-primary text-primary-foreground" : "bg-primary text-primary-foreground")}>
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl shadow-[0_18px_35px_-24px_hsl(var(--primary)/0.55)] bg-primary text-primary-foreground">
                 <Shield className="h-5 w-5" />
               </span>
               <div className="leading-tight">
@@ -104,7 +110,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <nav className="space-y-1 px-3">
             {links.map((link) => {
               const Icon = link.icon;
-              const isActive = location === link.href || location.startsWith(link.href + "/");
+              const isActive = link.href === basePath
+                ? location === link.href
+                : location === link.href || location.startsWith(link.href + "/");
+
               return (
                 <Link key={link.href} href={link.href}>
                   <span
@@ -133,12 +142,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             variant="outline"
             className={cn(
               "w-full justify-start gap-2",
-            isAgentMode ? "border-white/10 bg-white/5 text-white hover:bg-white/10" : "bg-background",
+              isAgentMode ? "border-white/10 bg-white/5 text-white hover:bg-white/10" : "bg-background",
             )}
             onClick={logout}
           >
             <LogOut className="w-4 h-4" />
-            Déconnexion
+            Deconnexion
           </Button>
         </div>
       </aside>
@@ -159,7 +168,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full"></span>
             </Button>
-              <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm", isAgentMode ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")}>
                 {user?.fullName?.charAt(0).toUpperCase() || "U"}
               </div>
@@ -168,10 +177,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className={cn(
-          "flex-1 p-4 sm:p-6 overflow-y-auto",
-          isAgentMode && "bg-[radial-gradient(circle_at_top_left,rgba(239,68,68,0.08),transparent_32%),linear-gradient(180deg,rgba(249,250,251,0.98),rgba(255,255,255,1))] text-foreground",
-        )}>
+        <main
+          className={cn(
+            "flex-1 p-4 sm:p-6 overflow-y-auto",
+            isAgentMode && "bg-[radial-gradient(circle_at_top_left,rgba(239,68,68,0.08),transparent_32%),linear-gradient(180deg,rgba(249,250,251,0.98),rgba(255,255,255,1))] text-foreground",
+          )}
+        >
           {children}
         </main>
       </div>

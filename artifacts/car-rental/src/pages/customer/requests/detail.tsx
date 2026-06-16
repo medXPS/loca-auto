@@ -135,7 +135,14 @@ export default function CustomerRequestDetail() {
       </div>
 
       {showDocumentCountdown && request.documentDeadline && (
-        <CountdownTimer deadline={request.documentDeadline} onExpire={handleSuccess} className="mb-8" />
+        <CountdownTimer
+          deadline={request.documentDeadline}
+          onExpire={handleSuccess}
+          className="mb-8"
+          label="Delai pour envoyer vos documents"
+          description="Envoyez votre CIN, passeport ou permis avant la fin du compte a rebours pour garder le vehicule bloque."
+          expiredDescription="Le delai d'envoi des documents est depasse. La demande peut etre liberee."
+        />
       )}
 
       {showPaymentCountdown && request.paymentDeadline && (

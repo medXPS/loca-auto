@@ -19,7 +19,7 @@ const settingsSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   address: z.string().optional(),
   city: z.string().optional(),
-  paymentDeadlineHours: z.coerce.number().min(1),
+  paymentDeadlineHours: z.coerce.number().min(12),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
