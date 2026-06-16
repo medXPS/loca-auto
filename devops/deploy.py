@@ -17,9 +17,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DOMAIN = "demo-locationauto.shonenx.shop"
 DEFAULT_APP_DIR = "/opt/loca-auto"
 DEFAULT_STATE_DIR = "/opt/loca-auto-state"
-SEED_MARKER = "demo-seeded"
-
-
 def env_or_default(name: str, default: str | None = None) -> str | None:
     value = os.environ.get(name)
     return value if value not in {None, ""} else default
@@ -245,14 +242,6 @@ def wait_for_backend_health(
     )
 
 
-def mark_seed_completed(remote: RemoteHost, state_dir: str) -> None:
-    remote.write_text(f"{state_dir}/{SEED_MARKER}", "ok\n")
-
-
-def seed_completed(remote: RemoteHost, state_dir: str) -> bool:
-    return remote.exists(f"{state_dir}/{SEED_MARKER}")
-
-
 def run_compose(remote: RemoteHost, app_dir: str, compose_cmd: str, command: str) -> None:
     remote.run(
         f"cd {shlex.quote(app_dir)} && {compose_cmd} {command}",
@@ -298,14 +287,12 @@ def main() -> None:
                 "run --rm --build db-migrate",
             )
 
-            if not seed_completed(remote, args.state_dir):
-                run_compose(
-                    remote,
-                    args.app_dir,
-                    compose_cmd,
-                    "--profile seed run --rm --build seed",
-                )
-                mark_seed_completed(remote, args.state_dir)
+            run_compose(
+                remote,
+                args.app_dir,
+                compose_cmd,
+                "--profile seed run --rm --build seed",
+            )
 
             run_compose(
                 remote,

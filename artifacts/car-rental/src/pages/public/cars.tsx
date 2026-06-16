@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useListCars } from "@workspace/api-client-react";
 import { CarCard } from "@/components/car-card";
 import { ReservationSearchBar } from "@/components/reservation-search-bar";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CarFront, Filter, Search, SlidersHorizontal } from "lucide-react";
+import { BadgeCheck, CarFront, Filter, MessageCircle, Search, ShieldCheck, Sparkles, Star, SlidersHorizontal } from "lucide-react";
 
 function getSearchParams() {
   return new URLSearchParams(window.location.search);
@@ -29,21 +29,37 @@ const fuelOptions = [
   { value: "DIESEL", label: "Diesel" },
   { value: "ESSENCE", label: "Essence" },
   { value: "HYBRIDE", label: "Hybride" },
-  { value: "ELECTRIQUE", label: "Électrique" },
+  { value: "ELECTRIQUE", label: "Electrique" },
+];
+
+const trustItems = [
+  { icon: ShieldCheck, title: "Agence verifiee", description: "Un parcours clair, sans surprise, du premier clic a la remise du vehicule." },
+  { icon: BadgeCheck, title: "Prix transparents", description: "Les prix restent visibles et faciles a comparer." },
+  { icon: MessageCircle, title: "Support WhatsApp", description: "Un contact direct pour verifier un vehicule ou une disponibilite." },
+  { icon: Sparkles, title: "Reservation rapide", description: "Le formulaire va droit au but et garde le parcours fluide." },
 ];
 
 function FilterGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-3 rounded-[1.4rem] border border-border/70 bg-white p-4 shadow-[0_16px_40px_-28px_rgba(16,23,34,0.16)]">
-      <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-muted-foreground">{title}</h3>
+    <section className="space-y-3 rounded-[1.25rem] border border-white/10 bg-slate-950/80 p-4 text-white shadow-[0_18px_45px_-28px_rgba(15,23,42,0.5)]">
+      <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/60">{title}</h3>
       {children}
     </section>
   );
 }
 
+function TrustCard({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+  return (
+    <div className="rounded-[1.5rem] border border-border/70 bg-white p-5 shadow-[0_16px_35px_-28px_rgba(16,23,34,0.12)]">
+      <Icon className="h-5 w-5 text-primary" />
+      <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
 export default function Cars() {
-  const [location, setLocation] = useLocation();
-  const isReservationRoute = location.startsWith("/reservation");
+  const [, setLocation] = useLocation();
   const params = getSearchParams();
 
   const [brand, setBrand] = useState(params.get("brand") || params.get("search") || "");
@@ -67,11 +83,7 @@ export default function Cars() {
     setFuelType(next.get("fuelType") || "all");
   }, [location]);
 
-  const { data: cityData } = useListCars({
-    limit: 200,
-    sortBy: "year_desc",
-  });
-
+  const { data: cityData } = useListCars({ limit: 200, sortBy: "year_desc" });
   const carQueryParams = {
     brand: brand || undefined,
     city: city || undefined,
@@ -84,258 +96,209 @@ export default function Cars() {
     startDate: startDate || undefined,
     returnDate: returnDate || undefined,
   } as any;
-
   const { data, isLoading } = useListCars(carQueryParams);
-
-  const pageTitle = isReservationRoute ? "Réservation de véhicule" : "Véhicules disponibles";
-  const pageDescription = isReservationRoute
-    ? "Choisissez votre véhicule, comparez les prix et finalisez votre demande en quelques clics."
-    : "Comparez les véhicules disponibles selon la marque, le prix, la transmission et le carburant.";
-
-  const canonical = isReservationRoute
-    ? "https://demo-locationauto.shonenx.shop/reservation"
-    : "https://demo-locationauto.shonenx.shop/voitures";
 
   const cities = useMemo(() => {
     const values = new Set<string>();
-    for (const car of cityData?.cars ?? []) {
-      if (car.city?.trim()) values.add(car.city.trim());
-    }
-    if (values.size === 0) {
-      ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"].forEach((item) => values.add(item));
-    }
+    for (const car of cityData?.cars ?? []) if (car.city?.trim()) values.add(car.city.trim());
+    if (values.size === 0) ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fes"].forEach((item) => values.add(item));
     return Array.from(values).sort((a, b) => a.localeCompare(b, "fr"));
   }, [cityData]);
 
   const handleSearch = () => {
-    const next = new URLSearchParams(window.location.search);
+    const next = new URLSearchParams();
+    if (brand) next.set("brand", brand);
     if (city) next.set("city", city);
-    else next.delete("city");
-
     if (startDate) next.set("startDate", startDate);
-    else next.delete("startDate");
-
     if (returnDate) next.set("returnDate", returnDate);
-    else next.delete("returnDate");
-
-    setLocation(`${isReservationRoute ? "/reservation" : "/voitures"}${next.toString() ? `?${next.toString()}` : ""}`);
+    if (sortBy) next.set("sortBy", sortBy);
+    if (transmission !== "all") next.set("transmission", transmission);
+    if (fuelType !== "all") next.set("fuelType", fuelType);
+    setLocation(`/voitures${next.toString() ? `?${next.toString()}` : ""}`);
   };
 
   const handleReset = () => {
-    setBrand("");
-    setCity("");
-    setStartDate("");
-    setReturnDate("");
-    setSortBy("year_desc");
-    setTransmission("all");
-    setFuelType("all");
-    setPriceRange([0, 2000]);
-    setLocation(isReservationRoute ? "/reservation" : "/voitures");
+    setBrand(""); setCity(""); setStartDate(""); setReturnDate(""); setSortBy("year_desc"); setTransmission("all"); setFuelType("all"); setPriceRange([0, 2000]);
+    setLocation("/voitures");
   };
 
   const FilterContent = () => (
     <div className="space-y-4">
       <FilterGroup title="Marque">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={brand}
-            onChange={(event) => setBrand(event.target.value)}
-            placeholder="Toyota, Dacia, Renault..."
-            className="h-12 rounded-2xl border-border/70 pl-9"
-          />
+          <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-white/45" />
+          <Input value={brand} onChange={(event) => setBrand(event.target.value)} placeholder="Toyota, Dacia, Renault..." className="h-12 rounded-2xl border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/35" />
         </div>
       </FilterGroup>
-
+      <FilterGroup title="Ville">
+        <Select value={city || "all"} onValueChange={(value) => setCity(value === "all" ? "" : value)}>
+          <SelectTrigger className="h-12 rounded-2xl border-white/10 bg-white/5 text-white">
+            <SelectValue placeholder="Choisir une ville" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les villes</SelectItem>
+            {cities.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </FilterGroup>
       <FilterGroup title="Prix">
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium text-muted-foreground">Budget</span>
-          <span className="font-semibold text-foreground">
-            {priceRange[0]} - {priceRange[1] >= 2000 ? "2000+" : priceRange[1]}
-          </span>
+        <div className="flex items-center justify-between text-sm text-white/70">
+          <span>Budget</span>
+          <span className="font-semibold text-white">{priceRange[0]} - {priceRange[1] >= 2000 ? "2000+" : priceRange[1]}</span>
         </div>
         <Slider value={priceRange} onValueChange={setPriceRange} max={2000} step={50} />
       </FilterGroup>
-
       <FilterGroup title="Transmission">
         <Select value={transmission} onValueChange={setTransmission}>
-          <SelectTrigger className="h-12 rounded-2xl border-border/70">
-            <SelectValue placeholder="Transmission" />
-          </SelectTrigger>
-          <SelectContent>
-            {transmissionOptions.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
+          <SelectTrigger className="h-12 rounded-2xl border-white/10 bg-white/5 text-white"><SelectValue placeholder="Transmission" /></SelectTrigger>
+          <SelectContent>{transmissionOptions.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent>
         </Select>
       </FilterGroup>
-
       <FilterGroup title="Carburant">
         <Select value={fuelType} onValueChange={setFuelType}>
-          <SelectTrigger className="h-12 rounded-2xl border-border/70">
-            <SelectValue placeholder="Carburant" />
-          </SelectTrigger>
-          <SelectContent>
-            {fuelOptions.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
+          <SelectTrigger className="h-12 rounded-2xl border-white/10 bg-white/5 text-white"><SelectValue placeholder="Carburant" /></SelectTrigger>
+          <SelectContent>{fuelOptions.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent>
         </Select>
       </FilterGroup>
-
-      <Button variant="outline" className="w-full rounded-2xl border-border/70 bg-white" onClick={handleReset}>
-        Réinitialiser
-      </Button>
+      <Button variant="outline" className="w-full rounded-2xl border-white/15 bg-white/5 text-white hover:bg-white/10" onClick={handleReset}>Reinitialiser</Button>
     </div>
   );
 
+  const totalLabel = `${data?.total || 0} vehicules`;
+
   return (
-    <div className="container mx-auto px-4 py-8 lg:py-10">
+    <div className="flex flex-col">
       <Seo
-        title={pageTitle}
-        description={pageDescription}
-        canonical={canonical}
+        title="Vehicules"
+        description="Parcourez les vehicules disponibles, comparez les prix et lancez une reservation en quelques clics."
+        canonical="https://demo-locationauto.shonenx.shop/voitures"
         image="/opengraph.jpg"
         type="website"
-        jsonLd={{
-          "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          name: `Location Auto Maroc - ${pageTitle}`,
-          description: pageDescription,
-          url: canonical,
-        }}
       />
 
-      <div className="rounded-[2rem] border border-border/70 bg-white px-6 py-8 shadow-[0_16px_35px_-28px_rgba(16,23,34,0.14)] md:px-8">
-        <p className="text-sm font-medium uppercase tracking-[0.22em] text-primary">Catalogue</p>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{pageTitle}</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">{pageDescription}</p>
+      <section className="container mx-auto px-4 pt-6 lg:pt-8">
+        <div className="relative overflow-hidden rounded-[2rem] bg-slate-950 text-white shadow-[0_28px_70px_-40px_rgba(16,23,34,0.3)]">
+          <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1800&q=80" alt="Voiture sur route" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(15,23,42,0.92),rgba(15,23,42,0.7)_55%,rgba(15,23,42,0.4))]" />
 
-        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          <span className="rounded-full border border-border/70 bg-muted/20 px-4 py-2">
-            {data?.total || 0} véhicules
-          </span>
-          {isReservationRoute && (
-            <span className="rounded-full border border-border/70 bg-muted/20 px-4 py-2">
-              Paiement à l’agence
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-8 flex justify-center px-2 sm:px-4">
-        <ReservationSearchBar
-          cities={cities}
-          city={city}
-          startDate={startDate}
-          returnDate={returnDate}
-          onCityChange={setCity}
-          onDatesChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
-            setStartDate(nextStartDate);
-            setReturnDate(nextReturnDate);
-          }}
-          onSubmit={handleSearch}
-          className="w-full max-w-5xl"
-        />
-      </div>
-
-      <div className="grid gap-8 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="hidden xl:block">
-          <div className="sticky top-24 space-y-4">
-            <Card className="overflow-hidden border-border/70 bg-white shadow-[0_16px_40px_-28px_rgba(16,23,34,0.16)]">
-              <CardContent className="p-5">
-                <div className="mb-4 flex items-center gap-2">
-                  <SlidersHorizontal className="h-4 w-4 text-primary" />
-                  <h2 className="text-lg font-semibold">Filtres</h2>
-                </div>
-                <FilterContent />
-              </CardContent>
-            </Card>
-          </div>
-        </aside>
-
-        <div>
-          <div className="mb-4 flex items-center justify-between gap-3 xl:hidden">
-            <span className="text-sm font-medium text-muted-foreground">{data?.total || 0} véhicules trouvés</span>
-            <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="rounded-full border-border/70 bg-white">
-                  <Filter className="h-4 w-4" />
-                  Filtres
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[min(100vw,420px)]">
-                <SheetHeader>
-                  <SheetTitle>Filtres</SheetTitle>
-                </SheetHeader>
-                <div className="mt-6">
-                  <FilterContent />
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[1.4rem] border border-border/70 bg-white px-4 py-3 shadow-[0_16px_40px_-28px_rgba(16,23,34,0.16)]">
-            <div>
-              <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Trier par</p>
-              <p className="text-sm font-semibold text-foreground">{data?.total || 0} offres disponibles</p>
+          <div className="relative z-10 grid gap-8 px-6 py-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:px-10 lg:py-14">
+            <div className="max-w-2xl">
+              <p className="text-xs font-medium uppercase tracking-[0.3em] text-white/60">Votre voyage, notre passion</p>
+              <h1 className="mt-4 font-serif text-5xl leading-[0.95] text-balance md:text-6xl lg:text-7xl">
+                Roulez librement
+                <span className="block text-primary">vivez le Maroc.</span>
+              </h1>
+              <p className="mt-5 max-w-xl text-sm leading-7 text-white/80 md:text-base">
+                Des vehicules selectionnes avec soin, des prix clairs et une reservation rapide.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Button asChild className="rounded-full bg-white px-6 text-primary hover:bg-white/95"><Link href="/">Accueil</Link></Button>
+                <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/5 px-6 text-white hover:bg-white/10"><a href="https://wa.me/212600000000" target="_blank" rel="noreferrer">WhatsApp</a></Button>
+              </div>
             </div>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="min-w-[220px] rounded-full border-border/70">
-                <SelectValue placeholder="Trier" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="year_desc">Recommandé</SelectItem>
-                <SelectItem value="price_asc">Prix croissant</SelectItem>
-                <SelectItem value="price_desc">Prix décroissant</SelectItem>
-                <SelectItem value="newest">Les plus récentes</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-4">
-            {isLoading ? (
-              Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-white shadow-sm">
-                  <div className="grid gap-0 lg:grid-cols-[260px_minmax(0,1fr)_230px]">
-                    <Skeleton className="h-[240px] w-full rounded-none" />
-                    <div className="space-y-4 p-5">
-                      <Skeleton className="h-5 w-1/3" />
-                      <Skeleton className="h-7 w-2/3" />
-                      <Skeleton className="h-20 w-full" />
-                    </div>
-                    <div className="border-t border-border/70 p-5 lg:border-l lg:border-t-0">
-                      <Skeleton className="h-8 w-2/3" />
-                      <Skeleton className="mt-3 h-11 w-full rounded-full" />
-                      <Skeleton className="mt-2 h-11 w-full rounded-full" />
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : data?.cars && data.cars.length > 0 ? (
-              data.cars.map((car) => <CarCard key={car.id} car={car} variant="compact" />)
-            ) : (
-              <Empty className="border border-dashed border-border/70 bg-white py-16">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <CarFront />
-                  </EmptyMedia>
-                  <EmptyTitle>Aucune voiture trouvée</EmptyTitle>
-                  <EmptyDescription>Essayez une autre marque ou un autre budget.</EmptyDescription>
-                </EmptyHeader>
-                <Button className="rounded-full bg-primary text-primary-foreground" onClick={handleReset}>
-                  Réinitialiser
-                </Button>
-              </Empty>
-            )}
+            <div className="rounded-[1.6rem] border border-white/10 bg-slate-900/60 p-4 shadow-[0_24px_60px_-36px_rgba(0,0,0,0.45)] backdrop-blur">
+              <ReservationSearchBar
+                cities={cities}
+                city={city}
+                startDate={startDate}
+                returnDate={returnDate}
+                onCityChange={setCity}
+                onDatesChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+                  setStartDate(nextStartDate);
+                  setReturnDate(nextReturnDate);
+                }}
+                onSubmit={handleSearch}
+                className="w-full"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      <section className="container mx-auto px-4 py-6 lg:py-8">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {trustItems.map((item) => <TrustCard key={item.title} {...item} />)}
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-16 lg:pb-20">
+        <div className="grid gap-8 xl:grid-cols-[320px_minmax(0,1fr)]">
+          <aside className="hidden xl:block">
+            <div className="sticky top-24 rounded-[1.6rem] border border-border/70 bg-slate-950 p-5">
+              <div className="mb-4 flex items-center gap-2 text-white">
+                <SlidersHorizontal className="h-4 w-4 text-primary" />
+                <h2 className="text-lg font-semibold">Affiner la recherche</h2>
+              </div>
+              <FilterContent />
+            </div>
+          </aside>
+
+          <div>
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-muted-foreground">{totalLabel}</span>
+              <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="rounded-full border-border/70 bg-white xl:hidden"><Filter className="h-4 w-4" />Filtres</Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[min(100vw,420px)] bg-slate-950 text-white">
+                  <SheetHeader><SheetTitle>Filtres</SheetTitle></SheetHeader>
+                  <div className="mt-6"><FilterContent /></div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[1.4rem] border border-border/70 bg-white px-4 py-3 shadow-[0_16px_40px_-28px_rgba(16,23,34,0.16)]">
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Trier par</p>
+                <p className="text-sm font-semibold text-foreground">{totalLabel}</p>
+              </div>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="min-w-[220px] rounded-full border-border/70"><SelectValue placeholder="Trier" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="year_desc">Recommande</SelectItem>
+                  <SelectItem value="price_asc">Prix croissant</SelectItem>
+                  <SelectItem value="price_desc">Prix decroissant</SelectItem>
+                  <SelectItem value="newest">Les plus recentes</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-4">
+              {isLoading ? (
+                Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-white shadow-sm">
+                    <div className="grid gap-0 lg:grid-cols-[260px_minmax(0,1fr)_230px]">
+                      <Skeleton className="h-[240px] w-full rounded-none" />
+                      <div className="space-y-4 p-5">
+                        <Skeleton className="h-5 w-1/3" />
+                        <Skeleton className="h-7 w-2/3" />
+                        <Skeleton className="h-20 w-full" />
+                      </div>
+                      <div className="border-t border-border/70 p-5 lg:border-l lg:border-t-0">
+                        <Skeleton className="h-8 w-2/3" />
+                        <Skeleton className="mt-3 h-11 w-full rounded-full" />
+                        <Skeleton className="mt-2 h-11 w-full rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : data?.cars && data.cars.length > 0 ? (
+                data.cars.map((car) => <CarCard key={car.id} car={car} variant="compact" />)
+              ) : (
+                <Empty className="border border-dashed border-border/70 bg-white py-16">
+                  <EmptyHeader>
+                    <EmptyMedia variant="icon"><CarFront /></EmptyMedia>
+                    <EmptyTitle>Aucun vehicule pour le moment</EmptyTitle>
+                    <EmptyDescription>Le catalogue est vide pour l'instant. Ajoutez des vehicules depuis l'espace admin.</EmptyDescription>
+                  </EmptyHeader>
+                  <Button className="rounded-full bg-primary text-primary-foreground" onClick={handleReset}>Reinitialiser</Button>
+                </Empty>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
