@@ -16,6 +16,7 @@ type ReservationSearchBarProps = {
   onDatesChange: (range: { startDate: string; returnDate: string }) => void;
   onSubmit: () => void;
   className?: string;
+  variant?: "default" | "compact";
 };
 
 export function ReservationSearchBar({
@@ -27,9 +28,11 @@ export function ReservationSearchBar({
   onDatesChange,
   onSubmit,
   className,
+  variant = "default",
 }: ReservationSearchBarProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [tripType, setTripType] = useState<"oneway" | "roundtrip">("oneway");
+  const isCompact = variant === "compact";
 
   const handleCityChange = (value: string) => {
     onCityChange(value === "all" ? "" : value);
@@ -43,13 +46,19 @@ export function ReservationSearchBar({
       }}
       className={cn("w-full", className)}
     >
-      <div className="overflow-hidden rounded-[1.9rem] border border-white/12 bg-white/8 shadow-[0_24px_70px_-35px_rgba(0,0,0,0.42)] backdrop-blur-xl">
-        <div className="flex items-center gap-2 border-b border-white/10 px-4 pt-4">
+      <div
+        className={cn(
+          "overflow-hidden border border-white/12 bg-white/8 shadow-[0_24px_70px_-35px_rgba(0,0,0,0.42)] backdrop-blur-xl",
+          isCompact ? "rounded-[1.65rem]" : "rounded-[1.9rem]",
+        )}
+      >
+        <div className={cn("flex items-center gap-2 border-b border-white/10", isCompact ? "px-3.5 pt-3.5" : "px-4 pt-4")}>
           <button
             type="button"
             onClick={() => setTripType("oneway")}
             className={cn(
-              "inline-flex items-center gap-2 rounded-t-2xl px-4 py-3 text-sm font-medium transition",
+              "inline-flex items-center gap-2 rounded-t-2xl font-medium transition",
+              isCompact ? "px-3 py-2.5 text-[0.82rem]" : "px-4 py-3 text-sm",
               tripType === "oneway" ? "bg-white/10 text-white" : "text-white/55 hover:text-white",
             )}
           >
@@ -60,7 +69,8 @@ export function ReservationSearchBar({
             type="button"
             onClick={() => setTripType("roundtrip")}
             className={cn(
-              "inline-flex items-center gap-2 rounded-t-2xl px-4 py-3 text-sm font-medium transition",
+              "inline-flex items-center gap-2 rounded-t-2xl font-medium transition",
+              isCompact ? "px-3 py-2.5 text-[0.82rem]" : "px-4 py-3 text-sm",
               tripType === "roundtrip" ? "bg-white/10 text-white" : "text-white/55 hover:text-white",
             )}
           >
@@ -69,11 +79,16 @@ export function ReservationSearchBar({
           </button>
         </div>
 
-        <div className="grid gap-3 p-4">
-          <div className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Ville de départ</p>
+        <div className={cn("grid gap-3", isCompact ? "p-3.5" : "p-4")}>
+          <div className={cn("border border-white/10 bg-white/8", isCompact ? "rounded-[1.15rem] px-3.5 py-3.5" : "rounded-2xl px-4 py-4")}>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Ville de depart</p>
             <Select value={city || "all"} onValueChange={handleCityChange}>
-              <SelectTrigger className="h-auto border-0 bg-transparent px-0 py-1 text-left text-lg font-semibold text-white shadow-none focus:ring-0">
+              <SelectTrigger
+                className={cn(
+                  "h-auto border-0 bg-transparent px-0 py-1 text-left font-semibold text-white shadow-none focus:ring-0",
+                  isCompact ? "text-base" : "text-lg",
+                )}
+              >
                 <MapPin className="mr-2 h-4 w-4 text-white/65" />
                 <SelectValue placeholder="Casablanca" />
               </SelectTrigger>
@@ -91,30 +106,69 @@ export function ReservationSearchBar({
           <div className="grid gap-3 sm:grid-cols-2">
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
-                <button type="button" className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4 text-left transition hover:bg-white/12">
+                <button
+                  type="button"
+                  className={cn(
+                    "border border-white/10 bg-white/8 text-left transition hover:bg-white/12",
+                    isCompact ? "rounded-[1.15rem] px-3.5 py-3.5" : "rounded-2xl px-4 py-4",
+                  )}
+                >
                   <CalendarDays className="h-4 w-4 text-white/55" />
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Date de départ</p>
-                  <p className="mt-1 text-sm font-semibold text-white">{startDate ? formatDisplayDate(startDate) : "Choisir"}</p>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Date de depart</p>
+                  <p className={cn("mt-1 font-semibold text-white", isCompact ? "text-[0.9rem]" : "text-sm")}>
+                    {startDate ? formatDisplayDate(startDate) : "Choisir"}
+                  </p>
                 </button>
               </PopoverTrigger>
-              <PopoverContent align="start" sideOffset={12} className="w-[min(96vw,960px)] overflow-hidden rounded-[1.75rem] border-border/70 bg-background p-0 shadow-[0_30px_80px_-40px_rgba(16,23,34,0.25)]">
-                <DateRangeCalendar label="Calendrier" startDate={startDate} returnDate={returnDate} onChange={onDatesChange} minimal />
+              <PopoverContent
+                align="start"
+                sideOffset={12}
+                className={cn(
+                  "overflow-hidden rounded-[1.75rem] border-border/70 bg-background p-0 shadow-[0_30px_80px_-40px_rgba(16,23,34,0.25)]",
+                  isCompact ? "w-[min(94vw,720px)]" : "w-[min(96vw,960px)]",
+                )}
+              >
+                <DateRangeCalendar
+                  label="Calendrier"
+                  startDate={startDate}
+                  returnDate={returnDate}
+                  onChange={onDatesChange}
+                  minimal
+                  compact={isCompact}
+                />
               </PopoverContent>
             </Popover>
 
-            <button type="button" className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4 text-left transition hover:bg-white/12" onClick={() => setCalendarOpen(true)}>
+            <button
+              type="button"
+              className={cn(
+                "border border-white/10 bg-white/8 text-left transition hover:bg-white/12",
+                isCompact ? "rounded-[1.15rem] px-3.5 py-3.5" : "rounded-2xl px-4 py-4",
+              )}
+              onClick={() => setCalendarOpen(true)}
+            >
               <CalendarDays className="h-4 w-4 text-white/55" />
               <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Date de retour</p>
-              <p className="mt-1 text-sm font-semibold text-white">{returnDate ? formatDisplayDate(returnDate) : "Choisir"}</p>
+              <p className={cn("mt-1 font-semibold text-white", isCompact ? "text-[0.9rem]" : "text-sm")}>
+                {returnDate ? formatDisplayDate(returnDate) : "Choisir"}
+              </p>
             </button>
           </div>
 
-          <Button type="submit" className="h-14 rounded-full bg-[#F04B45] px-6 text-base font-medium text-white shadow-[0_18px_35px_-22px_rgba(240,75,69,0.65)] hover:bg-[#e63f39]">
+          <Button
+            type="submit"
+            className={cn(
+              "rounded-full bg-[#F04B45] px-6 font-medium text-white shadow-[0_18px_35px_-22px_rgba(240,75,69,0.65)] hover:bg-[#e63f39]",
+              isCompact ? "h-12 text-[0.95rem]" : "h-14 text-base",
+            )}
+          >
             <Search className="h-4 w-4" />
             Rechercher
           </Button>
 
-          <p className="text-center text-xs text-white/55">Réservation en 2 minutes · Aucune carte requise</p>
+          <p className={cn("text-center text-white/55", isCompact ? "text-[11px]" : "text-xs")}>
+            Reservation en 2 minutes · Aucune carte requise
+          </p>
         </div>
       </div>
     </form>

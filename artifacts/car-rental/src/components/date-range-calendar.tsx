@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarCheck2, CalendarDays, CalendarX, RotateCcw } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 import { fr } from "date-fns/locale/fr";
-import { Calendar } from "@/components/ui/calendar";
 import type { AvailabilityBlock } from "@workspace/api-client-react";
 import {
   doesIsoRangeOverlapBlocked,
@@ -13,6 +12,7 @@ import {
   todayIso,
   toIsoDate,
 } from "@workspace/api-client-react/availability";
+import { Calendar } from "@/components/ui/calendar";
 
 interface DateRangeCalendarProps {
   label?: string;
@@ -66,7 +66,7 @@ export function DateRangeCalendar({
       from: parseIsoDate(startDate),
       to: returnDate ? parseIsoDate(returnDate) : undefined,
     };
-  }, [startDate, returnDate]);
+  }, [returnDate, startDate]);
 
   const disabledDates = useMemo(
     () => [
@@ -77,7 +77,7 @@ export function DateRangeCalendar({
         to: parseIsoDate(block.endDate),
       })),
     ],
-    [blockedRanges, minDate, maxDate],
+    [blockedRanges, maxDate, minDate],
   );
 
   const selectedLabel = formatRangeSummary(startDate, returnDate);
@@ -86,7 +86,7 @@ export function DateRangeCalendar({
     if (!startDate && !returnDate) {
       setWarningMessage(null);
     }
-  }, [startDate, returnDate]);
+  }, [returnDate, startDate]);
 
   const handleSelect = (range: DateRange | undefined) => {
     if (!range?.from) {
@@ -105,13 +105,13 @@ export function DateRangeCalendar({
     }
 
     if (!isIsoRangeValid(nextStartDate, nextReturnDate)) {
-      setWarningMessage("La date de retour doit être après la date de départ.");
+      setWarningMessage("La date de retour doit etre apres la date de depart.");
       onChange({ startDate: nextReturnDate, returnDate: "" });
       return;
     }
 
     if (doesIsoRangeOverlapBlocked({ startDate: nextStartDate, endDate: nextReturnDate }, blockedRanges)) {
-      setWarningMessage("Cette période traverse des dates réservées. Choisissez une autre plage.");
+      setWarningMessage("Cette periode contient des dates deja reservees ou une reservation en cours.");
       onChange({ startDate: lastClickedIsoRef.current ?? nextReturnDate, returnDate: "" });
       return;
     }
@@ -163,8 +163,8 @@ export function DateRangeCalendar({
                   setWarningMessage(null);
                   onChange({ startDate: "", returnDate: "" });
                 }}
-                aria-label="Réinitialiser la période"
-                title="Réinitialiser"
+                aria-label="Reinitialiser la periode"
+                title="Reinitialiser"
                 className={
                   isCompact
                     ? "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary/15 bg-background/80 text-muted-foreground shadow-sm transition-colors hover:bg-background hover:text-foreground"
@@ -172,7 +172,7 @@ export function DateRangeCalendar({
                 }
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                {!isCompact && "Réinitialiser"}
+                {!isCompact && "Reinitialiser"}
               </button>
             )}
           </div>
@@ -185,7 +185,7 @@ export function DateRangeCalendar({
                   : "rounded-2xl border border-primary/10 bg-background/85 px-3 py-2 shadow-sm"
               }
             >
-              <div className="text-[10px] font-medium uppercase text-muted-foreground">Départ</div>
+              <div className="text-[10px] font-medium uppercase text-muted-foreground">Depart</div>
               <div
                 className={
                   isCompact
@@ -193,7 +193,7 @@ export function DateRangeCalendar({
                     : "mt-1 min-h-5 text-sm font-semibold text-foreground"
                 }
               >
-                {startDate ? formatDisplayDate(startDate) : "À choisir"}
+                {startDate ? formatDisplayDate(startDate) : "A choisir"}
               </div>
             </div>
 
@@ -212,7 +212,7 @@ export function DateRangeCalendar({
                     : "mt-1 min-h-5 text-sm font-semibold text-foreground"
                 }
               >
-                {returnDate ? formatDisplayDate(returnDate) : "À choisir"}
+                {returnDate ? formatDisplayDate(returnDate) : "A choisir"}
               </div>
             </div>
           </div>
@@ -231,7 +231,7 @@ export function DateRangeCalendar({
             weekStartsOn={1}
             numberOfMonths={monthCount}
             showOutsideDays
-            className={isCompact ? "bg-transparent p-0 [--cell-size:1.38rem]" : "bg-transparent p-1 [--cell-size:2.35rem] sm:[--cell-size:2.55rem]"}
+            className={isCompact ? "bg-transparent p-0 [--cell-size:1.22rem]" : "bg-transparent p-1 [--cell-size:2.35rem] sm:[--cell-size:2.55rem]"}
             classNames={{
               months: monthCount > 1 ? "grid gap-4 lg:grid-cols-2" : isCompact ? "grid gap-1.5" : "grid gap-4",
               month: isCompact ? "flex min-w-0 flex-col gap-1.5" : "flex min-w-0 flex-col gap-3",
@@ -249,7 +249,7 @@ export function DateRangeCalendar({
               day: "relative aspect-square min-w-0 select-none p-0 text-center",
               today: "rounded-full border border-primary/20 bg-primary/10 text-primary",
               outside: "text-muted-foreground/45 aria-selected:text-muted-foreground/70",
-              disabled: "rounded-full bg-muted/40 text-muted-foreground/50 opacity-100 line-through",
+              disabled: "rounded-full border border-rose-200/60 bg-rose-50 text-rose-300 opacity-100 line-through",
               range_start: "rounded-l-full bg-primary text-primary-foreground shadow-[0_10px_24px_-14px_hsl(var(--primary)/0.8)]",
               range_middle: "rounded-none bg-primary/12",
               range_end: "rounded-r-full bg-primary text-primary-foreground shadow-[0_10px_24px_-14px_hsl(var(--primary)/0.8)]",
@@ -276,11 +276,11 @@ export function DateRangeCalendar({
             <div className={isCompact ? "grid gap-1.5 text-[11px] font-medium text-muted-foreground" : "flex flex-wrap items-center gap-3 text-xs font-medium text-muted-foreground"}>
               <span className="inline-flex items-center gap-2">
                 <CalendarCheck2 className="h-3.5 w-3.5 text-primary" />
-                Période sélectionnée
+                Periode selectionnee
               </span>
               <span className="inline-flex items-center gap-2">
                 <CalendarX className="h-3.5 w-3.5" />
-                Réservé
+                Indisponible
               </span>
             </div>
 
@@ -288,7 +288,7 @@ export function DateRangeCalendar({
               <div className={isCompact ? "space-y-1" : "flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4"}>
                 <span className="text-muted-foreground">{selectedLabel}</span>
                 <span className={isCompact ? "block text-xs font-semibold leading-snug text-foreground" : "font-semibold text-foreground"}>
-                  {startDate ? formatDisplayDate(startDate) : "Départ"}
+                  {startDate ? formatDisplayDate(startDate) : "Depart"}
                   {returnDate ? ` - ${formatDisplayDate(returnDate)}` : ""}
                 </span>
               </div>

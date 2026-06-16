@@ -7,11 +7,12 @@ import {
   useGetCar,
   useGetCarAvailability,
 } from "@workspace/api-client-react";
-import { addMinutes, calculateRentalDays, combineIsoDateAndHour, doesIsoRangeOverlapBlocked, formatDisplayDate, todayIso } from "@workspace/api-client-react/availability";
+import { addMinutes, calculateRentalDays, combineIsoDateAndHour, doesIsoRangeOverlapBlocked, formatDisplayDate } from "@workspace/api-client-react/availability";
+import { DateRangeCalendar } from "@/components/date-range-calendar";
+import { Seo } from "@/components/seo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Seo } from "@/components/seo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -23,8 +24,8 @@ import {
   CalendarDays,
   Fuel,
   ImageIcon,
-  MessageCircle,
   MapPin,
+  MessageCircle,
   Settings2,
   ShieldCheck,
   Sparkles,
@@ -61,7 +62,7 @@ function Gallery({
   useEffect(() => {
     setCurrent(0);
     setFailedUrls(new Set());
-  }, [mainImageUrl, images]);
+  }, [images, mainImageUrl]);
 
   const visibleMedia = media.filter((item) => !failedUrls.has(item.url));
   const activeIndex = Math.min(current, Math.max(visibleMedia.length - 1, 0));
@@ -103,7 +104,7 @@ function Gallery({
               type="button"
               onClick={() => setCurrent((value) => (value - 1 + visibleMedia.length) % visibleMedia.length)}
               className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur transition hover:bg-black/65"
-              aria-label="Image précédente"
+              aria-label="Image precedente"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
@@ -189,7 +190,8 @@ export default function CarDetail() {
   const returnDateFromQuery = searchParams.get("returnDate") || "";
   const startHourFromQuery = searchParams.get("startHour") || "09:00";
   const returnHourFromQuery = searchParams.get("returnHour") || "18:00";
-  const shouldFocusReservation = searchParams.get("reserve") === "1" || (typeof window !== "undefined" && window.location.hash === "#reservation");
+  const shouldFocusReservation =
+    searchParams.get("reserve") === "1" || (typeof window !== "undefined" && window.location.hash === "#reservation");
 
   const { data: car, isLoading } = useGetCar(id, {
     query: { enabled: isValidId, queryKey: getGetCarQueryKey(id) },
@@ -221,6 +223,48 @@ export default function CarDetail() {
     setReturnHour(returnHourFromQuery);
   }, [returnDateFromQuery, returnHourFromQuery, startDateFromQuery, startHourFromQuery]);
 
+  useEffect(() => {
+    if (!car || !shouldFocusReservation) return;
+
+    const timeout = window.setTimeout(() => {
+      reservationRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+
+    return () => window.clearTimeout(timeout);
+  }, [car, shouldFocusReservation]);
+
+  useEffect(() => {
+    if (!startDate || !returnDate) {
+      setFormError(null);
+      return;
+    }
+
+    const startAt = combineIsoDateAndHour(startDate, startHour);
+    const returnAt = combineIsoDateAndHour(returnDate, returnHour);
+
+    if (returnAt <= startAt) {
+      setFormError("La date de retour doit etre apres la date de depart.");
+      return;
+    }
+
+    if (
+      doesIsoRangeOverlapBlocked(
+        {
+          startDate,
+          endDate: returnDate,
+          startAt,
+          endAt: addMinutes(returnAt, 30),
+        },
+        availabilityBlocks,
+      )
+    ) {
+      setFormError("La periode selectionnee contient deja une reservation ou une demande en cours.");
+      return;
+    }
+
+    setFormError(null);
+  }, [availabilityBlocks, returnDate, returnHour, startDate, startHour]);
+
   const rentalDays = useMemo(() => {
     if (!startDate || !returnDate) return 0;
     return calculateRentalDays(startDate, returnDate);
@@ -249,9 +293,10 @@ export default function CarDetail() {
         : [],
     [car?.brand, car?.images, car?.mainImageUrl, car?.model],
   );
+
   const whatsappHref = buildWhatsAppHref(
     car ? `${car.brand} ${car.model}` : "Location Auto Maroc",
-    `Bonjour, je souhaite réserver${car ? ` ${car.brand} ${car.model}` : ""}${startDate ? ` du ${formatDisplayDate(startDate)}` : ""}${returnDate ? ` au ${formatDisplayDate(returnDate)}` : ""}${estimatedTotalPrice > 0 ? `. Budget estimé : ${formatPrice(estimatedTotalPrice)}` : ""}.`,
+    `Bonjour, je souhaite reserver${car ? ` ${car.brand} ${car.model}` : ""}${startDate ? ` du ${formatDisplayDate(startDate)}` : ""}${returnDate ? ` au ${formatDisplayDate(returnDate)}` : ""}${estimatedTotalPrice > 0 ? `. Budget estime : ${formatPrice(estimatedTotalPrice)}` : ""}.`,
   );
 
   const backHref = useMemo(() => {
@@ -260,53 +305,16 @@ export default function CarDetail() {
     return paramsCopy.toString() ? `/voitures?${paramsCopy.toString()}` : "/voitures";
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!car || !shouldFocusReservation) return;
-
-    const timeout = window.setTimeout(() => {
-      reservationRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 150);
-
-    return () => window.clearTimeout(timeout);
-  }, [car, shouldFocusReservation]);
-
-  useEffect(() => {
-    if (!startDate || !returnDate) {
-      setFormError(null);
-      return;
-    }
-
-    const startAt = combineIsoDateAndHour(startDate, startHour);
-    const returnAt = combineIsoDateAndHour(returnDate, returnHour);
-
-    if (returnAt <= startAt) {
-      setFormError("La date de retour doit être après la date de départ.");
-      return;
-    }
-
-    if (doesIsoRangeOverlapBlocked({
-      startDate,
-      endDate: returnDate,
-      startAt,
-      endAt: addMinutes(returnAt, 30),
-    }, availabilityBlocks)) {
-      setFormError("La période sélectionnée contient des dates indisponibles.");
-      return;
-    }
-
-    setFormError(null);
-  }, [availabilityBlocks, returnDate, returnHour, startDate, startHour]);
-
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!car) return;
 
     if (!fullName.trim() || !phone.trim() || !email.trim() || !startDate || !returnDate || !startHour || !returnHour) {
-      setFormError("Merci de compléter les champs essentiels.");
+      setFormError("Merci de completer les champs essentiels.");
       toast({
         title: "Informations manquantes",
-        description: "Remplissez votre nom, téléphone, email et les dates de location.",
+        description: "Remplissez votre nom, telephone, email et les dates de location.",
         variant: "destructive",
       });
       return;
@@ -350,8 +358,8 @@ export default function CarDetail() {
       {
         onSuccess: (request: any) => {
           toast({
-            title: "Demande envoyée",
-            description: "Notre équipe vous contactera très rapidement.",
+            title: "Demande envoyee",
+            description: "Notre equipe vous contactera tres rapidement.",
           });
           setLocation(`/dashboard/demandes/${request.id}`);
         },
@@ -371,11 +379,11 @@ export default function CarDetail() {
       <div className="container mx-auto px-4 py-8">
         <Link href="/voitures" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
           <ArrowLeft className="h-4 w-4" />
-          Retour aux véhicules
+          Retour aux vehicules
         </Link>
         <div className="mt-6 rounded-[1.8rem] border border-border/70 bg-white p-8 text-center">
           <p className="text-lg font-semibold">Voiture introuvable</p>
-          <p className="mt-2 text-sm text-muted-foreground">Le véhicule demandé n’existe pas ou n’est plus disponible.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Le vehicule demande n'existe pas ou n'est plus disponible.</p>
         </div>
       </div>
     );
@@ -394,18 +402,18 @@ export default function CarDetail() {
       <div className="container mx-auto px-4 py-8">
         <Link href={backHref} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
           <ArrowLeft className="h-4 w-4" />
-          Retour aux résultats
+          Retour aux resultats
         </Link>
         <div className="mt-6 rounded-[1.8rem] border border-border/70 bg-white p-8 text-center">
           <p className="text-lg font-semibold">Voiture introuvable</p>
-          <p className="mt-2 text-sm text-muted-foreground">Essayez un autre véhicule dans le catalogue.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Essayez un autre vehicule dans le catalogue.</p>
         </div>
       </div>
     );
   }
 
   const pageTitle = `${car.brand} ${car.model}`;
-  const pageDescription = `Réservez ${car.brand} ${car.model} au Maroc. Prix, caractéristiques et demande rapide en ligne.`;
+  const pageDescription = `Reservez ${car.brand} ${car.model} au Maroc. Prix, caracteristiques et demande rapide en ligne.`;
   const canonical = `https://demo-locationauto.shonenx.shop/voitures/${car.id}`;
   const mapLocation = `${car.city?.trim() || "Casablanca"}, Maroc`;
   const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapLocation)}&z=13&output=embed`;
@@ -447,7 +455,7 @@ export default function CarDetail() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <Link href={backHref} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
           <ArrowLeft className="h-4 w-4" />
-          Retour aux résultats
+          Retour aux resultats
         </Link>
 
         <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="hidden items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80 md:inline-flex">
@@ -467,23 +475,28 @@ export default function CarDetail() {
             <StatPill icon={Wind} label="Climatisation" value={hasAirConditioning ? "Oui" : "Non"} />
           </div>
 
-          <Card className="overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]" id="reservation" ref={reservationRef}>
+          <Card
+            className="overflow-hidden rounded-[1.9rem] border border-slate-900/10 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]"
+            id="reservation"
+            ref={reservationRef}
+          >
             <CardContent className="space-y-6 p-6 scroll-mt-28">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                     <CalendarDays className="h-3.5 w-3.5" />
-                    Réservation
+                    Reservation
                   </div>
-                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Réserver ce véhicule</h2>
+                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Reserver ce vehicule</h2>
                   <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    Remplissez les informations essentielles. L’équipe vous répond rapidement pour confirmer la disponibilité.
+                    Les dates deja reservees ou encore en cours de reservation sont desactivees directement dans le calendrier.
                   </p>
                 </div>
 
-                <div className="hidden rounded-2xl border border-border/70 bg-muted/20 px-4 py-3 text-right md:block">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Prix/jour</p>
-                  <p className="text-2xl font-semibold text-primary">{formatPrice(car.dailyPrice)}</p>
+                <div className="rounded-[1.4rem] border border-[#F04B45]/10 bg-[#F04B45]/5 px-4 py-4 text-right md:min-w-[180px]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Prix par jour</p>
+                  <p className="mt-1 text-3xl font-semibold text-[#F04B45]">{formatPrice(car.dailyPrice)}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Paiement a l'agence</p>
                 </div>
               </div>
 
@@ -510,7 +523,7 @@ export default function CarDetail() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground" htmlFor="phone">
-                      Téléphone
+                      Telephone
                     </label>
                     <Input
                       id="phone"
@@ -522,76 +535,70 @@ export default function CarDetail() {
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="email">
-                      Email
-                    </label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      placeholder="email@exemple.com"
-                      className="h-12 rounded-2xl border-border/70"
-                    />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground" htmlFor="email">
+                    Email
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="email@exemple.com"
+                    className="h-12 rounded-2xl border-border/70"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Dates de location</p>
+                      <p className="text-xs text-muted-foreground">Choisissez une plage disponible puis ajustez les heures ci-dessous.</p>
+                    </div>
+                    {availabilityBlocks.length > 0 && (
+                      <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-700">
+                        {availabilityBlocks.length} periode(s) bloquees
+                      </span>
+                    )}
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="startDate">
-                      Date de départ
-                    </label>
-                    <Input
-                      id="startDate"
-                      type="date"
-                      min={todayIso()}
-                      value={startDate}
-                      onChange={(event) => setStartDate(event.target.value)}
-                      className="h-12 rounded-2xl border-border/70"
-                    />
-                  </div>
+                  <DateRangeCalendar
+                    label="Disponibilite"
+                    startDate={startDate}
+                    returnDate={returnDate}
+                    blockedRanges={availabilityBlocks}
+                    onChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+                      setStartDate(nextStartDate);
+                      setReturnDate(nextReturnDate);
+                    }}
+                  />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="returnDate">
-                      Date de retour
+                    <label className="text-sm font-medium text-foreground" htmlFor="startHour">
+                      Heure de depart
                     </label>
                     <Input
-                      id="returnDate"
-                      type="date"
-                      min={startDate || todayIso()}
-                      value={returnDate}
-                      onChange={(event) => setReturnDate(event.target.value)}
+                      id="startHour"
+                      type="time"
+                      value={startHour}
+                      onChange={(event) => setStartHour(event.target.value)}
                       className="h-12 rounded-2xl border-border/70"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground" htmlFor="startHour">
-                        Heure depart
-                      </label>
-                      <Input
-                        id="startHour"
-                        type="time"
-                        value={startHour}
-                        onChange={(event) => setStartHour(event.target.value)}
-                        className="h-12 rounded-2xl border-border/70"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground" htmlFor="returnHour">
-                        Heure retour
-                      </label>
-                      <Input
-                        id="returnHour"
-                        type="time"
-                        value={returnHour}
-                        onChange={(event) => setReturnHour(event.target.value)}
-                        className="h-12 rounded-2xl border-border/70"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground" htmlFor="returnHour">
+                      Heure de retour
+                    </label>
+                    <Input
+                      id="returnHour"
+                      type="time"
+                      value={returnHour}
+                      onChange={(event) => setReturnHour(event.target.value)}
+                      className="h-12 rounded-2xl border-border/70"
+                    />
                   </div>
                 </div>
 
@@ -600,7 +607,9 @@ export default function CarDetail() {
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Infos utiles</p>
                     <div className="mt-2 grid gap-2 text-sm text-muted-foreground">
                       <p>{car.city || "Maroc"}</p>
-                      <p>{car.year} · {car.category}</p>
+                      <p>
+                        {car.year} · {car.category}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -611,18 +620,18 @@ export default function CarDetail() {
                     <span className="font-semibold text-foreground">{formatPrice(car.dailyPrice)}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Durée</span>
-                    <span className="font-semibold text-foreground">{rentalDays > 0 ? `${rentalDays} jour${rentalDays > 1 ? "s" : ""}` : "À choisir"}</span>
+                    <span className="text-muted-foreground">Duree</span>
+                    <span className="font-semibold text-foreground">{rentalDays > 0 ? `${rentalDays} jour${rentalDays > 1 ? "s" : ""}` : "A choisir"}</span>
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t border-border/70 pt-3 text-lg font-semibold">
-                    <span>Total estimé</span>
+                    <span>Total estime</span>
                     <span className="text-primary">{estimatedTotalPrice > 0 ? formatPrice(estimatedTotalPrice) : formatPrice(car.dailyPrice)}</span>
                   </div>
                 </div>
 
                 <Button
                   type="submit"
-                  className="h-12 w-full rounded-full text-base"
+                  className="h-12 w-full rounded-full bg-[#F04B45] text-base text-white hover:bg-[#e63f39]"
                   disabled={createRequest.isPending || car.status !== "AVAILABLE" || !!formError}
                 >
                   {createRequest.isPending
@@ -631,12 +640,12 @@ export default function CarDetail() {
                       ? "Indisponible"
                       : isAuthenticated
                         ? "Envoyer la demande"
-                        : "Se connecter pour réserver"}
+                        : "Se connecter pour reserver"}
                 </Button>
 
                 {!isAuthenticated && (
                   <p className="text-center text-xs text-muted-foreground">
-                    Vous serez redirigé vers la connexion avant l’envoi de la demande.
+                    Vous serez redirige vers la connexion avant l'envoi de la demande.
                   </p>
                 )}
               </form>
@@ -645,67 +654,65 @@ export default function CarDetail() {
         </div>
 
         <aside className="order-first h-fit space-y-4 xl:sticky xl:top-24 xl:order-none">
-          <Card className="overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]">
+          <Card className="overflow-hidden rounded-[1.8rem] border border-slate-900/10 bg-slate-950 text-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.4)]">
             <CardContent className="space-y-5 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div
                     className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
                       car.status === "AVAILABLE"
-                        ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border border-amber-200 bg-amber-50 text-amber-700"
+                        ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                        : "border border-amber-400/30 bg-amber-400/10 text-amber-200"
                     }`}
                   >
                     {car.status === "AVAILABLE" ? <ShieldCheck className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
                     {car.status === "AVAILABLE" ? "Disponible" : "Sur demande"}
                   </div>
-                  <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
+                  <h1 className="mt-4 text-3xl font-semibold tracking-tight">
                     {car.brand} {car.model}
                   </h1>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  <p className="mt-2 text-sm text-white/65">
                     {car.year} · {car.city || "Maroc"}
                   </p>
                 </div>
               </div>
 
-              <div className="rounded-[1.4rem] border border-primary/10 bg-primary/6 px-4 py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Prix par jour</p>
-                <p className="mt-1 text-4xl font-semibold tracking-tight text-primary">{formatPrice(car.dailyPrice)}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Paiement à l'agence</p>
+              <div className="rounded-[1.4rem] border border-white/10 bg-white/5 px-4 py-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Prix par jour</p>
+                <p className="mt-1 text-4xl font-semibold tracking-tight text-[#F04B45]">{formatPrice(car.dailyPrice)}</p>
+                <p className="mt-1 text-sm text-white/62">Paiement a l'agence</p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Caractéristiques</p>
-                  <div className="mt-3 grid gap-3 text-sm">
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-muted-foreground">Transmission</span>
-                      <span className="font-semibold text-foreground">{transmissionLabel}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-muted-foreground">Carburant</span>
-                      <span className="font-semibold text-foreground">{fuelLabel}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-muted-foreground">Places</span>
-                      <span className="font-semibold text-foreground">{car.seats}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-muted-foreground">Climatisation</span>
-                      <span className="font-semibold text-foreground">{hasAirConditioning ? "Oui" : "Non"}</span>
-                    </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Caracteristiques</p>
+                <div className="mt-3 grid gap-3 text-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-white/65">Transmission</span>
+                    <span className="font-semibold">{transmissionLabel}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-white/65">Carburant</span>
+                    <span className="font-semibold">{fuelLabel}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-white/65">Places</span>
+                    <span className="font-semibold">{car.seats}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-white/65">Climatisation</span>
+                    <span className="font-semibold">{hasAirConditioning ? "Oui" : "Non"}</span>
                   </div>
                 </div>
               </div>
 
               <div className="grid gap-3">
-                <Button asChild className="h-12 rounded-full bg-primary text-primary-foreground">
+                <Button asChild className="h-12 rounded-full bg-white text-slate-950 hover:bg-white/95">
                   <a href="#reservation">
-                    Réserver
+                    Reserver
                     <ArrowRight className="h-4 w-4" />
                   </a>
                 </Button>
-                <Button asChild variant="outline" className="h-12 rounded-full border-border/70 bg-white">
+                <Button asChild variant="outline" className="h-12 rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
                   <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="h-4 w-4" />
                     WhatsApp
@@ -764,9 +771,7 @@ export default function CarDetail() {
 
             <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
               <p className="font-medium text-foreground">Conseil</p>
-              <p className="mt-1 leading-7">
-                Utilisez la carte pour estimer le trajet jusqu'a l'agence et preparer votre arrivee.
-              </p>
+              <p className="mt-1 leading-7">Utilisez la carte pour estimer le trajet jusqu'a l'agence et preparer votre arrivee.</p>
             </div>
           </CardContent>
         </Card>
@@ -774,9 +779,9 @@ export default function CarDetail() {
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-white/96 px-3 py-3 shadow-[0_-12px_36px_-24px_rgba(16,23,34,0.24)] backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-xl grid-cols-2 gap-3">
-          <Button asChild className="h-12 rounded-full bg-primary text-primary-foreground">
+          <Button asChild className="h-12 rounded-full bg-[#F04B45] text-white hover:bg-[#e63f39]">
             <a href="#reservation">
-              Réserver
+              Reserver
               <ArrowRight className="h-4 w-4" />
             </a>
           </Button>

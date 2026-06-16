@@ -5,8 +5,37 @@ import { CarCard } from "@/components/car-card";
 import { ReservationSearchBar } from "@/components/reservation-search-bar";
 import { Seo } from "@/components/seo";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, BadgeCheck, CarFront, MessageCircle, ShieldCheck, Sparkles, Star } from "lucide-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  CircleCheckBig,
+  MessageCircle,
+  ShieldCheck,
+  Sparkles,
+  Star,
+} from "lucide-react";
+
+function FeaturePill({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-[1.45rem] border border-slate-200/80 bg-white px-4 py-4 shadow-[0_16px_34px_-28px_rgba(16,23,34,0.2)]">
+      <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#F04B45]/10 text-[#F04B45]">
+        <Icon className="h-5 w-5" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-slate-900">{title}</p>
+        <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+      </div>
+    </div>
+  );
+}
 
 function SectionHeading({
   eyebrow,
@@ -18,57 +47,21 @@ function SectionHeading({
   description: string;
 }) {
   return (
-    <div className="mx-auto max-w-2xl text-center">
-      <p className="text-sm font-medium uppercase tracking-[0.22em] text-primary">{eyebrow}</p>
-      <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">{title}</h2>
-      <p className="mt-3 text-base leading-7 text-muted-foreground">{description}</p>
+    <div className="max-w-2xl">
+      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#F04B45]">{eyebrow}</p>
+      <h2 className="mt-3 font-serif text-3xl leading-tight text-slate-900 md:text-4xl">{title}</h2>
+      <p className="mt-3 text-sm leading-7 text-slate-600 md:text-base">{description}</p>
     </div>
   );
 }
 
-function TrustCard({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Card className="rounded-[1.5rem] border border-border/70 bg-white shadow-[0_16px_40px_-28px_rgba(16,23,34,0.12)]">
-      <CardContent className="p-5">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
-        </div>
-        <h3 className="mt-4 text-lg font-semibold text-foreground">{title}</h3>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
 const trustItems = [
-  {
-    icon: ShieldCheck,
-    title: "Assurance incluse",
-    description: "Des véhicules présentés avec une information claire et rassurante dès la première vue.",
-  },
-  {
-    icon: BadgeCheck,
-    title: "Prix transparents",
-    description: "Le tarif journalier reste visible immédiatement, sans surcharge visuelle ni surprise.",
-  },
-  {
-    icon: MessageCircle,
-    title: "Support WhatsApp",
-    description: "Un contact direct pour poser une question, confirmer une disponibilité ou finaliser une demande.",
-  },
-  {
-    icon: Sparkles,
-    title: "Réservation rapide",
-    description: "Un parcours court, pensé pour aller droit au véhicule et au formulaire de réservation.",
-  },
+  { icon: ShieldCheck, title: "Assurance incluse", description: "Couverture complete des la prise en charge." },
+  { icon: BadgeCheck, title: "Prix transparents", description: "Aucun frais cache, prix clairs et justes." },
+  { icon: MessageCircle, title: "Support WhatsApp", description: "Reponse rapide pour toutes vos questions." },
+  { icon: Sparkles, title: "Reservation rapide", description: "Processus simple et 100% en ligne." },
+  { icon: CircleCheckBig, title: "Agence verifiee", description: "Agence locale fiable et certifiee." },
+  { icon: Star, title: "Avis clients", description: "4,8/5 sur +1200 clients satisfaits." },
 ];
 
 export default function Home() {
@@ -96,7 +89,7 @@ export default function Home() {
     }
 
     if (values.size === 0) {
-      ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fès"].forEach((item) => values.add(item));
+      ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fes"].forEach((item) => values.add(item));
     }
 
     return Array.from(values).sort((a, b) => a.localeCompare(b, "fr"));
@@ -112,32 +105,11 @@ export default function Home() {
     setLocation(`/reservation${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
-  const heroStats = [
-    {
-      label: "Note client",
-      value: "4,8/5",
-      description: "Avis vérifiés et expérience fluide",
-      icon: Star,
-    },
-    {
-      label: "Confiance",
-      value: "Agence vérifiée",
-      description: "Processus clair et encadré",
-      icon: ShieldCheck,
-    },
-    {
-      label: "Véhicules",
-      value: `${featuredCars?.total ?? 0}+`,
-      description: "Offres prêtes à réserver",
-      icon: CarFront,
-    },
-  ];
-
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col bg-[radial-gradient(circle_at_top,rgba(247,244,240,0.9),rgba(255,255,255,1)_48%)]">
       <Seo
         title="Location de voitures au Maroc"
-        description="Trouvez votre véhicule en quelques clics. Comparez les prix, réservez rapidement et contactez l’agence sur WhatsApp."
+        description="Trouvez votre vehicule en quelques clics. Comparez les prix, reservez rapidement et contactez l'agence sur WhatsApp."
         canonical="https://demo-locationauto.shonenx.shop/"
         image="/opengraph.jpg"
         jsonLd={[
@@ -166,110 +138,118 @@ export default function Home() {
       />
 
       <section className="container mx-auto px-4 pt-6 lg:pt-8">
-        <div className="relative overflow-hidden rounded-[2rem] border border-border/70 bg-slate-950 text-white shadow-[0_28px_70px_-40px_rgba(16,23,34,0.3)]">
+        <div className="relative overflow-hidden rounded-[2.4rem] bg-slate-950 text-white shadow-[0_32px_80px_-42px_rgba(16,23,34,0.42)]">
           <img
             src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1800&q=80"
             alt="Voiture premium sur route"
             className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(15,23,42,0.9),rgba(15,23,42,0.68)_55%,rgba(15,23,42,0.4))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(239,68,68,0.24),transparent_28%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(7,14,27,0.94),rgba(7,14,27,0.76)_52%,rgba(7,14,27,0.24))]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_24%),radial-gradient(circle_at_top_right,rgba(240,75,69,0.18),transparent_22%)]" />
 
-          <div className="relative z-10 px-6 py-10 md:px-8 lg:px-12 lg:py-14">
-            <div className="max-w-3xl">
-              <p className="text-sm font-medium uppercase tracking-[0.24em] text-white/72">Location Auto Maroc</p>
-              <h1 className="mt-4 text-4xl font-semibold leading-tight text-balance md:text-5xl lg:text-6xl">
-                Réservez votre voiture au Maroc avec une expérience simple et premium.
-              </h1>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-white/82 md:text-lg">
-                Comparez les véhicules disponibles, choisissez vos dates et lancez votre demande en quelques secondes.
-              </p>
-            </div>
+          <div className="relative z-10 px-6 py-8 md:px-8 lg:px-10 lg:py-12">
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(340px,0.82fr)] lg:items-center">
+              <div className="max-w-3xl lg:py-8">
+                <p className="text-xs font-medium uppercase tracking-[0.34em] text-white/56">Votre voyage, notre passion</p>
+                <h1 className="mt-5 font-serif text-5xl leading-[0.94] text-balance md:text-6xl lg:text-7xl">
+                  Roulez librement
+                  <span className="block text-[#F04B45]">vivez le Maroc.</span>
+                </h1>
+                <p className="mt-5 max-w-xl text-sm leading-7 text-white/80 md:text-base">
+                  Des voitures selectionnees avec soin, un service premium et des prix clairs. Recherchez vos dates,
+                  choisissez votre ville et lancez votre reservation en quelques clics.
+                </p>
 
-            <div className="mt-8 max-w-5xl">
-              <ReservationSearchBar
-                cities={cities}
-                city={city}
-                startDate={startDate}
-                returnDate={returnDate}
-                onCityChange={setCity}
-                onDatesChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
-                  setStartDate(nextStartDate);
-                  setReturnDate(nextReturnDate);
-                }}
-                onSubmit={handleSearch}
-                className="w-full"
-              />
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Button asChild className="rounded-full bg-white px-6 text-primary hover:bg-white/95">
-                <Link href="/voitures">
-                  Voir les véhicules
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="rounded-full border-white/16 bg-transparent px-6 text-white hover:bg-white/10 hover:text-white">
-                <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
-                  WhatsApp
-                </a>
-              </Button>
-            </div>
-
-            <div className="mt-10 grid gap-3 sm:grid-cols-3">
-              {heroStats.map((item) => {
-                const Icon = item.icon;
-
-                return (
-                  <div key={item.label} className="rounded-[1.35rem] border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs uppercase tracking-[0.18em] text-white/70">{item.label}</p>
-                      <Icon className="h-4 w-4 text-white/78" />
-                    </div>
-                    <p className="mt-2 text-2xl font-semibold">{item.value}</p>
-                    <p className="mt-1 text-sm leading-6 text-white/72">{item.description}</p>
+                <div className="mt-8 flex flex-wrap items-center gap-4">
+                  <div className="flex items-center -space-x-2">
+                    {["AM", "SK", "YR"].map((label) => (
+                      <div
+                        key={label}
+                        className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/15 text-[11px] font-semibold text-white backdrop-blur-sm"
+                      >
+                        {label}
+                      </div>
+                    ))}
                   </div>
-                );
-              })}
+                  <div>
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <span>4,8/5</span>
+                      <span className="text-[#FFCC66]">★★★★★</span>
+                    </div>
+                    <p className="text-sm text-white/64">+1200 clients satisfaits</p>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex flex-wrap gap-3">
+                  <Button asChild className="rounded-full bg-white px-6 text-slate-950 hover:bg-white/95">
+                    <Link href="/voitures">
+                      Voir les vehicules
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="rounded-full border-white/15 bg-white/8 px-6 text-white hover:bg-white/12 hover:text-white">
+                    <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="h-4 w-4" />
+                      WhatsApp
+                    </a>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="w-full max-w-[430px] justify-self-end">
+                <ReservationSearchBar
+                  cities={cities}
+                  city={city}
+                  startDate={startDate}
+                  returnDate={returnDate}
+                  onCityChange={setCity}
+                  onDatesChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+                    setStartDate(nextStartDate);
+                    setReturnDate(nextReturnDate);
+                  }}
+                  onSubmit={handleSearch}
+                  variant="compact"
+                />
+              </div>
             </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 -mt-10 px-2 sm:px-6 lg:px-10">
+          <div className="grid gap-4 rounded-[2rem] border border-slate-200/80 bg-white px-5 py-5 shadow-[0_28px_64px_-40px_rgba(16,23,34,0.22)] md:grid-cols-2 xl:grid-cols-3">
+            {trustItems.map((item) => (
+              <FeaturePill key={item.title} {...item} />
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="container mx-auto px-4 py-14 lg:py-16">
-        <SectionHeading
-          eyebrow="Confiance"
-          title="Une réservation claire et rassurante"
-          description="Quatre repères simples pour garder une expérience premium, lisible et orientée conversion."
-        />
-
-        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {trustItems.map((item) => (
-            <TrustCard key={item.title} {...item} />
-          ))}
+      <section className="container mx-auto px-4 pb-16 pt-16 lg:pb-20 lg:pt-20">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <SectionHeading
+            eyebrow="Selection populaire"
+            title="Nos voitures les plus demandees"
+            description="Une presentation plus premium et plus proche du design partage, avec un acces direct vers la fiche vehicule et la reservation."
+          />
+          <Link href="/voitures" className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900">
+            Voir toutes les offres
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
-      </section>
 
-      <section className="container mx-auto px-4 pb-16 lg:pb-20">
-        <SectionHeading
-          eyebrow="Véhicules populaires"
-          title="Les offres les plus demandées"
-          description="Une sélection lisible avec le prix journalier, les caractéristiques clés et un accès direct à la réservation."
-        />
-
-        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-8 grid gap-5 lg:grid-cols-3">
           {isLoading
-            ? Array.from({ length: 6 }).map((_, index) => (
-                <div key={index} className="overflow-hidden rounded-[1.6rem] border border-border/70 bg-white shadow-[0_16px_35px_-28px_rgba(16,23,34,0.14)]">
-                  <div className="h-60 animate-pulse bg-muted/60" />
+            ? Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="overflow-hidden rounded-[1.75rem] border border-border/70 bg-white shadow-[0_16px_35px_-28px_rgba(16,23,34,0.14)]">
+                  <div className="h-64 animate-pulse bg-muted/60" />
                   <div className="space-y-3 p-5">
                     <div className="h-5 w-1/2 animate-pulse rounded-full bg-muted/60" />
                     <div className="h-4 w-2/3 animate-pulse rounded-full bg-muted/60" />
-                    <div className="h-20 animate-pulse rounded-2xl bg-muted/60" />
+                    <div className="h-16 animate-pulse rounded-2xl bg-muted/60" />
                   </div>
                 </div>
               ))
-            : featuredCars?.cars?.slice(0, 6).map((car) => <CarCard key={car.id} car={car} />)}
+            : featuredCars?.cars?.slice(0, 3).map((car) => <CarCard key={car.id} car={car} />)}
         </div>
       </section>
     </div>
