@@ -260,7 +260,7 @@ router.get("/:id/receipt", authMiddleware, requireRole("ADMIN", "AGENT"), async 
       return;
     }
 
-    if (!["RESERVED", "CAR_DELIVERED", "RENTED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(result.status)) {
+    if (!["RESERVED", "PAID", "ACTIVE_RENTAL", "CAR_DELIVERED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(result.status)) {
       res.status(409).json({ error: "Le reçu PDF n'est disponible qu'après validation du paiement." });
       return;
     }

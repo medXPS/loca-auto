@@ -1,9 +1,12 @@
 import { Router } from "express";
-import { eq, sql, desc, and, gte, lte } from "drizzle-orm";
+import { eq, sql, desc, and, gte, lte, inArray } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 
 const router = Router();
+
+const ACTIVE_REVENUE_STATUSES = ["RESERVED", "PAID", "CAR_DELIVERED", "ACTIVE_RENTAL"] as const;
+const ACTIVE_RENTAL_STATUSES = ["RESERVED", "PAID", "CAR_DELIVERED", "ACTIVE_RENTAL"] as const;
 
 // GET /api/dashboard/stats
 router.get("/stats", authMiddleware, requireRole("ADMIN"), async (req, res) => {
@@ -18,7 +21,7 @@ router.get("/stats", authMiddleware, requireRole("ADMIN"), async (req, res) => {
         total: sql<number>`COALESCE(SUM(COALESCE(final_price, estimated_total_price)::numeric), 0)::float`,
       })
       .from(schema.rentalRequestsTable)
-      .where(sql`status IN ('RESERVED', 'CAR_DELIVERED', 'RENTED')`);
+      .where(inArray(schema.rentalRequestsTable.status, ACTIVE_REVENUE_STATUSES));
 
     const [pendingRow] = await db
       .select({
@@ -49,7 +52,7 @@ router.get("/stats", authMiddleware, requireRole("ADMIN"), async (req, res) => {
     const [activeRentals] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(schema.rentalRequestsTable)
-      .where(sql`status IN ('CAR_DELIVERED', 'RENTED')`);
+      .where(inArray(schema.rentalRequestsTable.status, ACTIVE_RENTAL_STATUSES));
 
     const [availableCars] = await db
       .select({ count: sql<number>`count(*)::int` })
@@ -190,10 +193,11 @@ router.get("/requests-by-status", authMiddleware, requireRole("ADMIN"), async (r
       CALL_CONFIRMED: "Appel confirmé",
       WAITING_AGENCY_PAYMENT: "Appel confirmé",
       RESERVED: "Réservé",
+      PAID: "Payé",
+      ACTIVE_RENTAL: "En cours de location",
       REJECTED: "Refusé",
-      WAITING_DOCUMENTS: "En attente",
+      WAITING_DOCUMENTS: "En attente de documents",
       CAR_DELIVERED: "En cours de location",
-      RENTED: "En cours de location",
       CAR_RETURNED: "Retourné",
       RETURNED: "Retourné",
       CANCELLED: "Annulé",
