@@ -75,4 +75,22 @@ router.patch("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   }
 });
 
+router.delete("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
+  try {
+    const [agency] = await db
+      .delete(schema.agenciesTable)
+      .where(eq(schema.agenciesTable.id, parseInt(String(req.params.id), 10)))
+      .returning();
+
+    if (!agency) {
+      res.status(404).json({ error: "Agence introuvable" });
+      return;
+    }
+
+    res.status(204).send();
+  } catch (err: any) {
+    res.status(400).json({ error: err?.message || "Impossible de supprimer l'agence" });
+  }
+});
+
 export default router;

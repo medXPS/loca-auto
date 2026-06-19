@@ -83,6 +83,12 @@ export async function saveAgency(data: Partial<AgencyRecord> & { name: string; c
   });
 }
 
+export async function deleteAgency(id: number) {
+  return customFetch<void>(`/api/agencies/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export async function fetchEligibleRatings() {
   return customFetch<EligibleRatingRecord[]>("/api/ratings/me/eligible");
 }
