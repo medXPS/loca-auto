@@ -7,20 +7,40 @@ export type CarAvailabilityLike = {
   } | null;
 };
 
+function parseAvailabilityDate(isoDate: string) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) {
+    const [year, month, day] = isoDate.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  return new Date(isoDate);
+}
+
+function formatDatePart(date: Date) {
+  const parts = new Intl.DateTimeFormat("fr-MA", { day: "2-digit", month: "2-digit" }).formatToParts(date);
+  const day = parts.find((part) => part.type === "day")?.value ?? "";
+  const month = parts.find((part) => part.type === "month")?.value ?? "";
+  return `${day}/${month}`;
+}
+
+function formatTimePart(date: Date) {
+  const parts = new Intl.DateTimeFormat("fr-MA", { hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(date);
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "";
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "";
+  return `${hour}:${minute}`;
+}
+
 export function formatAvailabilityDate(isoDate?: string | null) {
   if (!isoDate) return "";
 
-  const [year, month, day] = isoDate.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
+  const date = parseAvailabilityDate(isoDate);
 
   if (Number.isNaN(date.getTime())) {
     return isoDate;
   }
 
-  return new Intl.DateTimeFormat("fr-MA", {
-    day: "2-digit",
-    month: "2-digit",
-  }).format(date);
+  const dateLabel = formatDatePart(date);
+  return isoDate.includes("T") ? `${dateLabel} ${formatTimePart(date)}` : dateLabel;
 }
 
 export function getAvailabilityCopy(car: CarAvailabilityLike) {

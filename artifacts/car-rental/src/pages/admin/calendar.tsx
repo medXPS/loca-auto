@@ -8,6 +8,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import type { EventInput } from "@fullcalendar/core";
 import { customFetch, useListCars, useListRentalRequests } from "@workspace/api-client-react";
+import { addMinutes } from "@workspace/api-client-react/availability";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -59,7 +60,7 @@ function getEventStart(request: any) {
 
 function getEventEnd(request: any) {
   const returnAt = request.returnAt ? new Date(request.returnAt) : new Date(`${request.returnDate}T18:00:00`);
-  return new Date(returnAt.getTime() + 30 * 60 * 1000).toISOString();
+  return addMinutes(returnAt, 60).toISOString();
 }
 
 function getVisualStatus(request: any) {
@@ -137,7 +138,7 @@ export default function AdminCalendarPage() {
   }, [requests]);
 
   const updateDates = async (requestId: number, start: Date, end: Date) => {
-    const returnAt = new Date(end.getTime() - 30 * 60 * 1000);
+    const returnAt = new Date(end.getTime() - 60 * 60 * 1000);
     await customFetch(`/api/rental-requests/${requestId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },

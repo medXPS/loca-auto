@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte, ilike, lte, notInArray, sql } from "drizzle-or
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { logAudit } from "../lib/audit";
-import { combineDateAndHour, expireStaleAvailabilityLocks, getCarsAvailabilitySummaries, type CarAvailabilitySummary } from "../lib/availability";
+import { addReturnBuffer, combineDateAndHour, expireStaleAvailabilityLocks, getCarsAvailabilitySummaries, type CarAvailabilitySummary } from "../lib/availability";
 import {
   ensureCatalogueBackfill,
   formatAgency,
@@ -141,7 +141,7 @@ router.get("/", async (req, res) => {
       const requestedStartAt = startAt ? new Date(startAt) : combineDateAndHour(startDate, startHour ?? "09:00");
       const requestedEndAt = returnAt
         ? new Date(returnAt)
-        : new Date(combineDateAndHour(returnDate, returnHour ?? "18:00").getTime() + 30 * 60 * 1000);
+        : addReturnBuffer(combineDateAndHour(returnDate, returnHour ?? "18:00"));
 
       const blockedRows = await db
         .selectDistinct({ carId: schema.carAvailabilityBlocksTable.carId })

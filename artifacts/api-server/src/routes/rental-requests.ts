@@ -7,6 +7,7 @@ import { createNotification } from "../lib/notify";
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 import {
+  addReturnBuffer,
   combineDateAndHour,
   createTemporaryHold,
   expireStaleAvailabilityLocks,
@@ -364,7 +365,7 @@ router.post("/", authMiddleware, async (req, res) => {
       return;
     }
 
-    const availabilityEndAt = new Date(returnAt.getTime() + 30 * 60 * 1000);
+    const availabilityEndAt = addReturnBuffer(returnAt);
     if (await hasActiveAvailabilityOverlap(Number(carId), startDate, returnDate, undefined, startAt, availabilityEndAt)) {
       res.status(409).json({ error: "Cette voiture est deja reservee ou bloquee sur cette periode." });
       return;
@@ -484,7 +485,7 @@ router.patch("/:id", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, 
       dateUpdate.returnDate,
       existing.id,
       dateUpdate.startAt,
-      new Date(dateUpdate.returnAt.getTime() + 30 * 60 * 1000),
+      addReturnBuffer(dateUpdate.returnAt),
     )) {
       res.status(409).json({ error: "Cette voiture est deja bloquee sur cette periode." });
       return;

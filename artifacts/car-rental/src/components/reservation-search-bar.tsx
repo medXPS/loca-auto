@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeftRight, CalendarDays, MapPin, Route, Search } from "lucide-react";
+import { CalendarDays, MapPin, Search } from "lucide-react";
 import { formatDisplayDate } from "@workspace/api-client-react/availability";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -31,7 +31,6 @@ export function ReservationSearchBar({
   variant = "default",
 }: ReservationSearchBarProps) {
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [tripType, setTripType] = useState<"oneway" | "roundtrip">("oneway");
   const isCompact = variant === "compact";
 
   const handleCityChange = (value: string) => {
@@ -52,33 +51,6 @@ export function ReservationSearchBar({
           isCompact ? "rounded-[1.65rem]" : "rounded-[1.9rem]",
         )}
       >
-        <div className={cn("flex items-center gap-2 border-b border-white/10", isCompact ? "px-3.5 pt-3.5" : "px-4 pt-4")}>
-          <button
-            type="button"
-            onClick={() => setTripType("oneway")}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-t-2xl font-medium transition",
-              isCompact ? "px-3 py-2.5 text-[0.82rem]" : "px-4 py-3 text-sm",
-              tripType === "oneway" ? "bg-white/10 text-white" : "text-white/55 hover:text-white",
-            )}
-          >
-            <Route className="h-4 w-4" />
-            Aller simple
-          </button>
-          <button
-            type="button"
-            onClick={() => setTripType("roundtrip")}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-t-2xl font-medium transition",
-              isCompact ? "px-3 py-2.5 text-[0.82rem]" : "px-4 py-3 text-sm",
-              tripType === "roundtrip" ? "bg-white/10 text-white" : "text-white/55 hover:text-white",
-            )}
-          >
-            <ArrowLeftRight className="h-4 w-4" />
-            Aller-retour
-          </button>
-        </div>
-
         <div className={cn("grid gap-3", isCompact ? "p-3.5" : "p-4")}>
           <div className={cn("border border-white/10 bg-white/8", isCompact ? "rounded-[1.15rem] px-3.5 py-3.5" : "rounded-2xl px-4 py-4")}>
             <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Ville de depart</p>

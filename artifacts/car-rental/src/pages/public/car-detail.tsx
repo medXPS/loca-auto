@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { formatAvailabilityDate } from "@/lib/car-availability";
 import { savePendingReservation } from "@/lib/pending-reservation";
 import { FUEL_TRANSLATIONS, formatPrice } from "@/lib/utils";
 import {
@@ -43,22 +44,6 @@ type GalleryImage = {
 
 function buildWhatsAppHref(carName: string, message: string) {
   return `https://wa.me/212600000000?text=${encodeURIComponent(`${carName}\n${message}`)}`;
-}
-
-function formatShortDate(isoDate?: string | null) {
-  if (!isoDate) return "";
-
-  const [year, month, day] = isoDate.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-
-  if (Number.isNaN(date.getTime())) {
-    return isoDate;
-  }
-
-  return new Intl.DateTimeFormat("fr-MA", {
-    day: "2-digit",
-    month: "2-digit",
-  }).format(date);
 }
 
 function Gallery({
@@ -270,7 +255,7 @@ export default function CarDetail() {
           startDate,
           endDate: returnDate,
           startAt,
-          endAt: addMinutes(returnAt, 30),
+          endAt: addMinutes(returnAt, 60),
         },
         availabilityBlocks,
       )
@@ -747,12 +732,12 @@ export default function CarDetail() {
                     {isManualUnavailable
                       ? "Sur demande"
                       : hasFutureBlock && availability?.availableFrom
-                        ? `Dispo dès le ${formatShortDate(availability.availableFrom)}`
+                        ? `Dispo dès le ${formatAvailabilityDate(availability.availableFrom)}`
                         : "Disponible"}
                   </div>
                   {hasFutureBlock && availability?.availableFrom && (
                     <p className="mt-2 text-sm text-white/65">
-                      Disponible à partir du {formatShortDate(availability.availableFrom)}
+                      Disponible à partir du {formatAvailabilityDate(availability.availableFrom)}
                     </p>
                   )}
                   <h1 className="mt-4 text-3xl font-semibold tracking-tight">

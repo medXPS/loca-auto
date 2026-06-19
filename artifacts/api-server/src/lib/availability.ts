@@ -4,7 +4,7 @@ import { db, schema } from "./db";
 const blockingTypes = ["TEMPORARY_HOLD", "RESERVED", "RENTED", "MAINTENANCE"] as const;
 const documentHoldMinutes = 30;
 const paymentDeadlineHours = 24;
-const returnBufferMinutes = 30;
+const returnBufferMinutes = 60;
 
 export function getDocumentHoldMinutes() {
   const parsed = Number(process.env.DOCUMENT_HOLD_MINUTES ?? documentHoldMinutes);
@@ -184,7 +184,7 @@ export async function getCarsAvailabilitySummaries(carIds: number[]) {
     summaries.set(carId, {
       hasActiveBlock: true,
       isAvailableNow: false,
-      availableFrom: addIsoDays(block.endDate, 1),
+      availableFrom: block.endAt?.toISOString() ?? combineDateAndHour(block.endDate, "23:59").toISOString(),
       blockedUntil: block.endDate,
       blockStartDate: block.startDate,
       blockType: block.type,

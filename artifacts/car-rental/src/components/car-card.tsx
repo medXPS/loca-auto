@@ -229,7 +229,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
           </div>
           <div className="rounded-[1.15rem] border border-white/12 bg-white/92 px-4 py-3 text-right backdrop-blur-sm">
             <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">À partir de</p>
-            <p className="text-3xl font-semibold tracking-tight text-slate-950">{formatPrice(car.dailyPrice)}</p>
+            <p className="text-3xl font-semibold tracking-tight text-[#F04B45]">{formatPrice(car.dailyPrice)}</p>
           </div>
         </div>
       </Link>
