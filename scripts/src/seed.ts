@@ -4,9 +4,11 @@ import { ensureSuperAdmin, getDefaultSuperAdmin } from "./lib/super-admin.js";
 
 const { db, pool, schema } = createDatabase();
 
-async function seed() {
-  console.log("Resetting database to admin-only state...");
+function shouldResetDatabase() {
+  return process.env.SEED_RESET === "true" || process.env.SEED_MODE === "reset";
+}
 
+async function resetDatabase() {
   await db.execute(sql`
     truncate table
       ${schema.carAvailabilityBlocksTable},
@@ -24,12 +26,30 @@ async function seed() {
       ${schema.usersTable}
     restart identity cascade;
   `);
+}
 
-  await ensureSuperAdmin({ db, schema }, getDefaultSuperAdmin());
-  console.log("Done. Only the admin account remains.");
-  console.log("Admin: admin@demo.com / demo-admin@$");
+async function seed() {
+  const shouldReset = shouldResetDatabase();
 
-  await pool.end();
+  try {
+    if (shouldReset) {
+      console.log("Resetting database to admin-only state...");
+      await resetDatabase();
+    } else {
+      console.log("Seeding database without deleting existing data...");
+    }
+
+    const admin = await ensureSuperAdmin({ db, schema }, getDefaultSuperAdmin());
+
+    if (shouldReset) {
+      console.log("Done. Only the admin account remains.");
+    } else {
+      console.log("Done. Existing data was preserved.");
+    }
+    console.log(`Super admin ready: ${admin.email}`);
+  } finally {
+    await pool.end();
+  }
 }
 
 seed().catch((err) => {
