@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { CATEGORY_TRANSLATIONS, cn, FUEL_TRANSLATIONS, formatPrice } from "@/lib/utils";
 import { fetchAgencies } from "@/lib/fleet-catalog";
+import { formatAvailabilityDate, getAvailabilityCopy } from "@/lib/car-availability";
 
 const ALL_VALUE = "all";
 
@@ -116,6 +117,7 @@ function CatalogueCarRow({ car }: { car: any }) {
   const fuelLabel = FUEL_TRANSLATIONS[car.fuelType] || car.fuelType;
   const agency = car.agency;
   const ratingSummary = car.ratingSummary;
+  const availabilityCopy = getAvailabilityCopy(car);
 
   return (
     <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_16px_42px_-32px_rgba(15,23,42,0.14)]">
@@ -174,12 +176,21 @@ function CatalogueCarRow({ car }: { car: any }) {
           </div>
         </div>
 
-        <div className="flex flex-col justify-between border-t border-slate-100 p-5 lg:border-l lg:border-t-0">
-          <div className="text-right">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">A partir de</p>
-            <p className="mt-1 text-3xl font-semibold text-[#FF4B43]">{formatPrice(car.dailyPrice)}</p>
-            <p className="text-xs text-slate-400">/ jour</p>
-          </div>
+          <div className="flex flex-col justify-between border-t border-slate-100 p-5 lg:border-l lg:border-t-0">
+            <div className="text-right">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">A partir de</p>
+              <p className="mt-1 text-3xl font-semibold text-[#FF4B43]">{formatPrice(car.dailyPrice)}</p>
+              <p className="text-xs text-slate-400">/ jour</p>
+              <div
+                className={`mt-3 inline-flex max-w-full rounded-full px-3 py-1 text-xs font-semibold ${
+                  availabilityCopy.isBlocked ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
+                }`}
+              >
+                {availabilityCopy.isBlocked && availabilityCopy.availableFrom
+                  ? `Disponible à partir du ${formatAvailabilityDate(availabilityCopy.availableFrom)}`
+                  : availabilityCopy.label}
+              </div>
+            </div>
 
           <Button asChild className="rounded-full bg-[#FF4B43] text-white hover:bg-[#f03b33]">
             <Link href={`/voitures/${car.id}?reserve=1`}>Reserver maintenant</Link>

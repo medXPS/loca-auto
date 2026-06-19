@@ -4,6 +4,7 @@ import { Car } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatPrice, FUEL_TRANSLATIONS } from "@/lib/utils";
+import { getAvailabilityCopy } from "@/lib/car-availability";
 import { ArrowRight, BarChart3, Fuel, Heart, ImageIcon, Settings2, Users } from "lucide-react";
 
 interface CarCardProps {
@@ -11,61 +12,12 @@ interface CarCardProps {
   variant?: "featured" | "compact";
 }
 
-type CarAvailability = {
-  hasActiveBlock?: boolean;
-  availableFrom?: string | null;
-};
-
 function resolveQueryContext() {
   if (typeof window === "undefined") {
     return { searchParams: new URLSearchParams() };
   }
 
   return { searchParams: new URLSearchParams(window.location.search) };
-}
-
-function formatAvailabilityDate(isoDate?: string | null) {
-  if (!isoDate) return "";
-
-  const [year, month, day] = isoDate.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-
-  if (Number.isNaN(date.getTime())) {
-    return isoDate;
-  }
-
-  return new Intl.DateTimeFormat("fr-MA", {
-    day: "2-digit",
-    month: "2-digit",
-  }).format(date);
-}
-
-function getAvailabilityCopy(car: Car) {
-  const availability = (car as any).availability as CarAvailability | undefined;
-  const isBlocked = Boolean(availability?.hasActiveBlock && availability.availableFrom);
-  const isManualUnavailable = car.status === "MAINTENANCE" || car.status === "INACTIVE";
-
-  if (isBlocked) {
-    return {
-      isBlocked: true,
-      badge: "Reservee",
-      label: `Disponible a partir du ${formatAvailabilityDate(availability?.availableFrom)}`,
-    };
-  }
-
-  if (isManualUnavailable) {
-    return {
-      isBlocked: true,
-      badge: "Sur demande",
-      label: "Disponibilite sur demande",
-    };
-  }
-
-  return {
-    isBlocked: false,
-    badge: "Disponible",
-    label: "Disponible",
-  };
 }
 
 function SpecLine({
@@ -229,7 +181,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
   }
 
   return (
-    <Card className="group overflow-hidden rounded-[1.85rem] border border-white/8 bg-[linear-gradient(180deg,#07101f_0%,#040712_100%)] text-white shadow-[0_26px_60px_-36px_rgba(16,23,34,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_34px_80px_-34px_rgba(16,23,34,0.55)]">
+    <Card className="group overflow-hidden rounded-[1.85rem] border border-slate-200/80 bg-white text-slate-950 shadow-[0_26px_60px_-36px_rgba(16,23,34,0.24)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_34px_80px_-34px_rgba(16,23,34,0.28)]">
       <Link
         href={detailHref}
         className="relative block aspect-[16/11] overflow-hidden bg-muted"
@@ -251,7 +203,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
           </div>
         )}
 
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02),rgba(0,0,0,0.6))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,31,0.04),rgba(7,15,31,0.56))]" />
         <div className="absolute left-4 top-4 flex items-center gap-2">
           <div className="rounded-full bg-[#F04B45] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_10px_24px_-12px_rgba(240,75,69,0.95)]">
             {availabilityCopy.badge}
@@ -275,31 +227,31 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
             </h3>
             <p className="mt-1 text-xs text-white/85">{agency?.name || car.city || "Maroc"}</p>
           </div>
-          <div className="rounded-[1.15rem] border border-white/10 bg-white/8 px-4 py-3 text-right backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white">A partir de</p>
-            <p className="text-3xl font-semibold tracking-tight text-white">{formatPrice(car.dailyPrice)}</p>
+          <div className="rounded-[1.15rem] border border-white/12 bg-white/92 px-4 py-3 text-right backdrop-blur-sm">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">À partir de</p>
+            <p className="text-3xl font-semibold tracking-tight text-slate-950">{formatPrice(car.dailyPrice)}</p>
           </div>
         </div>
       </Link>
 
-      <div className="space-y-4 p-5">
+      <div className="space-y-4 bg-white p-5">
         <div className="grid gap-3 sm:grid-cols-3">
-          <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} tone="dark" />
-          <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} tone="dark" />
-          <SpecLine icon={Users} label="Places" value={`${car.seats} places`} tone="dark" />
+          <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} />
+          <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} />
+          <SpecLine icon={Users} label="Places" value={`${car.seats} places`} />
         </div>
 
-        <div className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">
-          <span className="text-white">
+        <div className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <span className="text-slate-700">
             {availabilityCopy.isBlocked
               ? availabilityCopy.label
-              : `Disponible a ${agency?.name || car.city || "Maroc"}`}
+              : `Disponible à ${agency?.name || car.city || "Maroc"}`}
           </span>
-          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">Reservation rapide</span>
+          <span className="rounded-full bg-[#F04B45]/10 px-3 py-1 text-xs font-semibold text-[#F04B45]">Réservation rapide</span>
         </div>
 
         <div className="flex gap-2">
-          <Button asChild className="flex-1 rounded-full bg-white text-slate-950 hover:bg-white/95">
+          <Button asChild className="flex-1 rounded-full bg-[#F04B45] text-white hover:bg-[#ec3c36]">
             <Link href={reserveHref}>
               Reserver
               <ArrowRight className="h-4 w-4" />
