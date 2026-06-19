@@ -23,17 +23,27 @@ function SpecLine({
   icon: Icon,
   label,
   value,
+  tone = "light",
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
   value: string;
+  tone?: "light" | "dark";
 }) {
+  const isDarkTone = tone === "dark";
+
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-muted/15 px-3 py-2.5">
-      <Icon className="h-4 w-4 shrink-0 text-primary" />
+    <div
+      className={`flex items-center gap-3 rounded-2xl border px-3 py-2.5 ${
+        isDarkTone ? "border-white/10 bg-white/5" : "border-border/70 bg-muted/15"
+      }`}
+    >
+      <Icon className={`h-4 w-4 shrink-0 ${isDarkTone ? "text-[#F04B45]" : "text-primary"}`} />
       <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-        <p className="truncate text-sm font-semibold text-foreground">{value}</p>
+        <p className={`text-[11px] uppercase tracking-[0.14em] ${isDarkTone ? "text-white/55" : "text-muted-foreground"}`}>
+          {label}
+        </p>
+        <p className={`truncate text-sm font-semibold ${isDarkTone ? "text-white" : "text-foreground"}`}>{value}</p>
       </div>
     </div>
   );
@@ -115,9 +125,9 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} />
-                <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} />
-                <SpecLine icon={Users} label="Places" value={`${car.seats} places`} />
+                <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} tone="dark" />
+                <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} tone="dark" />
+                <SpecLine icon={Users} label="Places" value={`${car.seats} places`} tone="dark" />
               </div>
             </div>
 
