@@ -5,7 +5,18 @@ import { ensureSuperAdmin, getDefaultSuperAdmin } from "./lib/super-admin.js";
 const { db, pool, schema } = createDatabase();
 
 function shouldResetDatabase() {
-  return process.env.SEED_RESET === "true" || process.env.SEED_MODE === "reset";
+  const requestedReset = process.env.SEED_RESET === "true" || process.env.SEED_MODE === "reset";
+
+  if (!requestedReset) {
+    return false;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    console.warn("Ignoring SEED_RESET in production to avoid deleting live data.");
+    return false;
+  }
+
+  return true;
 }
 
 async function resetDatabase() {

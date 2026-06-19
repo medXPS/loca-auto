@@ -31,7 +31,7 @@ function SpecLine({
   tone?: "light" | "dark";
 }) {
   const isDarkTone = tone === "dark";
-  const labelStyle: CSSProperties | undefined = isDarkTone ? { color: "rgba(255,255,255,0.62)" } : undefined;
+  const labelStyle: CSSProperties | undefined = isDarkTone ? { color: "rgba(255,255,255,0.9)" } : undefined;
   const valueStyle: CSSProperties | undefined = isDarkTone ? { color: "#ffffff" } : undefined;
   const iconStyle: CSSProperties | undefined = isDarkTone ? { color: "#ffffff" } : undefined;
 
@@ -44,7 +44,7 @@ function SpecLine({
       <Icon className={`h-4 w-4 shrink-0 ${isDarkTone ? "text-white" : "text-primary"}`} style={iconStyle} />
       <div className="min-w-0">
         <p
-          className={`text-[11px] uppercase tracking-[0.14em] ${isDarkTone ? "text-white/55" : "text-muted-foreground"}`}
+          className={`text-[11px] uppercase tracking-[0.14em] ${isDarkTone ? "text-white" : "text-muted-foreground"}`}
           style={labelStyle}
         >
           {label}
@@ -210,14 +210,14 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
         )}
         <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-sm uppercase tracking-[0.2em] text-white/70">{car.category}</p>
+            <p className="text-sm uppercase tracking-[0.2em] text-white">{car.category}</p>
             <h3 className="mt-1 truncate text-2xl font-semibold tracking-tight text-white transition-colors group-hover:text-[#ffd3d0]">
               {car.brand} {car.model}
             </h3>
-            <p className="mt-1 text-xs text-white/70">{agency?.name || car.city || "Maroc"}</p>
+            <p className="mt-1 text-xs text-white/85">{agency?.name || car.city || "Maroc"}</p>
           </div>
           <div className="rounded-[1.15rem] border border-white/10 bg-white/8 px-4 py-3 text-right backdrop-blur-sm">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-white/65">A partir de</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white">A partir de</p>
             <p className="text-3xl font-semibold tracking-tight text-white">{formatPrice(car.dailyPrice)}</p>
           </div>
         </div>

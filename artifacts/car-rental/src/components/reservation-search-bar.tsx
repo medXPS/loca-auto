@@ -165,10 +165,6 @@ export function ReservationSearchBar({
             <Search className="h-4 w-4" />
             Rechercher
           </Button>
-
-          <p className={cn("text-center text-white/55", isCompact ? "text-[11px]" : "text-xs")}>
-            Reservation en 2 minutes · Aucune carte requise
-          </p>
         </div>
       </div>
     </form>

@@ -186,7 +186,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               </div>
             </div>
             <p className="max-w-md text-sm leading-7 text-muted-foreground">
-              Une vitrine simple et premium pour comparer les véhicules, voir les prix et réserver en quelques clics.
+              Entreprise de location de voitures au Maroc, pensée pour comparer les offres, lire les prix et réserver rapidement.
             </p>
           </div>
 

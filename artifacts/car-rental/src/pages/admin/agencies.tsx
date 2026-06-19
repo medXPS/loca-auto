@@ -5,8 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LocationMapPicker } from "@/components/location-map-picker";
 import { useToast } from "@/hooks/use-toast";
 import { fetchAgencies, saveAgency, type AgencyRecord } from "@/lib/fleet-catalog";
+
+function buildGoogleMapsLink(latitude: number, longitude: number) {
+  return `https://www.google.com/maps/search/?api=1&query=${latitude.toFixed(6)},${longitude.toFixed(6)}`;
+}
+
+function extractCoordinatesFromMapUrl(mapUrl?: string | null) {
+  if (!mapUrl) return null;
+
+  const patterns = [
+    /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /[?&]q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /[?&]query=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = mapUrl.match(pattern);
+    if (match) {
+      const latitude = Number(match[1]);
+      const longitude = Number(match[2]);
+
+      if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+        return { latitude, longitude };
+      }
+    }
+  }
+
+  return null;
+}
 
 const emptyAgency: Partial<AgencyRecord> = {
   name: "",
@@ -66,6 +95,20 @@ export default function AdminAgencies() {
       return;
     }
 
+    const selectedCoordinates =
+      draft.latitude != null && draft.longitude != null
+        ? { latitude: draft.latitude, longitude: draft.longitude }
+        : extractCoordinatesFromMapUrl(draft.mapUrl);
+
+    if (!selectedCoordinates) {
+      toast({
+        title: "Position requise",
+        description: "Choisissez l'emplacement sur la carte avant d'enregistrer l'agence.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     mutation.mutate({
       id: draft.id,
       name: draft.name.trim(),
@@ -73,17 +116,12 @@ export default function AdminAgencies() {
       address: draft.address || "",
       phone: draft.phone || "",
       email: draft.email || "",
-      latitude: draft.latitude ?? "",
-      longitude: draft.longitude ?? "",
-      mapUrl: draft.mapUrl || "",
+      latitude: selectedCoordinates.latitude,
+      longitude: selectedCoordinates.longitude,
+      mapUrl: buildGoogleMapsLink(selectedCoordinates.latitude, selectedCoordinates.longitude),
       isActive: draft.isActive ?? true,
-    } as any);
+    });
   };
-
-  const mapPreview = draft.mapUrl
-    || ((draft.latitude !== null && draft.latitude !== undefined && draft.longitude !== null && draft.longitude !== undefined)
-      ? `https://www.google.com/maps?q=${draft.latitude},${draft.longitude}`
-      : "");
 
   return (
     <div className="space-y-6">
@@ -109,7 +147,7 @@ export default function AdminAgencies() {
         <Card>
           <CardHeader>
             <CardTitle>{draft.id ? "Modifier l'agence" : "Nouvelle agence"}</CardTitle>
-            <CardDescription>Renseignez la ville, l'adresse et la position carte pour guider le client.</CardDescription>
+            <CardDescription>Renseignez la ville, puis cherchez le lieu sur la carte et cliquez dessus pour fixer la position.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -139,31 +177,20 @@ export default function AdminAgencies() {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Latitude</label>
-                <Input
-                  type="number"
-                  value={draft.latitude ?? ""}
-                  onChange={(event) => setDraft((current) => ({ ...current, latitude: event.target.value ? Number(event.target.value) : null }))}
-                  placeholder="33.5731"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Longitude</label>
-                <Input
-                  type="number"
-                  value={draft.longitude ?? ""}
-                  onChange={(event) => setDraft((current) => ({ ...current, longitude: event.target.value ? Number(event.target.value) : null }))}
-                  placeholder="-7.5898"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Lien carte</label>
-              <Input value={draft.mapUrl || ""} onChange={(event) => setDraft((current) => ({ ...current, mapUrl: event.target.value }))} placeholder="https://maps.google.com/..." />
-            </div>
+            <LocationMapPicker
+              key={draft.id ?? "new-agency"}
+              latitude={draft.latitude ?? extractCoordinatesFromMapUrl(draft.mapUrl)?.latitude ?? null}
+              longitude={draft.longitude ?? extractCoordinatesFromMapUrl(draft.mapUrl)?.longitude ?? null}
+              initialQuery={draft.city || draft.address || draft.name || ""}
+              onChange={(value) =>
+                setDraft((current) => ({
+                  ...current,
+                  latitude: value.latitude,
+                  longitude: value.longitude,
+                  mapUrl: value.mapUrl,
+                }))
+              }
+            />
 
             <label className="flex items-center gap-3 text-sm">
               <input
@@ -174,9 +201,9 @@ export default function AdminAgencies() {
               Agence active
             </label>
 
-            {mapPreview && (
+            {draft.latitude != null && draft.longitude != null && (
               <a
-                href={mapPreview}
+                href={buildGoogleMapsLink(draft.latitude, draft.longitude)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-2xl border bg-muted/20 px-4 py-3 text-sm text-primary"
