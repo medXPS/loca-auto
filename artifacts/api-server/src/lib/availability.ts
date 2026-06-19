@@ -153,7 +153,7 @@ export async function getCarsAvailabilitySummaries(carIds: number[]) {
     ))
     .orderBy(asc(schema.carAvailabilityBlocksTable.startDate), asc(schema.carAvailabilityBlocksTable.endDate));
 
-  type AvailabilityBlockRow = typeof rows[number];
+  type AvailabilityBlockRow = (typeof rows)[number];
   const blocksByCarId = new Map<number, AvailabilityBlockRow[]>();
   for (const row of rows) {
     const existing = blocksByCarId.get(row.carId) ?? [];
@@ -163,7 +163,19 @@ export async function getCarsAvailabilitySummaries(carIds: number[]) {
 
   const summaries = new Map<number, CarAvailabilitySummary>();
   for (const carId of uniqueCarIds) {
-    const block = blocksByCarId.get(carId)?.[0];
+    const block = blocksByCarId.get(carId)?.reduce<AvailabilityBlockRow | undefined>((current, candidate) => {
+      if (!current) return candidate;
+
+      const currentEnd = new Date(current.endAt ?? `${current.endDate}T23:59:59Z`).getTime();
+      const candidateEnd = new Date(candidate.endAt ?? `${candidate.endDate}T23:59:59Z`).getTime();
+
+      if (candidateEnd > currentEnd) return candidate;
+      if (candidateEnd < currentEnd) return current;
+
+      const currentStart = new Date(current.startAt ?? `${current.startDate}T00:00:00Z`).getTime();
+      const candidateStart = new Date(candidate.startAt ?? `${candidate.startDate}T00:00:00Z`).getTime();
+      return candidateStart > currentStart ? candidate : current;
+    }, undefined);
     if (!block) {
       summaries.set(carId, { ...emptySummary });
       continue;

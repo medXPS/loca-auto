@@ -15,27 +15,17 @@ import {
 
 const router = Router();
 
-function isManualUnavailableStatus(status: string) {
-  return status === "MAINTENANCE" || status === "INACTIVE";
-}
-
 function formatCarBase(
   car: typeof schema.carsTable.$inferSelect,
   availability?: CarAvailabilitySummary,
 ) {
-  const effectiveStatus = isManualUnavailableStatus(car.status)
-    ? car.status
-    : availability?.hasActiveBlock
-      ? "RESERVED"
-      : "AVAILABLE";
-
   return {
     ...car,
     dailyPrice: Number(car.dailyPrice),
     weeklyPrice: car.weeklyPrice ? Number(car.weeklyPrice) : null,
     monthlyPrice: car.monthlyPrice ? Number(car.monthlyPrice) : null,
     depositAmount: car.depositAmount ? Number(car.depositAmount) : null,
-    status: effectiveStatus,
+    status: car.status,
     rawStatus: car.status,
     availability,
   };

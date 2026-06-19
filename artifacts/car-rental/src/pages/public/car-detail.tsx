@@ -45,6 +45,22 @@ function buildWhatsAppHref(carName: string, message: string) {
   return `https://wa.me/212600000000?text=${encodeURIComponent(`${carName}\n${message}`)}`;
 }
 
+function formatShortDate(isoDate?: string | null) {
+  if (!isoDate) return "";
+
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  if (Number.isNaN(date.getTime())) {
+    return isoDate;
+  }
+
+  return new Intl.DateTimeFormat("fr-MA", {
+    day: "2-digit",
+    month: "2-digit",
+  }).format(date);
+}
+
 function Gallery({
   images,
   mainImageUrl,
@@ -287,6 +303,10 @@ export default function CarDetail() {
   const agency = car ? (car as any).agency : null;
   const ratingSummary = car ? (car as any).ratingSummary : null;
   const carRatings = car ? ((car as any).ratings ?? []) : [];
+  const carStatus = car ? ((car as any).rawStatus || car.status) : "";
+  const availability = car ? ((car as any).availability ?? null) : null;
+  const hasFutureBlock = Boolean(availability?.hasActiveBlock && availability.availableFrom);
+  const isManualUnavailable = carStatus === "MAINTENANCE" || carStatus === "INACTIVE";
   const images = useMemo(
     () =>
       car
@@ -686,12 +706,14 @@ export default function CarDetail() {
                 <Button
                   type="submit"
                   className="h-12 w-full rounded-full bg-[#F04B45] text-base text-white hover:bg-[#e63f39]"
-                  disabled={createRequest.isPending || car.status !== "AVAILABLE" || !!formError}
+                  disabled={createRequest.isPending || isManualUnavailable || !!formError}
                 >
                   {createRequest.isPending
                     ? "Envoi en cours..."
-                    : car.status !== "AVAILABLE"
+                    : isManualUnavailable
                       ? "Indisponible"
+                      : formError
+                        ? "Période indisponible"
                       : isAuthenticated
                         ? "Envoyer la demande"
                         : "Se connecter pour reserver"}
@@ -714,14 +736,25 @@ export default function CarDetail() {
                 <div>
                   <div
                     className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${
-                      car.status === "AVAILABLE"
-                        ? "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                        : "border border-amber-400/30 bg-amber-400/10 text-amber-200"
+                      isManualUnavailable
+                        ? "border border-amber-400/30 bg-amber-400/10 text-amber-200"
+                        : hasFutureBlock
+                          ? "border border-sky-400/30 bg-sky-400/10 text-sky-200"
+                          : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
                     }`}
                   >
-                    {car.status === "AVAILABLE" ? <ShieldCheck className="h-3.5 w-3.5" /> : <Sparkles className="h-3.5 w-3.5" />}
-                    {car.status === "AVAILABLE" ? "Disponible" : "Sur demande"}
+                    {isManualUnavailable ? <Sparkles className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                    {isManualUnavailable
+                      ? "Sur demande"
+                      : hasFutureBlock && availability?.availableFrom
+                        ? `Dispo dès le ${formatShortDate(availability.availableFrom)}`
+                        : "Disponible"}
                   </div>
+                  {hasFutureBlock && availability?.availableFrom && (
+                    <p className="mt-2 text-sm text-white/65">
+                      Disponible à partir du {formatShortDate(availability.availableFrom)}
+                    </p>
+                  )}
                   <h1 className="mt-4 text-3xl font-semibold tracking-tight">
                     {car.brand} {car.model}
                   </h1>

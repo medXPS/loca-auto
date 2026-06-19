@@ -36,8 +36,7 @@ function formatAvailabilityDate(isoDate?: string | null) {
 
   return new Intl.DateTimeFormat("fr-MA", {
     day: "2-digit",
-    month: "short",
-    year: "numeric",
+    month: "2-digit",
   }).format(date);
 }
 
