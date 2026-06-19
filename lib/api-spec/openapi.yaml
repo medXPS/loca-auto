@@ -437,7 +437,7 @@ paths:
     patch:
       operationId: confirmCall
       tags: [rental-requests]
-      summary: Mark as call confirmed — starts 12h payment deadline
+      summary: Mark as call confirmed - starts 24h payment deadline
       parameters:
         - name: id
           in: path
@@ -990,7 +990,7 @@ paths:
     get:
       operationId: getExpiringRequests
       tags: [dashboard]
-      summary: Requests close to 12h payment deadline expiration
+      summary: Requests close to 24h payment deadline expiration
       responses:
         "200":
           description: Expiring requests
@@ -1191,6 +1191,18 @@ components:
         phone: { type: string }
 
     # ── Cars ──────────────────────────────────────────────────────────────────
+    CarAvailabilitySummary:
+      type: object
+      required: [hasActiveBlock, isAvailableNow]
+      properties:
+        hasActiveBlock: { type: boolean }
+        isAvailableNow: { type: boolean }
+        availableFrom: { type: ["string", "null"] }
+        blockedUntil: { type: ["string", "null"] }
+        blockStartDate: { type: ["string", "null"] }
+        blockType: { type: ["string", "null"] }
+        visualState: { type: ["string", "null"] }
+
     Car:
       type: object
       required: [id, brand, model, year, category, fuelType, transmission, seats, doors, dailyPrice, status]
@@ -1220,6 +1232,9 @@ components:
         insuranceIncluded: { type: boolean }
         requiredDocuments: { type: ["string", "null"] }
         status: { type: string }
+        rawStatus: { type: string }
+        availability:
+          $ref: "#/components/schemas/CarAvailabilitySummary"
         mainImageUrl: { type: ["string", "null"] }
         createdAt: { type: string }
 
@@ -1252,6 +1267,9 @@ components:
         insuranceIncluded: { type: boolean }
         requiredDocuments: { type: ["string", "null"] }
         status: { type: string }
+        rawStatus: { type: string }
+        availability:
+          $ref: "#/components/schemas/CarAvailabilitySummary"
         mainImageUrl: { type: ["string", "null"] }
         images:
           type: array
@@ -1359,8 +1377,11 @@ components:
         rentalRequestId: { type: ["integer", "null"] }
         startDate: { type: string }
         endDate: { type: string }
+        startAt: { type: ["string", "null"] }
+        endAt: { type: ["string", "null"] }
         type: { type: string }
         status: { type: string }
+        visualState: { type: ["string", "null"] }
         expiresAt: { type: ["string", "null"] }
 
     # ── Rental Requests ───────────────────────────────────────────────────────

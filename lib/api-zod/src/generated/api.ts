@@ -674,7 +674,7 @@ export const UpdateRentalRequestStatusResponse = zod.object({
 
 
 /**
- * @summary Mark as call confirmed — starts 12h payment deadline
+ * @summary Mark as call confirmed - starts 24h payment deadline
  */
 export const ConfirmCallParams = zod.object({
   "id": zod.coerce.number()
@@ -1792,7 +1792,7 @@ export const GetRecentRequestsResponse = zod.array(GetRecentRequestsResponseItem
 
 
 /**
- * @summary Requests close to 12h payment deadline expiration
+ * @summary Requests close to 24h payment deadline expiration
  */
 export const GetExpiringRequestsResponseItem = zod.object({
   "id": zod.number(),
@@ -1980,5 +1980,4 @@ export const GetUploadUrlResponse = zod.object({
 
 }).passthrough().optional()
 })
-
 

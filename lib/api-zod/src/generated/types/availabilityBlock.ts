@@ -13,8 +13,14 @@ export interface AvailabilityBlock {
   rentalRequestId?: number | null;
   startDate: string;
   endDate: string;
+  /** @nullable */
+  startAt?: string | null;
+  /** @nullable */
+  endAt?: string | null;
   type: string;
   status: string;
+  /** @nullable */
+  visualState?: string | null;
   /** @nullable */
   expiresAt?: string | null;
 }

@@ -62,6 +62,21 @@ export interface UserProfileUpdate {
   phone?: string;
 }
 
+export interface CarAvailabilitySummary {
+  hasActiveBlock: boolean;
+  isAvailableNow: boolean;
+  /** @nullable */
+  availableFrom?: string | null;
+  /** @nullable */
+  blockedUntil?: string | null;
+  /** @nullable */
+  blockStartDate?: string | null;
+  /** @nullable */
+  blockType?: string | null;
+  /** @nullable */
+  visualState?: string | null;
+}
+
 export interface Car {
   id: number;
   brand: string;
@@ -99,6 +114,8 @@ export interface Car {
   /** @nullable */
   requiredDocuments?: string | null;
   status: string;
+  rawStatus?: string;
+  availability?: CarAvailabilitySummary;
   /** @nullable */
   mainImageUrl?: string | null;
   createdAt?: string;
@@ -151,6 +168,8 @@ export interface CarDetail {
   /** @nullable */
   requiredDocuments?: string | null;
   status: string;
+  rawStatus?: string;
+  availability?: CarAvailabilitySummary;
   /** @nullable */
   mainImageUrl?: string | null;
   images?: CarImage[];

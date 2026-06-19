@@ -101,7 +101,7 @@ export default function AgentDashboard() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard title="Demandes en attente" value={pendingRequests.length} description="À appeler ou à qualifier en priorité." icon={PhoneCall} />
-        <StatCard title="Appels confirmés" value={callConfirmedRequests.length} description="Clients ayant 12h pour se présenter." icon={BadgeCheck} />
+        <StatCard title="Appels confirmés" value={callConfirmedRequests.length} description="Clients ayant 24h pour se présenter." icon={BadgeCheck} />
         <StatCard title="Locations actives" value={activeRentals.length} description="Réservations validées ou en cours." icon={Car} />
         <StatCard title="Véhicules disponibles" value={availableCars.length} description={`Sur ${cars.length} véhicules au total.`} icon={Car} />
       </div>

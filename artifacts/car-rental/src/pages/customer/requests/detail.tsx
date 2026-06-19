@@ -140,7 +140,7 @@ export default function CustomerRequestDetail() {
           onExpire={handleSuccess}
           className="mb-8"
           label="Delai pour envoyer vos documents"
-          description="Envoyez votre CIN, passeport ou permis avant la fin du compte a rebours pour garder le vehicule bloque."
+          description="Envoyez votre CIN ou passeport et votre permis avant la fin du compte a rebours pour garder le vehicule bloque."
           expiredDescription="Le delai d'envoi des documents est depasse. La demande peut etre liberee."
         />
       )}
@@ -153,7 +153,7 @@ export default function CustomerRequestDetail() {
         <div className="mb-6 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
           <FileText className="mt-0.5 h-6 w-6 shrink-0" />
           <div>
-            <h3 className="font-bold">Documents requis sous 1 heure</h3>
+            <h3 className="font-bold">Documents requis sous 30 minutes</h3>
             <p className="mt-1 text-sm">
               Televersez votre CIN ou passeport et votre permis de conduire pour garder le vehicule bloque.
             </p>
@@ -168,7 +168,7 @@ export default function CustomerRequestDetail() {
             <h3 className="font-bold">Prochaine etape : Paiement a l'agence</h3>
             <p className="mt-1 text-sm">
               Votre demande a ete confirmee par telephone. Veuillez vous presenter a notre agence avant
-              le delai imparti pour finaliser le paiement et recuperer votre vehicule.
+              la limite de 24h pour finaliser le paiement en especes et recuperer votre vehicule.
             </p>
           </div>
         </div>

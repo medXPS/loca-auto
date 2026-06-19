@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte, ilike, lte, notInArray, sql } from "drizzle-or
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { logAudit } from "../lib/audit";
-import { combineDateAndHour, expireStaleAvailabilityLocks } from "../lib/availability";
+import { combineDateAndHour, expireStaleAvailabilityLocks, getCarsAvailabilitySummaries, type CarAvailabilitySummary } from "../lib/availability";
 import {
   ensureCatalogueBackfill,
   formatAgency,
@@ -15,19 +15,36 @@ import {
 
 const router = Router();
 
-function formatCarBase(car: typeof schema.carsTable.$inferSelect) {
+function isManualUnavailableStatus(status: string) {
+  return status === "MAINTENANCE" || status === "INACTIVE";
+}
+
+function formatCarBase(
+  car: typeof schema.carsTable.$inferSelect,
+  availability?: CarAvailabilitySummary,
+) {
+  const effectiveStatus = isManualUnavailableStatus(car.status)
+    ? car.status
+    : availability?.hasActiveBlock
+      ? "RESERVED"
+      : "AVAILABLE";
+
   return {
     ...car,
     dailyPrice: Number(car.dailyPrice),
     weeklyPrice: car.weeklyPrice ? Number(car.weeklyPrice) : null,
     monthlyPrice: car.monthlyPrice ? Number(car.monthlyPrice) : null,
     depositAmount: car.depositAmount ? Number(car.depositAmount) : null,
+    status: effectiveStatus,
+    rawStatus: car.status,
+    availability,
   };
 }
 
 function attachCarRelations(
   car: typeof schema.carsTable.$inferSelect,
   relations: Awaited<ReturnType<typeof getCarRelations>>,
+  availability?: CarAvailabilitySummary,
 ) {
   const brand = car.brandId
     ? relations.brandsById.get(car.brandId)
@@ -38,7 +55,7 @@ function attachCarRelations(
   const rating = relations.ratingsByCarId.get(car.id);
 
   return {
-    ...formatCarBase(car),
+    ...formatCarBase(car, availability),
     brandMeta: brand ? formatBrand(brand) : null,
     agency: agency ? formatAgency(agency) : null,
     ratingSummary: {
@@ -51,7 +68,8 @@ function attachCarRelations(
 async function enrichCars(cars: Array<typeof schema.carsTable.$inferSelect>) {
   if (cars.length === 0) return [];
   const relations = await getCarRelations(cars);
-  return cars.map((car) => attachCarRelations(car, relations));
+  const availabilityByCarId = await getCarsAvailabilitySummaries(cars.map((car) => car.id));
+  return cars.map((car) => attachCarRelations(car, relations, availabilityByCarId.get(car.id)));
 }
 
 async function getCarRatings(carId: number) {

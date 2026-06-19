@@ -569,7 +569,7 @@ router.patch("/:id/confirm-call", authMiddleware, requireRole("ADMIN", "AGENT"),
     const now = new Date();
 
     const [settings] = await db.select().from(schema.companySettingsTable).limit(1);
-    const deadlineHours = getPaymentDeadlineHours(settings?.paymentDeadlineHours ?? 12);
+    const deadlineHours = getPaymentDeadlineHours(settings?.paymentDeadlineHours ?? 24);
     const paymentDeadline = new Date(now.getTime() + deadlineHours * 60 * 60 * 1000);
 
     const [updated] = await db
@@ -684,7 +684,6 @@ router.patch("/:id/confirm-payment", authMiddleware, requireRole("ADMIN", "AGENT
     }
 
     await markRequestReserved(updated);
-    await db.update(schema.carsTable).set({ status: "RENTED" }).where(eq(schema.carsTable.id, updated.carId));
 
     if (updated.customerId) {
       const [customer] = await db.select().from(schema.customersTable).where(eq(schema.customersTable.id, updated.customerId)).limit(1);

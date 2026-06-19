@@ -18,6 +18,7 @@ export * from './blogPost';
 export * from './blogPostInput';
 export * from './blogPostUpdate';
 export * from './car';
+export * from './carAvailabilitySummary';
 export * from './carDetail';
 export * from './carImage';
 export * from './carImageInput';

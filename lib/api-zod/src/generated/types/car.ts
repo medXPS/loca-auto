@@ -5,6 +5,7 @@
  * Location Auto Maroc API
  * OpenAPI spec version: 0.1.0
  */
+import type { CarAvailabilitySummary } from './carAvailabilitySummary';
 
 export interface Car {
   id: number;
@@ -43,6 +44,8 @@ export interface Car {
   /** @nullable */
   requiredDocuments?: string | null;
   status: string;
+  rawStatus?: string;
+  availability?: CarAvailabilitySummary;
   /** @nullable */
   mainImageUrl?: string | null;
   createdAt?: string;

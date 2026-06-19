@@ -1580,7 +1580,7 @@ export const getConfirmCallUrl = (id: number,) => {
 }
 
 /**
- * @summary Mark as call confirmed — starts 12h payment deadline
+ * @summary Mark as call confirmed - starts 24h payment deadline
  */
 export const confirmCall = async (id: number,
     confirmCallInput: ConfirmCallInput, options?: RequestInit): Promise<RentalRequest> => {
@@ -1630,7 +1630,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type ConfirmCallMutationError = ErrorType<unknown>
 
     /**
- * @summary Mark as call confirmed — starts 12h payment deadline
+ * @summary Mark as call confirmed - starts 24h payment deadline
  */
 export const useConfirmCall = <TError = ErrorType<unknown>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmCall>>, TError,{id: number;data: BodyType<ConfirmCallInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -3834,7 +3834,7 @@ export const getGetExpiringRequestsUrl = () => {
 }
 
 /**
- * @summary Requests close to 12h payment deadline expiration
+ * @summary Requests close to 24h payment deadline expiration
  */
 export const getExpiringRequests = async ( options?: RequestInit): Promise<RentalRequest[]> => {
 
@@ -3881,7 +3881,7 @@ export type GetExpiringRequestsQueryError = ErrorType<unknown>
 
 
 /**
- * @summary Requests close to 12h payment deadline expiration
+ * @summary Requests close to 24h payment deadline expiration
  */
 
 export function useGetExpiringRequests<TData = Awaited<ReturnType<typeof getExpiringRequests>>, TError = ErrorType<unknown>>(
@@ -4352,4 +4352,3 @@ export const useGetUploadUrl = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getGetUploadUrlMutationOptions(options));
     }
-

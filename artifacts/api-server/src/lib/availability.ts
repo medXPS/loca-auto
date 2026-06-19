@@ -1,23 +1,35 @@
-import { and, eq, gt, gte, inArray, lte, lt, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, lte, lt, sql } from "drizzle-orm";
 import { db, schema } from "./db";
 
 const blockingTypes = ["TEMPORARY_HOLD", "RESERVED", "RENTED", "MAINTENANCE"] as const;
+const documentHoldMinutes = 30;
+const paymentDeadlineHours = 24;
+const returnBufferMinutes = 30;
 
 export function getDocumentHoldMinutes() {
-  return Number(process.env.DOCUMENT_HOLD_MINUTES ?? 60);
+  const parsed = Number(process.env.DOCUMENT_HOLD_MINUTES ?? documentHoldMinutes);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : documentHoldMinutes;
 }
 
-export function getPaymentDeadlineHours(defaultHours = 12) {
+export function getPaymentDeadlineHours(defaultHours = paymentDeadlineHours) {
   const parsed = Number(process.env.PAYMENT_DEADLINE_HOURS ?? defaultHours);
-  return Number.isFinite(parsed) && parsed >= defaultHours ? parsed : defaultHours;
+  return Number.isFinite(parsed) && parsed >= paymentDeadlineHours ? parsed : paymentDeadlineHours;
 }
 
 export function getReturnBufferMinutes() {
-  return Number(process.env.RETURN_BUFFER_MINUTES ?? 30);
+  const parsed = Number(process.env.RETURN_BUFFER_MINUTES ?? returnBufferMinutes);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : returnBufferMinutes;
 }
 
 export function toDateOnly(value: Date) {
   return value.toISOString().slice(0, 10);
+}
+
+export function addIsoDays(isoDate: string, days: number) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return toDateOnly(date);
 }
 
 export function combineDateAndHour(date: string, hour?: string | null) {
@@ -92,6 +104,83 @@ export async function expireStaleAvailabilityLocks() {
       .where(eq(schema.rentalRequestsTable.id, request.id));
     await releaseRequestAvailabilityBlocks(request.id, "EXPIRED");
   }
+
+  await db.update(schema.carAvailabilityBlocksTable)
+    .set({ status: "COMPLETED", updatedAt: now })
+    .where(and(
+      eq(schema.carAvailabilityBlocksTable.status, "ACTIVE"),
+      inArray(schema.carAvailabilityBlocksTable.type, blockingTypes),
+      sql`coalesce(${schema.carAvailabilityBlocksTable.endAt}, (${schema.carAvailabilityBlocksTable.endDate}::text || 'T23:59:00')::timestamptz) < ${now}`,
+    ));
+}
+
+export interface CarAvailabilitySummary {
+  hasActiveBlock: boolean;
+  isAvailableNow: boolean;
+  availableFrom: string | null;
+  blockedUntil: string | null;
+  blockStartDate: string | null;
+  blockType: string | null;
+  visualState: string | null;
+}
+
+export async function getCarsAvailabilitySummaries(carIds: number[]) {
+  const uniqueCarIds = [...new Set(carIds)].filter((id) => Number.isInteger(id));
+  const emptySummary: CarAvailabilitySummary = {
+    hasActiveBlock: false,
+    isAvailableNow: true,
+    availableFrom: null,
+    blockedUntil: null,
+    blockStartDate: null,
+    blockType: null,
+    visualState: null,
+  };
+
+  if (uniqueCarIds.length === 0) {
+    return new Map<number, CarAvailabilitySummary>();
+  }
+
+  const now = new Date();
+  const rows = await db
+    .select()
+    .from(schema.carAvailabilityBlocksTable)
+    .where(and(
+      inArray(schema.carAvailabilityBlocksTable.carId, uniqueCarIds),
+      eq(schema.carAvailabilityBlocksTable.status, "ACTIVE"),
+      inArray(schema.carAvailabilityBlocksTable.type, blockingTypes),
+      sql`coalesce(${schema.carAvailabilityBlocksTable.endAt}, (${schema.carAvailabilityBlocksTable.endDate}::text || 'T23:59:00')::timestamptz) >= ${now}`,
+      sql`(${schema.carAvailabilityBlocksTable.expiresAt} IS NULL OR ${schema.carAvailabilityBlocksTable.expiresAt} > ${now})`,
+    ))
+    .orderBy(asc(schema.carAvailabilityBlocksTable.startDate), asc(schema.carAvailabilityBlocksTable.endDate));
+
+  type AvailabilityBlockRow = typeof rows[number];
+  const blocksByCarId = new Map<number, AvailabilityBlockRow[]>();
+  for (const row of rows) {
+    const existing = blocksByCarId.get(row.carId) ?? [];
+    existing.push(row);
+    blocksByCarId.set(row.carId, existing);
+  }
+
+  const summaries = new Map<number, CarAvailabilitySummary>();
+  for (const carId of uniqueCarIds) {
+    const block = blocksByCarId.get(carId)?.[0];
+    if (!block) {
+      summaries.set(carId, { ...emptySummary });
+      continue;
+    }
+
+    summaries.set(carId, {
+      hasActiveBlock: true,
+      isAvailableNow: false,
+      availableFrom: addIsoDays(block.endDate, 1),
+      blockedUntil: block.endDate,
+      blockStartDate: block.startDate,
+      blockType: block.type,
+      visualState: block.visualState,
+    });
+  }
+
+  return summaries;
 }
 
 export async function hasActiveAvailabilityOverlap(

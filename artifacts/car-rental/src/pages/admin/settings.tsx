@@ -19,7 +19,7 @@ const settingsSchema = z.object({
   email: z.string().email().optional().or(z.literal("")),
   address: z.string().optional(),
   city: z.string().optional(),
-  paymentDeadlineHours: z.coerce.number().min(12),
+  paymentDeadlineHours: z.coerce.number().min(24, "Le delai minimum est 24h"),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -40,7 +40,7 @@ export default function AdminSettings() {
       email: "",
       address: "",
       city: "Casablanca",
-      paymentDeadlineHours: 12,
+      paymentDeadlineHours: 24,
     },
   });
 
@@ -54,7 +54,7 @@ export default function AdminSettings() {
         email: settings.email || "",
         address: settings.address || "",
         city: settings.city || "",
-        paymentDeadlineHours: settings.paymentDeadlineHours || 12,
+        paymentDeadlineHours: Math.max(settings.paymentDeadlineHours || 24, 24),
       });
     }
   }, [settings, form]);
@@ -105,7 +105,7 @@ export default function AdminSettings() {
                   <FormItem><FormLabel>Ville principale</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="paymentDeadlineHours" render={({ field }) => (
-                  <FormItem><FormLabel>Délai de paiement (Heures)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Delai de paiement agence (24h minimum)</FormLabel><FormControl><Input type="number" min={24} {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
               

@@ -16,7 +16,7 @@ export const companySettingsTable = pgTable("company_settings", {
   instagram: text("instagram"),
   primaryColor: text("primary_color").default("#B45309"),
   secondaryColor: text("secondary_color").default("#0F172A"),
-  paymentDeadlineHours: integer("payment_deadline_hours").notNull().default(12),
+  paymentDeadlineHours: integer("payment_deadline_hours").notNull().default(24),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
 

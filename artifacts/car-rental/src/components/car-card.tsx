@@ -11,12 +11,62 @@ interface CarCardProps {
   variant?: "featured" | "compact";
 }
 
+type CarAvailability = {
+  hasActiveBlock?: boolean;
+  availableFrom?: string | null;
+};
+
 function resolveQueryContext() {
   if (typeof window === "undefined") {
     return { searchParams: new URLSearchParams() };
   }
 
   return { searchParams: new URLSearchParams(window.location.search) };
+}
+
+function formatAvailabilityDate(isoDate?: string | null) {
+  if (!isoDate) return "";
+
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  if (Number.isNaN(date.getTime())) {
+    return isoDate;
+  }
+
+  return new Intl.DateTimeFormat("fr-MA", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+function getAvailabilityCopy(car: Car) {
+  const availability = (car as any).availability as CarAvailability | undefined;
+  const isBlocked = Boolean(availability?.hasActiveBlock && availability.availableFrom);
+  const isManualUnavailable = car.status === "MAINTENANCE" || car.status === "INACTIVE";
+
+  if (isBlocked) {
+    return {
+      isBlocked: true,
+      badge: "Reservee",
+      label: `Disponible a partir du ${formatAvailabilityDate(availability?.availableFrom)}`,
+    };
+  }
+
+  if (isManualUnavailable) {
+    return {
+      isBlocked: true,
+      badge: "Sur demande",
+      label: "Disponibilite sur demande",
+    };
+  }
+
+  return {
+    isBlocked: false,
+    badge: "Disponible",
+    label: "Disponible",
+  };
 }
 
 function SpecLine({
@@ -74,6 +124,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
   const ratingSummary = (car as any).ratingSummary;
   const brandMeta = (car as any).brandMeta;
   const agency = (car as any).agency;
+  const availabilityCopy = getAvailabilityCopy(car);
 
   if (isCompact) {
     return (
@@ -125,10 +176,19 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
                       {ratingSummary.average}/5 - {ratingSummary.count} avis verifies
                     </p>
                   )}
+                  {availabilityCopy.isBlocked && (
+                    <p className="mt-1 text-xs font-semibold text-amber-700">
+                      {availabilityCopy.label}
+                    </p>
+                  )}
                 </div>
 
-                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                  Disponible
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    availabilityCopy.isBlocked ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
+                  }`}
+                >
+                  {availabilityCopy.badge}
                 </span>
               </div>
 
@@ -195,7 +255,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02),rgba(0,0,0,0.6))]" />
         <div className="absolute left-4 top-4 flex items-center gap-2">
           <div className="rounded-full bg-[#F04B45] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_10px_24px_-12px_rgba(240,75,69,0.95)]">
-            Disponible
+            {availabilityCopy.badge}
           </div>
           {brandMeta?.logoUrl && (
             <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/92 p-1">
@@ -231,7 +291,11 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
         </div>
 
         <div className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">
-          <span>Disponible a {agency?.name || car.city || "Maroc"}</span>
+          <span className="text-white">
+            {availabilityCopy.isBlocked
+              ? availabilityCopy.label
+              : `Disponible a ${agency?.name || car.city || "Maroc"}`}
+          </span>
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">Reservation rapide</span>
         </div>
 

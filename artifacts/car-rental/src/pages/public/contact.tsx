@@ -67,56 +67,25 @@ export default function Contact() {
         </div>
       </section>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="space-y-4">
-          {contactItems.map((item) => {
-            const Icon = item.icon;
+      <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {contactItems.map((item) => {
+          const Icon = item.icon;
 
-            return (
-              <Card key={item.title} className="marketing-soft-panel">
-                <CardContent className="flex items-start gap-4 p-6">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
-                    <p className="mt-1 text-muted-foreground">{item.value}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        <Card className="surface-panel-strong overflow-hidden">
-          <div className="marketing-dark-panel px-6 py-7 text-white">
-            <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] marketing-kicker marketing-pill">
-              <MessageCircle className="h-3.5 w-3.5 text-primary" />
-              WhatsApp
-            </div>
-            <h2 className="mt-5 text-3xl font-semibold leading-tight text-balance">Un canal simple, direct et rapide.</h2>
-            <p className="mt-4 text-sm leading-7 text-white/72">
-              Lancez la conversation et recevez une reponse claire sans passer par un parcours complique.
-            </p>
-          </div>
-
-          <CardContent className="space-y-4 p-6">
-            <div className="rounded-2xl border border-black/8 bg-white/88 p-5 shadow-[0_18px_35px_-28px_rgba(16,23,34,0.14)]">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">Coordonnees rapides</p>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                {settings?.address ?? "Casablanca, Maroc"}
-              </p>
-            </div>
-
-            <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-              <Button className="w-full rounded-full marketing-accent-button">
-                <MessageCircle className="h-4 w-4" />
-                Demarrer sur WhatsApp
-              </Button>
-            </a>
-          </CardContent>
-        </Card>
+          return (
+            <Card key={item.title} className="marketing-soft-panel">
+              <CardContent className="flex items-start gap-4 p-6">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
+                  <p className="mt-1 text-muted-foreground">{item.value}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );

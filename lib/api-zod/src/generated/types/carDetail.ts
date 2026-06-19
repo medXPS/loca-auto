@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CarImage } from './carImage';
+import type { CarAvailabilitySummary } from './carAvailabilitySummary';
 
 export interface CarDetail {
   id: number;
@@ -44,6 +45,8 @@ export interface CarDetail {
   /** @nullable */
   requiredDocuments?: string | null;
   status: string;
+  rawStatus?: string;
+  availability?: CarAvailabilitySummary;
   /** @nullable */
   mainImageUrl?: string | null;
   images?: CarImage[];

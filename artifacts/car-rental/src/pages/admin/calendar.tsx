@@ -259,9 +259,9 @@ export default function AdminCalendarPage() {
             <div className="space-y-2">
               <p className="text-sm font-medium text-foreground">Légende</p>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">Documents 1h</Badge>
+                <Badge variant="outline">Documents 30min</Badge>
                 <Badge variant="outline">Appel a confirmer</Badge>
-                <Badge variant="outline">Paiement 12h</Badge>
+                <Badge variant="outline">Paiement 24h</Badge>
                 <Badge variant="outline">Delai prolonge</Badge>
                 <Badge variant="outline">Location active</Badge>
                 <Badge variant="outline">Abandonnee</Badge>
