@@ -12,7 +12,6 @@ import blogRouter from "./blog";
 import notificationsRouter from "./notifications";
 import dashboardRouter from "./dashboard";
 import settingsRouter from "./settings";
-import mapSearchRouter from "./map-search";
 import documentsRouter, { uploadRouter } from "./documents";
 import ratingsRouter from "./ratings";
 
@@ -31,7 +30,6 @@ router.use("/blog", blogRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/settings", settingsRouter);
-router.use("/map-search", mapSearchRouter);
 router.use("/documents", documentsRouter);
 router.use("/upload", uploadRouter);
 router.use("/ratings", ratingsRouter);
