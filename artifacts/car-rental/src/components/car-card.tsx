@@ -38,7 +38,7 @@ function SpecLine({
         isDarkTone ? "border-white/10 bg-white/5" : "border-border/70 bg-muted/15"
       }`}
     >
-      <Icon className={`h-4 w-4 shrink-0 ${isDarkTone ? "text-[#F04B45]" : "text-primary"}`} />
+      <Icon className={`h-4 w-4 shrink-0 ${isDarkTone ? "text-white" : "text-primary"}`} />
       <div className="min-w-0">
         <p className={`text-[11px] uppercase tracking-[0.14em] ${isDarkTone ? "text-white/55" : "text-muted-foreground"}`}>
           {label}
@@ -162,7 +162,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
   }
 
   return (
-    <Card className="group overflow-hidden rounded-[1.75rem] border border-slate-900/10 bg-slate-950 text-white shadow-[0_26px_60px_-36px_rgba(16,23,34,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_32px_70px_-34px_rgba(16,23,34,0.45)]">
+    <Card className="group overflow-hidden rounded-[1.85rem] border border-white/8 bg-[linear-gradient(180deg,#07101f_0%,#040712_100%)] text-white shadow-[0_26px_60px_-36px_rgba(16,23,34,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_34px_80px_-34px_rgba(16,23,34,0.55)]">
       <Link
         href={detailHref}
         className="relative block aspect-[16/11] overflow-hidden bg-muted"
@@ -186,7 +186,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
 
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02),rgba(0,0,0,0.6))]" />
         <div className="absolute left-4 top-4 flex items-center gap-2">
-          <div className="rounded-full bg-[#F04B45] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+          <div className="rounded-full bg-[#F04B45] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_10px_24px_-12px_rgba(240,75,69,0.95)]">
             Disponible
           </div>
           {brandMeta?.logoUrl && (
@@ -201,16 +201,16 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
           </div>
         )}
         <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm uppercase tracking-[0.2em] text-white/70">{car.category}</p>
-            <h3 className="mt-1 text-2xl font-semibold tracking-tight text-white transition-colors group-hover:text-[#ffd3d0]">
+            <h3 className="mt-1 truncate text-2xl font-semibold tracking-tight text-white transition-colors group-hover:text-[#ffd3d0]">
               {car.brand} {car.model}
             </h3>
             <p className="mt-1 text-xs text-white/70">{agency?.name || car.city || "Maroc"}</p>
           </div>
-          <div className="text-right">
+          <div className="rounded-[1.15rem] border border-white/10 bg-white/8 px-4 py-3 text-right backdrop-blur-sm">
             <p className="text-[11px] uppercase tracking-[0.18em] text-white/65">A partir de</p>
-            <p className="text-3xl font-semibold text-[#F04B45]">{formatPrice(car.dailyPrice)}</p>
+            <p className="text-3xl font-semibold tracking-tight text-white">{formatPrice(car.dailyPrice)}</p>
           </div>
         </div>
       </Link>
@@ -222,7 +222,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
           <SpecLine icon={Users} label="Places" value={`${car.seats} places`} />
         </div>
 
-        <div className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/82">
+        <div className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">
           <span>Disponible a {agency?.name || car.city || "Maroc"}</span>
           <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">Reservation rapide</span>
         </div>
