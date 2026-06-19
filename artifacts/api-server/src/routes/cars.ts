@@ -3,7 +3,7 @@ import { and, asc, desc, eq, gte, ilike, lte, notInArray, sql } from "drizzle-or
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { logAudit } from "../lib/audit";
-import { addReturnBuffer, combineDateAndHour, expireStaleAvailabilityLocks, getCarsAvailabilitySummaries, type CarAvailabilitySummary } from "../lib/availability";
+import { expireStaleAvailabilityLocks, getCarsAvailabilitySummaries, type CarAvailabilitySummary } from "../lib/availability";
 import {
   ensureCatalogueBackfill,
   formatAgency,
@@ -138,20 +138,13 @@ router.get("/", async (req, res) => {
 
     if (startDate && returnDate) {
       const now = new Date();
-      const requestedStartAt = startAt ? new Date(startAt) : combineDateAndHour(startDate, startHour ?? "09:00");
-      const requestedEndAt = returnAt
-        ? new Date(returnAt)
-        : addReturnBuffer(combineDateAndHour(returnDate, returnHour ?? "18:00"));
-
       const blockedRows = await db
         .selectDistinct({ carId: schema.carAvailabilityBlocksTable.carId })
         .from(schema.carAvailabilityBlocksTable)
         .where(and(
           eq(schema.carAvailabilityBlocksTable.status, "ACTIVE"),
-          lte(schema.carAvailabilityBlocksTable.startDate, returnDate),
-          gte(schema.carAvailabilityBlocksTable.endDate, startDate),
-          sql`coalesce(${schema.carAvailabilityBlocksTable.startAt}, (${schema.carAvailabilityBlocksTable.startDate}::text || 'T00:00:00')::timestamptz) < ${requestedEndAt}`,
-          sql`coalesce(${schema.carAvailabilityBlocksTable.endAt}, (${schema.carAvailabilityBlocksTable.endDate}::text || 'T23:59:00')::timestamptz) > ${requestedStartAt}`,
+          lte(schema.carAvailabilityBlocksTable.startDate, startDate),
+          gte(schema.carAvailabilityBlocksTable.endDate, returnDate),
           sql`(${schema.carAvailabilityBlocksTable.expiresAt} IS NULL OR ${schema.carAvailabilityBlocksTable.expiresAt} > ${now})`,
         ));
 

@@ -17,14 +17,23 @@ function parseAvailabilityDate(isoDate: string) {
 }
 
 function formatDatePart(date: Date) {
-  const parts = new Intl.DateTimeFormat("fr-MA", { day: "2-digit", month: "2-digit" }).formatToParts(date);
+  const parts = new Intl.DateTimeFormat("fr-MA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Africa/Casablanca",
+  }).formatToParts(date);
   const day = parts.find((part) => part.type === "day")?.value ?? "";
   const month = parts.find((part) => part.type === "month")?.value ?? "";
   return `${day}/${month}`;
 }
 
 function formatTimePart(date: Date) {
-  const parts = new Intl.DateTimeFormat("fr-MA", { hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(date);
+  const parts = new Intl.DateTimeFormat("fr-MA", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Africa/Casablanca",
+  }).formatToParts(date);
   const hour = parts.find((part) => part.type === "hour")?.value ?? "";
   const minute = parts.find((part) => part.type === "minute")?.value ?? "";
   return `${hour}:${minute}`;

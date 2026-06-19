@@ -4,7 +4,7 @@ import { Car } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatPrice, FUEL_TRANSLATIONS } from "@/lib/utils";
-import { getAvailabilityCopy } from "@/lib/car-availability";
+import { formatAvailabilityDate, getAvailabilityCopy } from "@/lib/car-availability";
 import { ArrowRight, BarChart3, Fuel, Heart, ImageIcon, Settings2, Users } from "lucide-react";
 
 interface CarCardProps {
@@ -204,14 +204,23 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
         )}
 
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,31,0.04),rgba(7,15,31,0.56))]" />
-        <div className="absolute left-4 top-4 flex items-center gap-2">
-          <div className="rounded-full bg-[#F04B45] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_10px_24px_-12px_rgba(240,75,69,0.95)]">
-            {availabilityCopy.badge}
+        <div className="absolute left-4 top-4 flex max-w-[calc(100%-5.5rem)] flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <div className="rounded-full bg-[#F04B45] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white shadow-[0_10px_24px_-12px_rgba(240,75,69,0.95)]">
+              {availabilityCopy.badge}
+            </div>
+            {brandMeta?.logoUrl && (
+              <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/92 p-1">
+                <img src={brandMeta.logoUrl} alt={car.brand} className="max-h-full max-w-full object-contain" />
+              </span>
+            )}
           </div>
-          {brandMeta?.logoUrl && (
-            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/92 p-1">
-              <img src={brandMeta.logoUrl} alt={car.brand} className="max-h-full max-w-full object-contain" />
-            </span>
+          {availabilityCopy.availableFrom && (
+            <div className="inline-flex w-fit rounded-full border border-white/15 bg-slate-950/45 px-3 py-1 text-[11px] font-semibold text-white shadow-sm backdrop-blur-sm">
+              {availabilityCopy.isBlocked
+                ? `Disponible à partir du ${formatAvailabilityDate(availabilityCopy.availableFrom)}`
+                : availabilityCopy.label}
+            </div>
           )}
         </div>
         {ratingSummary?.count > 0 && (
@@ -242,12 +251,10 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
         </div>
 
         <div className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-          <span className="text-slate-700">
-            {availabilityCopy.isBlocked
-              ? availabilityCopy.label
-              : `Disponible à ${agency?.name || car.city || "Maroc"}`}
+          <span className="text-slate-700">Réservation rapide</span>
+          <span className="rounded-full bg-[#F04B45]/10 px-3 py-1 text-xs font-semibold text-[#F04B45]">
+            {availabilityCopy.badge}
           </span>
-          <span className="rounded-full bg-[#F04B45]/10 px-3 py-1 text-xs font-semibold text-[#F04B45]">Réservation rapide</span>
         </div>
 
         <div className="flex gap-2">
