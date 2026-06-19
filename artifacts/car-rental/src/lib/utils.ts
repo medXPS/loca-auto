@@ -36,17 +36,34 @@ export function formatDate(date: string | Date | null | undefined): string {
   }).format(new Date(date));
 }
 
-export const STATUS_TRANSLATIONS: Record<string, string> = {
+export type StatusKind = "rental" | "document" | "payment" | "car" | "generic";
+
+function normalizeStatusKey(status: string) {
+  return status.trim().toUpperCase().replace(/[\s-]+/g, "_");
+}
+
+function humanizeStatusKey(status: string) {
+  return status
+    .toLowerCase()
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export const RENTAL_STATUS_TRANSLATIONS: Record<string, string> = {
   PENDING: "En attente",
   DOCUMENT_SUBMISSION_WINDOW: "Documents requis",
-  PENDING_CALL_CONFIRMATION: "Appel a confirmer",
-  EXTENDED_PAYMENT_DEADLINE: "Delai prolonge",
-  PAID: "Payee",
+  WAITING_DOCUMENTS: "En attente de documents",
+  PENDING_CALL_CONFIRMATION: "Documents reçus",
+  EXTENDED_PAYMENT_DEADLINE: "Délai prolongé",
+  PAID: "Payée",
+  PAID_AT_AGENCY: "Payée à l'agence",
   ACTIVE_RENTAL: "Location active",
   UNDER_REVIEW: "En attente",
   CALL_ATTEMPTED: "En attente",
   CALL_CONFIRMED: "Appel confirmé",
-  WAITING_AGENCY_PAYMENT: "Appel confirmé",
+  WAITING_AGENCY_PAYMENT: "Paiement à l'agence",
   RESERVED: "Réservé",
   CAR_DELIVERED: "En cours de location",
   RENTED: "En cours de location",
@@ -56,7 +73,86 @@ export const STATUS_TRANSLATIONS: Record<string, string> = {
   REJECTED: "Refusé",
   CANCELLED: "Annulé",
   ABANDONED: "Abandonné",
+  RCVD: "Reçu",
+  RECEIVED: "Reçu",
+  SENT: "Envoyé",
+  APPROVED: "Approuvé",
+  VALIDATED: "Validé",
 };
+
+export const DOCUMENT_STATUS_TRANSLATIONS: Record<string, string> = {
+  PENDING: "En attente",
+  RCVD: "Reçu",
+  RECEIVED: "Reçu",
+  SENT: "Envoyé",
+  APPROVED: "Approuvé",
+  VALIDATED: "Validé",
+  REJECTED: "Refusé",
+  CANCELLED: "Annulé",
+  ARCHIVED: "Archivé",
+  DRAFT: "Brouillon",
+  NEEDS_REVIEW: "À vérifier",
+};
+
+export const PAYMENT_STATUS_TRANSLATIONS: Record<string, string> = {
+  PENDING: "En attente",
+  RCVD: "Reçu",
+  RECEIVED: "Reçu",
+  PAID: "Payé",
+  PAID_AT_AGENCY: "Payé à l'agence",
+  SENT: "Envoyé",
+  APPROVED: "Approuvé",
+  REJECTED: "Refusé",
+  FAILED: "Échec",
+  REFUNDED: "Remboursé",
+};
+
+export const GENERIC_STATUS_TRANSLATIONS: Record<string, string> = {
+  ACTIVE: "Actif",
+  INACTIVE: "Inactif",
+  SUSPENDED: "Suspendu",
+  DRAFT: "Brouillon",
+  PUBLISHED: "Publié",
+  ARCHIVED: "Archivé",
+  AVAILABLE: "Disponible",
+  TEMPORARILY_HELD: "Réservée temporairement",
+  RESERVED: "Réservé",
+  RENTED: "Louée",
+  MAINTENANCE: "En entretien",
+  PENDING: "En attente",
+  RCVD: "Reçu",
+  RECEIVED: "Reçu",
+  SENT: "Envoyé",
+  APPROVED: "Approuvé",
+  VALIDATED: "Validé",
+  REJECTED: "Refusé",
+  CANCELLED: "Annulé",
+  COMPLETED: "Terminé",
+  PAID: "Payé",
+  FAILED: "Échec",
+  REFUNDED: "Remboursé",
+  DOCUMENT_SUBMISSION_WINDOW: "Documents requis",
+  WAITING_DOCUMENTS: "En attente de documents",
+  PENDING_CALL_CONFIRMATION: "Documents reçus",
+  CALL_ATTEMPTED: "En attente",
+  CALL_CONFIRMED: "Appel confirmé",
+  EXTENDED_PAYMENT_DEADLINE: "Délai prolongé",
+  WAITING_AGENCY_PAYMENT: "Paiement à l'agence",
+  ACTIVE_RENTAL: "Location active",
+  CAR_DELIVERED: "En cours de location",
+  CAR_RETURNED: "Retourné",
+  RETURNED: "Retourné",
+  ABANDONED: "Abandonné",
+  UNDER_REVIEW: "En attente",
+  OPEN: "Ouvert",
+  CLOSED: "Fermé",
+  NEW: "Nouveau",
+  PROCESSING: "En cours",
+  READY: "Prêt",
+  DONE: "Terminé",
+};
+
+export const STATUS_TRANSLATIONS: Record<string, string> = RENTAL_STATUS_TRANSLATIONS;
 
 export const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-800",
@@ -83,6 +179,7 @@ export const STATUS_COLORS: Record<string, string> = {
 export const RENTAL_ACTIVE_STATUSES = new Set([
   "PENDING",
   "DOCUMENT_SUBMISSION_WINDOW",
+  "WAITING_DOCUMENTS",
   "PENDING_CALL_CONFIRMATION",
   "UNDER_REVIEW",
   "CALL_ATTEMPTED",
@@ -132,6 +229,20 @@ export const CAR_STATUS_COLORS: Record<string, string> = {
   MAINTENANCE: "bg-rose-100 text-rose-800",
   INACTIVE: "bg-slate-100 text-slate-800",
 };
+
+const STATUS_DICTIONARIES: Record<StatusKind, Record<string, string>> = {
+  rental: RENTAL_STATUS_TRANSLATIONS,
+  document: DOCUMENT_STATUS_TRANSLATIONS,
+  payment: PAYMENT_STATUS_TRANSLATIONS,
+  car: CAR_STATUS_TRANSLATIONS,
+  generic: GENERIC_STATUS_TRANSLATIONS,
+};
+
+export function getStatusLabel(status?: string | null, kind: StatusKind = "generic"): string {
+  if (!status) return "—";
+  const key = normalizeStatusKey(status);
+  return STATUS_DICTIONARIES[kind][key] ?? STATUS_DICTIONARIES.generic[key] ?? humanizeStatusKey(key);
+}
 
 export const CATEGORY_TRANSLATIONS: Record<string, string> = {
   CITADINE: "Citadine",

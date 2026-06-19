@@ -4,6 +4,7 @@ import {
   getGetMeQueryKey,
   getGetMyCustomerProfileQueryKey,
   useGetMyCustomerProfile,
+  useUpdateMe,
   useUpdateMyCustomerProfile,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
@@ -22,6 +23,7 @@ import { CheckCircle2, FileText, ShieldCheck, Star, UserCircle2 } from "lucide-r
 import { DocumentUploadField } from "@/components/document-upload-field";
 import { RatingEditor } from "@/components/rating-editor";
 import { fetchEligibleRatings } from "@/lib/fleet-catalog";
+import { getStatusLabel } from "@/lib/utils";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, { message: "Nom requis" }),
@@ -43,6 +45,7 @@ function formatFileLabel(fileUrl: string) {
 export default function CustomerProfile() {
   const { user } = useAuth();
   const { data: profile, isLoading } = useGetMyCustomerProfile();
+  const updateMe = useUpdateMe();
   const updateProfile = useUpdateMyCustomerProfile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -85,21 +88,38 @@ export default function CustomerProfile() {
   const drivingDoc = profileDocs.find((doc) => doc.type === "PERMIS_CONDUIRE");
   const profileComplete = Boolean((profile?.cin || profile?.passportNumber || cinDoc || passportDoc) && (profile?.drivingLicenseNumber || drivingDoc));
 
-  const onSubmit = (data: ProfileFormValues) => {
-    updateProfile.mutate(
-      { data },
-      {
-        onSuccess: () => {
-          toast({ title: "Profil mis a jour avec succes" });
-          queryClient.invalidateQueries({ queryKey: getGetMyCustomerProfileQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+  const onSubmit = async (data: ProfileFormValues) => {
+    try {
+      await updateMe.mutateAsync({
+        data: {
+          fullName: data.fullName,
+          phone: data.phone,
         },
-        onError: (error: any) => {
-          toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      });
+
+      await updateProfile.mutateAsync({
+        data: {
+          cin: data.cin || undefined,
+          passportNumber: data.passportNumber || undefined,
+          drivingLicenseNumber: data.drivingLicenseNumber || undefined,
+          address: data.address || undefined,
+          city: data.city || undefined,
         },
-      }
-    );
+      });
+
+      toast({ title: "Profil mis a jour avec succes" });
+      queryClient.invalidateQueries({ queryKey: getGetMyCustomerProfileQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de mettre a jour votre profil",
+        variant: "destructive",
+      });
+    }
   };
+
+  const isSaving = updateMe.isPending || updateProfile.isPending;
 
   const refreshProfile = () => {
     queryClient.invalidateQueries({ queryKey: getGetMyCustomerProfileQueryKey() });
@@ -273,8 +293,8 @@ export default function CustomerProfile() {
                 </div>
 
                 <div className="flex justify-end border-t pt-4">
-                  <Button type="submit" disabled={updateProfile.isPending}>
-                    {updateProfile.isPending ? "Enregistrement..." : "Enregistrer les modifications"}
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
                   </Button>
                 </div>
               </form>
@@ -327,7 +347,7 @@ export default function CustomerProfile() {
                         </div>
                         <div className="truncate text-xs text-muted-foreground">{formatFileLabel(doc.fileUrl)}</div>
                       </div>
-                      <Badge variant="outline">{doc.status}</Badge>
+                      <Badge variant="outline">{getStatusLabel(doc.status, "document")}</Badge>
                     </li>
                   ))}
                 </ul>

@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { CAR_STATUS_TRANSLATIONS, STATUS_TRANSLATIONS, cn } from "@/lib/utils";
+import { cn, getStatusLabel } from "@/lib/utils";
 
 interface StatusBadgeProps {
   status: string;
@@ -58,9 +58,7 @@ function getCarTone(status: string) {
 }
 
 export function StatusBadge({ status, type = "rental", className }: StatusBadgeProps) {
-  const label = type === "rental"
-    ? STATUS_TRANSLATIONS[status] || status
-    : CAR_STATUS_TRANSLATIONS[status] || status;
+  const label = getStatusLabel(status, type);
 
   const tone = type === "rental" ? getRentalTone(status) : getCarTone(status);
 

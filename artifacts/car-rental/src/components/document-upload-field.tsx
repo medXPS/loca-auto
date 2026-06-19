@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { type ChangeEvent, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Upload } from "lucide-react";
 import { useGetUploadUrl, useUploadDocument } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -39,56 +39,56 @@ export function DocumentUploadField({
   const getUploadUrl = useGetUploadUrl();
   const uploadDocument = useUploadDocument();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [progress, setProgress] = useState<"idle" | "uploading" | "done" | "error">("idle");
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [progress, setProgress] = useState<"idle" | "uploading" | "error">("idle");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const existingName = existingDocument ? fileNameFromUrl(existingDocument.fileUrl) : null;
   const titleHint = existingDocument
     ? `Actuel: ${existingName}${existingDocument.uploadedAt ? ` · ${new Date(existingDocument.uploadedAt).toLocaleDateString("fr-MA")}` : ""}`
     : helperText;
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
+
     if (!file) return;
 
-    setFileName(file.name);
+    setSelectedFile(file);
+    setProgress("idle");
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || progress === "uploading") return;
+
     setProgress("uploading");
 
     try {
-      const presignResult = await new Promise<{ uploadUrl: string; fileUrl: string }>((resolve, reject) => {
-        getUploadUrl.mutate(
-          { data: { fileName: file.name, fileType: file.type, context: "documents" } },
-          {
-            onSuccess: (data) => resolve(data as { uploadUrl: string; fileUrl: string }),
-            onError: reject,
-          }
-        );
+      const presignResult = await getUploadUrl.mutateAsync({
+        data: { fileName: selectedFile.name, fileType: selectedFile.type, context: "documents" },
       });
 
-      await fetch(presignResult.uploadUrl, {
+      const uploadResponse = await fetch(presignResult.uploadUrl, {
         method: "PUT",
-        body: file,
-        headers: { "Content-Type": file.type },
+        body: selectedFile,
+        headers: { "Content-Type": selectedFile.type },
+      });
+      if (!uploadResponse.ok) {
+        throw new Error("upload_failed");
+      }
+
+      await uploadDocument.mutateAsync({
+        data: {
+          rentalRequestId: rentalRequestId ?? undefined,
+          type: docType,
+          fileUrl: presignResult.fileUrl,
+        },
       });
 
-      await new Promise<void>((resolve, reject) => {
-        uploadDocument.mutate(
-          {
-            data: {
-              rentalRequestId: rentalRequestId ?? undefined,
-              type: docType,
-              fileUrl: presignResult.fileUrl,
-            },
-          },
-          {
-            onSuccess: () => resolve(),
-            onError: reject,
-          }
-        );
-      });
-
-      setProgress("done");
-      inputRef.current && (inputRef.current.value = "");
+      setProgress("idle");
+      setSelectedFile(null);
+      if (inputRef.current) {
+        inputRef.current.value = "";
+      }
       toast({ title: `${label} televerse avec succes` });
       onUploaded();
     } catch {
@@ -100,6 +100,8 @@ export function DocumentUploadField({
       });
     }
   };
+
+  const isUploading = progress === "uploading";
 
   return (
     <div className="space-y-2">
@@ -113,23 +115,13 @@ export function DocumentUploadField({
           variant="outline"
           size="sm"
           className="gap-2"
-          disabled={progress === "uploading"}
+          disabled={isUploading}
           onClick={() => inputRef.current?.click()}
         >
-          {progress === "uploading" ? (
+          {isUploading ? (
             <>
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
               Televersement...
-            </>
-          ) : progress === "done" ? (
-            <>
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              Remplacer le fichier
-            </>
-          ) : progress === "error" ? (
-            <>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              Reessayer
             </>
           ) : existingDocument ? (
             <>
@@ -143,7 +135,31 @@ export function DocumentUploadField({
             </>
           )}
         </Button>
-        {fileName && <span className="max-w-[220px] truncate text-sm text-muted-foreground">{fileName}</span>}
+
+        <Button
+          type="button"
+          size="sm"
+          className="gap-2"
+          disabled={!selectedFile || isUploading}
+          onClick={handleUpload}
+        >
+          {isUploading ? (
+            <>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+              Envoi...
+            </>
+          ) : (
+            "Soumettre le document"
+          )}
+        </Button>
+
+        {selectedFile && <span className="max-w-[220px] truncate text-sm text-muted-foreground">{selectedFile.name}</span>}
+        {progress === "error" && (
+          <span className="inline-flex items-center gap-2 text-sm text-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            Le televersement a echoue. Reessayez.
+          </span>
+        )}
         <input ref={inputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileChange} />
       </div>
     </div>

@@ -6,7 +6,7 @@ import {
   useGetRevenueChart,
   useGetRequestsByStatus,
 } from "@workspace/api-client-react";
-import { formatPrice, STATUS_TRANSLATIONS } from "@/lib/utils";
+import { formatPrice, getStatusLabel } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
 import { ReceiptDownloadButton } from "@/components/receipt-download-button";
 import { Car, Banknote, CalendarClock, TrendingUp } from "lucide-react";
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
   }));
 
   const formattedStatus = (statusData || []).map((s) => ({
-    name: STATUS_TRANSLATIONS[s.status] || s.status,
+    name: s.label && s.label !== s.status ? s.label : getStatusLabel(s.status, "rental"),
     value: s.count,
   }));
 
