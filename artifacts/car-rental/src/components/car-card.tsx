@@ -133,9 +133,9 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
               </div>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} tone="dark" />
-                <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} tone="dark" />
-                <SpecLine icon={Users} label="Places" value={`${car.seats} places`} tone="dark" />
+                <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} />
+                <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} />
+                <SpecLine icon={Users} label="Places" value={`${car.seats} places`} />
               </div>
             </div>
 
@@ -225,9 +225,9 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
 
       <div className="space-y-4 p-5">
         <div className="grid gap-3 sm:grid-cols-3">
-          <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} />
-          <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} />
-          <SpecLine icon={Users} label="Places" value={`${car.seats} places`} />
+          <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} tone="dark" />
+          <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} tone="dark" />
+          <SpecLine icon={Users} label="Places" value={`${car.seats} places`} tone="dark" />
         </div>
 
         <div className="flex items-center justify-between gap-4 rounded-[1.25rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/85">
