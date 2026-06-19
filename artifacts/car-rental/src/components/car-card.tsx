@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { useMemo, useState, type ComponentType } from "react";
+import { useMemo, useState, type CSSProperties, type ComponentType } from "react";
 import { Car } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -25,12 +25,15 @@ function SpecLine({
   value,
   tone = "light",
 }: {
-  icon: ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string; style?: CSSProperties }>;
   label: string;
   value: string;
   tone?: "light" | "dark";
 }) {
   const isDarkTone = tone === "dark";
+  const labelStyle: CSSProperties | undefined = isDarkTone ? { color: "rgba(255,255,255,0.62)" } : undefined;
+  const valueStyle: CSSProperties | undefined = isDarkTone ? { color: "#ffffff" } : undefined;
+  const iconStyle: CSSProperties | undefined = isDarkTone ? { color: "#ffffff" } : undefined;
 
   return (
     <div
@@ -38,12 +41,17 @@ function SpecLine({
         isDarkTone ? "border-white/10 bg-white/5" : "border-border/70 bg-muted/15"
       }`}
     >
-      <Icon className={`h-4 w-4 shrink-0 ${isDarkTone ? "text-white" : "text-primary"}`} />
+      <Icon className={`h-4 w-4 shrink-0 ${isDarkTone ? "text-white" : "text-primary"}`} style={iconStyle} />
       <div className="min-w-0">
-        <p className={`text-[11px] uppercase tracking-[0.14em] ${isDarkTone ? "text-white/55" : "text-muted-foreground"}`}>
+        <p
+          className={`text-[11px] uppercase tracking-[0.14em] ${isDarkTone ? "text-white/55" : "text-muted-foreground"}`}
+          style={labelStyle}
+        >
           {label}
         </p>
-        <p className={`truncate text-sm font-semibold ${isDarkTone ? "text-white" : "text-foreground"}`}>{value}</p>
+        <p className={`truncate text-sm font-semibold ${isDarkTone ? "text-white" : "text-foreground"}`} style={valueStyle}>
+          {value}
+        </p>
       </div>
     </div>
   );
