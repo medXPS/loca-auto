@@ -24,6 +24,7 @@ function publicUser(user: typeof schema.usersTable.$inferSelect) {
     role: user.role,
     status: user.status,
     emailVerifiedAt: user.emailVerifiedAt,
+    mfaEnabled: user.mfaEnabled,
     createdAt: user.createdAt,
   };
 }
@@ -290,11 +291,37 @@ router.get("/me", authMiddleware, async (req, res) => {
 // PATCH /api/auth/me
 router.patch("/me", authMiddleware, async (req, res) => {
   try {
-    const { fullName, phone } = req.body;
+    const { fullName, phone, mfaEnabled } = req.body;
+    const [currentUser] = await db.select().from(schema.usersTable).where(eq(schema.usersTable.id, req.user!.userId)).limit(1);
+    if (!currentUser) {
+      res.status(404).json({ error: "Utilisateur non trouve" });
+      return;
+    }
+
+    const updates: Partial<typeof schema.usersTable.$inferInsert> = {};
+    if (fullName) updates.fullName = fullName;
+    if (phone) updates.phone = phone;
+    if (typeof mfaEnabled === "boolean") updates.mfaEnabled = mfaEnabled;
+
+    if (Object.keys(updates).length === 0) {
+      res.status(400).json({ error: "Aucune modification fournie" });
+      return;
+    }
+
     const [user] = await db.update(schema.usersTable)
-      .set({ ...(fullName && { fullName }), ...(phone && { phone }) })
+      .set(updates)
       .where(eq(schema.usersTable.id, req.user!.userId))
       .returning();
+
+    if (typeof mfaEnabled === "boolean" && mfaEnabled !== currentUser.mfaEnabled) {
+      await logAudit({
+        userId: user.id,
+        action: mfaEnabled ? "MFA_ENABLED" : "MFA_DISABLED",
+        entityType: "user",
+        entityId: user.id,
+      });
+    }
+
     res.json(publicUser(user));
   } catch (err) {
     req.log.error(err);

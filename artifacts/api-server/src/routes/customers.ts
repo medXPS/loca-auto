@@ -28,6 +28,7 @@ function publicUser(user: typeof schema.usersTable.$inferSelect) {
     role: user.role,
     status: user.status,
     emailVerifiedAt: user.emailVerifiedAt,
+    mfaEnabled: user.mfaEnabled,
     createdAt: user.createdAt,
   };
 }
@@ -55,7 +56,8 @@ async function fetchCustomerDetail(id: number) {
     .where(eq(schema.documentsTable.customerId, customer.id))
     .orderBy(desc(schema.documentsTable.uploadedAt));
 
-  const rentalRequests = requests.map((r) => ({
+  const visibleRequests = requests.filter((request) => request.status !== "CANCELLED");
+  const rentalRequests = visibleRequests.map((r) => ({
     ...r,
     estimatedTotalPrice: Number(r.estimatedTotalPrice),
     finalPrice: r.finalPrice ? Number(r.finalPrice) : null,

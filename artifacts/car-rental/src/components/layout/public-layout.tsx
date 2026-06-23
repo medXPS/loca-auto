@@ -2,7 +2,7 @@ import { useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CarFront, House, LogOut, Menu, MessageCircle, Newspaper, Phone, X } from "lucide-react";
+import { ArrowRight, CarFront, House, LogOut, Menu, MessageCircle, Newspaper, Phone, UserCircle2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
@@ -23,6 +23,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const dashboardHref = useMemo(() => getDashboardHref(user?.role), [user?.role]);
+  const isCustomer = user?.role === "CUSTOMER";
   const isCarDetailPage = /^\/voitures\/\d+/.test(location);
 
   const navLinks: NavItem[] = [
@@ -87,6 +88,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
             {isAuthenticated ? (
               <>
+                {isCustomer && (
+                  <Button asChild variant="outline" className="rounded-full border-border/70 bg-white px-4">
+                    <Link href="/dashboard/profil">Profil</Link>
+                  </Button>
+                )}
                 <Button asChild variant="outline" className="rounded-full border-border/70 bg-white px-4">
                   <Link href={dashboardHref}>Mon espace</Link>
                 </Button>
@@ -114,11 +120,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
         {isMenuOpen && (
           <div className="border-t border-border/60 bg-white lg:hidden">
-            <div className="container mx-auto px-4 py-4">
-              <div className="grid gap-2">
-                {navLinks.map((link) => {
-                  const Icon = link.icon;
-                  const active = isActive(link.href);
+          <div className="container mx-auto px-4 py-4">
+            <div className="grid gap-2">
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                const active = isActive(link.href);
 
                   return (
                     <Link
@@ -140,7 +146,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 })}
               </div>
 
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className={cn("mt-4 grid gap-2", isAuthenticated && isCustomer ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
                 <Button asChild variant="outline" className="w-full rounded-2xl border-border/70 bg-white">
                   <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="h-4 w-4" />
@@ -149,15 +155,27 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 </Button>
 
                 {isAuthenticated ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full rounded-2xl border-border/70 bg-white"
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Déconnexion
-                  </Button>
+                  <>
+                    {isCustomer && (
+                      <Button asChild variant="outline" className="w-full rounded-2xl border-border/70 bg-white">
+                        <Link href="/dashboard/profil" onClick={() => setIsMenuOpen(false)}>
+                          <span className="flex items-center gap-2">
+                            <UserCircle2 className="h-4 w-4" />
+                            Profil
+                          </span>
+                        </Link>
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full rounded-2xl border-border/70 bg-white"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Déconnexion
+                    </Button>
+                  </>
                 ) : (
                   <Button asChild className="w-full rounded-2xl bg-primary text-primary-foreground">
                     <Link href="/connexion" onClick={() => setIsMenuOpen(false)}>

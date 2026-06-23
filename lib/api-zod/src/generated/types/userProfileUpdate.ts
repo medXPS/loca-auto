@@ -9,4 +9,5 @@
 export interface UserProfileUpdate {
   fullName?: string;
   phone?: string;
+  mfaEnabled?: boolean;
 }

@@ -314,6 +314,8 @@ router.get("/", authMiddleware, async (req, res) => {
     if (req.user!.role === "CUSTOMER") {
       const [customer] = await db.select().from(schema.customersTable).where(eq(schema.customersTable.userId, req.user!.userId)).limit(1);
       if (customer) conditions.push(eq(schema.rentalRequestsTable.customerId, customer.id));
+    } else {
+      conditions.push(sql`status <> 'CANCELLED'`);
     }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
@@ -450,6 +452,10 @@ router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const result = await fetchRequestWithCar(parseInt(String(req.params.id), 10));
     if (!result) {
+      res.status(404).json({ error: "Demande non trouvée" });
+      return;
+    }
+    if (result.status === "CANCELLED" && req.user!.role !== "CUSTOMER") {
       res.status(404).json({ error: "Demande non trouvée" });
       return;
     }

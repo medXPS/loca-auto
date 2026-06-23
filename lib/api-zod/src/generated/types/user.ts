@@ -15,5 +15,6 @@ export interface User {
   status: string;
   /** @nullable */
   emailVerifiedAt?: string | null;
+  mfaEnabled: boolean;
   createdAt?: string;
 }

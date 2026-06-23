@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getGetMeQueryKey,
@@ -14,6 +14,7 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +50,7 @@ export default function CustomerProfile() {
   const updateProfile = useUpdateMyCustomerProfile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [mfaEnabled, setMfaEnabled] = useState(Boolean(user?.mfaEnabled));
   const { data: eligibleRatings = [] } = useQuery({
     queryKey: ["eligible-ratings"],
     queryFn: fetchEligibleRatings,
@@ -82,11 +84,21 @@ export default function CustomerProfile() {
     });
   }, [profile, form]);
 
+  useEffect(() => {
+    if (!profile?.user) return;
+    setMfaEnabled(Boolean(profile.user.mfaEnabled));
+  }, [profile?.user?.mfaEnabled]);
+
   const profileDocs = (profile?.documents ?? []).filter((doc) => doc.rentalRequestId == null);
   const cinDoc = profileDocs.find((doc) => doc.type === "CIN");
   const passportDoc = profileDocs.find((doc) => doc.type === "PASSPORT");
   const drivingDoc = profileDocs.find((doc) => doc.type === "PERMIS_CONDUIRE");
   const profileComplete = Boolean((profile?.cin || profile?.passportNumber || cinDoc || passportDoc) && (profile?.drivingLicenseNumber || drivingDoc));
+
+  const refreshIdentity = () => {
+    queryClient.invalidateQueries({ queryKey: getGetMyCustomerProfileQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+  };
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
@@ -108,8 +120,7 @@ export default function CustomerProfile() {
       });
 
       toast({ title: "Profil mis a jour avec succes" });
-      queryClient.invalidateQueries({ queryKey: getGetMyCustomerProfileQueryKey() });
-      queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      refreshIdentity();
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -123,6 +134,34 @@ export default function CustomerProfile() {
 
   const refreshProfile = () => {
     queryClient.invalidateQueries({ queryKey: getGetMyCustomerProfileQueryKey() });
+  };
+
+  const handleMfaToggle = async (enabled: boolean) => {
+    if (!user?.emailVerifiedAt) {
+      toast({
+        title: "Verification requise",
+        description: "Veuillez verifier votre adresse e-mail avant de gerer le MFA.",
+      });
+      return;
+    }
+
+    const previousValue = mfaEnabled;
+    setMfaEnabled(enabled);
+
+    try {
+      await updateMe.mutateAsync({
+        data: { mfaEnabled: enabled },
+      });
+      toast({ title: enabled ? "MFA active" : "MFA desactive" });
+      refreshIdentity();
+    } catch (error: any) {
+      setMfaEnabled(previousValue);
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de mettre a jour le MFA",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -163,6 +202,13 @@ export default function CustomerProfile() {
               <div className="mt-1 flex items-center gap-2 text-sm font-medium">
                 <CheckCircle2 className={`h-4 w-4 ${profileComplete ? "text-emerald-500" : "text-amber-500"}`} />
                 {profileComplete ? "Complet" : "A completer"}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-primary/10 bg-background/80 px-4 py-3 shadow-sm">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Securite</div>
+              <div className="mt-1 flex items-center gap-2 text-sm font-medium">
+                <ShieldCheck className={`h-4 w-4 ${mfaEnabled ? "text-emerald-500" : "text-slate-400"}`} />
+                {user?.emailVerifiedAt ? (mfaEnabled ? "MFA activee" : "MFA desactivee") : "Apres verification"}
               </div>
             </div>
           </div>
@@ -358,6 +404,37 @@ export default function CustomerProfile() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-border/60 shadow-[0_18px_45px_-28px_hsl(var(--primary)/0.35)]">
+        <CardHeader className="border-b bg-muted/20">
+          <CardTitle className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-primary" />
+            Securite du compte
+          </CardTitle>
+          <CardDescription>Activez ou desactivez la verification MFA apres la premiere validation de votre e-mail.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 pt-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={mfaEnabled ? "secondary" : "outline"}>{mfaEnabled ? "MFA activee" : "MFA desactivee"}</Badge>
+              {!user?.emailVerifiedAt && <Badge variant="outline">Verification e-mail requise</Badge>}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {user?.emailVerifiedAt
+                ? "Quand cette option est activee, une seconde verification sera demandee a chaque connexion."
+                : "La gestion du MFA sera disponible apres la premiere verification de votre adresse e-mail."}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 rounded-2xl border border-primary/10 bg-background px-4 py-3 shadow-sm">
+            <div className="text-right">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bascule</div>
+              <div className="mt-1 text-sm font-medium">{mfaEnabled ? "Active" : "Desactive"}</div>
+            </div>
+            <Switch checked={mfaEnabled} onCheckedChange={handleMfaToggle} disabled={!user?.emailVerifiedAt || isSaving} />
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-border/60 shadow-[0_18px_45px_-28px_hsl(var(--primary)/0.25)]">
         <CardHeader className="border-b bg-muted/20">

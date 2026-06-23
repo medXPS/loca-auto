@@ -34,6 +34,7 @@ export interface User {
   status: string;
   /** @nullable */
   emailVerifiedAt?: string | null;
+  mfaEnabled: boolean;
   createdAt?: string;
 }
 
@@ -60,6 +61,7 @@ export interface VerifyEmailInput {
 export interface UserProfileUpdate {
   fullName?: string;
   phone?: string;
+  mfaEnabled?: boolean;
 }
 
 export interface CarAvailabilitySummary {

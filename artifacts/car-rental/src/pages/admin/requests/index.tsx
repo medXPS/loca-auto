@@ -29,6 +29,7 @@ export default function AdminRequests() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Demandes de location</h1>
           <p className="text-sm text-muted-foreground">Recherche, validation et suivi des réservations.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Les demandes annulées par le client sont masquées de cette vue.</p>
         </div>
         <Link href={`${basePath}/calendrier`}>
           <Button variant="outline" className="gap-2">
@@ -66,7 +67,6 @@ export default function AdminRequests() {
               <SelectItem value="CAR_DELIVERED">En cours de location</SelectItem>
               <SelectItem value="CAR_RETURNED">Retourné</SelectItem>
               <SelectItem value="ABANDONED">Abandonné</SelectItem>
-              <SelectItem value="CANCELLED">Annulé</SelectItem>
             </SelectContent>
           </Select>
         </div>

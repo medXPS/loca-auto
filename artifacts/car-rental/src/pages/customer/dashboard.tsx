@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
 import { formatPrice } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, Car, CheckCircle, Clock } from "lucide-react";
+import { FileText, Car, CheckCircle, Clock, UserCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function CustomerDashboard() {
@@ -24,11 +24,18 @@ export default function CustomerDashboard() {
           <h1 className="text-3xl font-serif font-bold tracking-tight">Bonjour, {user?.fullName}</h1>
           <p className="text-muted-foreground mt-2">Bienvenue sur votre espace client Location Auto Maroc.</p>
         </div>
-        <Link href="/voitures">
-          <Button className="gap-2">
-            <Car className="w-4 h-4" /> Nouvelle réservation
-          </Button>
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/dashboard/profil">
+            <Button variant="outline" className="gap-2">
+              <UserCircle2 className="w-4 h-4" /> Mon profil
+            </Button>
+          </Link>
+          <Link href="/voitures">
+            <Button className="gap-2">
+              <Car className="w-4 h-4" /> Nouvelle réservation
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

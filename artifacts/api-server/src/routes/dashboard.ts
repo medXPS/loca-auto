@@ -36,7 +36,8 @@ router.get("/stats", authMiddleware, requireRole("ADMIN"), async (req, res) => {
 
     const [totalRequests] = await db
       .select({ count: sql<number>`count(*)::int` })
-      .from(schema.rentalRequestsTable);
+      .from(schema.rentalRequestsTable)
+      .where(sql`status <> 'CANCELLED'`);
     const [pendingRequests] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(schema.rentalRequestsTable)
@@ -184,6 +185,7 @@ router.get("/requests-by-status", authMiddleware, requireRole("ADMIN"), async (r
     const rows = await db.execute(sql`
       SELECT status, count(*)::int AS count
       FROM rental_requests
+      WHERE status <> 'CANCELLED'
       GROUP BY status
     `);
     const labels: Record<string, string> = {
@@ -223,6 +225,7 @@ router.get("/recent-requests", authMiddleware, requireRole("ADMIN"), async (req,
     const requests = await db
       .select()
       .from(schema.rentalRequestsTable)
+      .where(sql`status <> 'CANCELLED'`)
       .orderBy(desc(schema.rentalRequestsTable.createdAt))
       .limit(limit);
     const carIds = [...new Set(requests.map((r) => r.carId))];
