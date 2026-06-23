@@ -113,7 +113,7 @@ export default function CustomerRequestDetail() {
     (!requestCinDocument || !requestLicenseDocument);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
+    <div id="request-top" className="mx-auto max-w-4xl space-y-6 px-4 py-8">
       <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-serif font-bold tracking-tight">Ma Demande #{request.id}</h1>
@@ -247,7 +247,9 @@ export default function CustomerRequestDetail() {
       )}
 
       {showPaymentCountdown && request.paymentDeadline && (
-        <CountdownTimer deadline={request.paymentDeadline} onExpire={handleSuccess} className="mb-8" />
+        <div id="payment">
+          <CountdownTimer deadline={request.paymentDeadline} onExpire={handleSuccess} className="mb-8" />
+        </div>
       )}
 
       {request.status === "DOCUMENT_SUBMISSION_WINDOW" && (
@@ -275,7 +277,7 @@ export default function CustomerRequestDetail() {
       )}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <Card>
+        <Card id="vehicle">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Car className="h-5 w-5 text-primary" />
@@ -299,7 +301,7 @@ export default function CustomerRequestDetail() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="details">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
