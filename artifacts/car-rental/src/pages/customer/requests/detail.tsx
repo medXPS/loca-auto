@@ -1,6 +1,8 @@
 import {
   useGetRentalRequest,
   getGetRentalRequestQueryKey,
+  getGetMyCustomerProfileQueryKey,
+  useGetMyCustomerProfile,
   useCancelRentalRequest,
   useListDocuments,
   getListDocumentsQueryKey,
@@ -42,6 +44,12 @@ export default function CustomerRequestDetail() {
   const { data: documents } = useListDocuments(id, {
     query: { enabled: !!id, queryKey: getListDocumentsQueryKey(id) },
   });
+  const { data: profile } = useGetMyCustomerProfile({
+    query: {
+      enabled: !!id,
+      queryKey: getGetMyCustomerProfileQueryKey(),
+    },
+  });
   const cancelRequest = useCancelRentalRequest();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -51,7 +59,9 @@ export default function CustomerRequestDetail() {
   };
 
   const handleDocsRefresh = () => {
+    handleSuccess();
     queryClient.invalidateQueries({ queryKey: getListDocumentsQueryKey(id) });
+    queryClient.invalidateQueries({ queryKey: getGetMyCustomerProfileQueryKey() });
   };
 
   const handleCancel = () => {
@@ -90,8 +100,16 @@ export default function CustomerRequestDetail() {
 
   const canCancel = request.status === "PENDING" || request.status === "DOCUMENT_SUBMISSION_WINDOW" || request.status === "CALL_ATTEMPTED";
 
-  const cinDocument = documents?.find((doc) => doc.type === "CIN" || doc.type === "PASSPORT");
-  const licenseDocument = documents?.find((doc) => doc.type === "PERMIS_CONDUIRE");
+  const profileDocuments = (profile?.documents ?? []).filter((doc) => doc.rentalRequestId == null);
+  const requestCinDocument = documents?.find((doc) => doc.type === "CIN" || doc.type === "PASSPORT");
+  const requestLicenseDocument = documents?.find((doc) => doc.type === "PERMIS_CONDUIRE");
+  const profileCinDocument = profileDocuments.find((doc) => doc.type === "CIN" || doc.type === "PASSPORT");
+  const profileLicenseDocument = profileDocuments.find((doc) => doc.type === "PERMIS_CONDUIRE");
+  const cinDocument = requestCinDocument || profileCinDocument || null;
+  const licenseDocument = requestLicenseDocument || profileLicenseDocument || null;
+  const hasReusableProfileDocuments =
+    Boolean(profileCinDocument || profileLicenseDocument) &&
+    (!requestCinDocument || !requestLicenseDocument);
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8">
@@ -245,12 +263,19 @@ export default function CustomerRequestDetail() {
             les images (JPG, PNG) et les PDF. Vous pouvez remplacer chaque fichier a tout moment.
           </p>
 
+          {hasReusableProfileDocuments && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              Nous avons trouve vos documents dans votre profil. Vous pouvez les soumettre directement ou les remplacer pour cette reservation.
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <DocumentUploadField
               label="CIN / Passeport"
               docType="CIN"
               rentalRequestId={id}
               existingDocument={cinDocument || null}
+              allowExistingDocumentSubmit
               onUploaded={handleDocsRefresh}
             />
 
@@ -259,6 +284,7 @@ export default function CustomerRequestDetail() {
               docType="PERMIS_CONDUIRE"
               rentalRequestId={id}
               existingDocument={licenseDocument || null}
+              allowExistingDocumentSubmit
               onUploaded={handleDocsRefresh}
             />
           </div>

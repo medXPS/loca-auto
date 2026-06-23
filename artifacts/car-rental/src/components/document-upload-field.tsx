@@ -9,6 +9,7 @@ type SupportedDocumentType = "CIN" | "PASSPORT" | "PERMIS_CONDUIRE" | "AUTRE";
 type ExistingDocument = {
   id: number;
   fileUrl: string;
+  type?: string;
   status?: string;
   uploadedAt?: string;
 } | null | undefined;
@@ -20,6 +21,7 @@ interface DocumentUploadFieldProps {
   existingDocument?: ExistingDocument;
   rentalRequestId?: number | null;
   helperText?: string;
+  allowExistingDocumentSubmit?: boolean;
 }
 
 function fileNameFromUrl(fileUrl: string) {
@@ -34,6 +36,7 @@ export function DocumentUploadField({
   existingDocument,
   rentalRequestId,
   helperText,
+  allowExistingDocumentSubmit = false,
 }: DocumentUploadFieldProps) {
   const { toast } = useToast();
   const getUploadUrl = useGetUploadUrl();
@@ -46,6 +49,7 @@ export function DocumentUploadField({
   const titleHint = existingDocument
     ? `Actuel: ${existingName}${existingDocument.uploadedAt ? ` · ${new Date(existingDocument.uploadedAt).toLocaleDateString("fr-MA")}` : ""}`
     : helperText;
+  const canSubmitExistingDocument = allowExistingDocumentSubmit && Boolean(existingDocument);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -58,29 +62,38 @@ export function DocumentUploadField({
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || progress === "uploading") return;
+    if (progress === "uploading") return;
+    if (!selectedFile && !canSubmitExistingDocument) return;
 
     setProgress("uploading");
 
     try {
-      const presignResult = await getUploadUrl.mutateAsync({
-        data: { fileName: selectedFile.name, fileType: selectedFile.type, context: "documents" },
-      });
+      let fileUrl = existingDocument?.fileUrl ?? "";
+      let documentType = existingDocument?.type || docType;
 
-      const uploadResponse = await fetch(presignResult.uploadUrl, {
-        method: "PUT",
-        body: selectedFile,
-        headers: { "Content-Type": selectedFile.type },
-      });
-      if (!uploadResponse.ok) {
-        throw new Error("upload_failed");
+      if (selectedFile) {
+        const presignResult = await getUploadUrl.mutateAsync({
+          data: { fileName: selectedFile.name, fileType: selectedFile.type, context: "documents" },
+        });
+
+        const uploadResponse = await fetch(presignResult.uploadUrl, {
+          method: "PUT",
+          body: selectedFile,
+          headers: { "Content-Type": selectedFile.type },
+        });
+        if (!uploadResponse.ok) {
+          throw new Error("upload_failed");
+        }
+
+        fileUrl = presignResult.fileUrl;
+        documentType = docType;
       }
 
       await uploadDocument.mutateAsync({
         data: {
           rentalRequestId: rentalRequestId ?? undefined,
-          type: docType,
-          fileUrl: presignResult.fileUrl,
+          type: documentType,
+          fileUrl,
         },
       });
 
@@ -89,7 +102,7 @@ export function DocumentUploadField({
       if (inputRef.current) {
         inputRef.current.value = "";
       }
-      toast({ title: `${label} televerse avec succes` });
+      toast({ title: selectedFile ? `${label} televerse avec succes` : `${label} soumis avec succes` });
       onUploaded();
     } catch {
       setProgress("error");
@@ -140,13 +153,13 @@ export function DocumentUploadField({
           type="button"
           size="sm"
           className="gap-2"
-          disabled={!selectedFile || isUploading}
+          disabled={(!selectedFile && !canSubmitExistingDocument) || isUploading}
           onClick={handleUpload}
         >
           {isUploading ? (
             <>
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              Envoi...
+              {selectedFile ? "Envoi..." : "Validation..."}
             </>
           ) : (
             "Soumettre le document"
