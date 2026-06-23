@@ -3,6 +3,8 @@ import { Link, useLocation, useRoute } from "wouter";
 import {
   getGetCarAvailabilityQueryKey,
   getGetCarQueryKey,
+  getGetMyCustomerProfileQueryKey,
+  useGetMyCustomerProfile,
   useCreateRentalRequest,
   useGetCar,
   useGetCarAvailability,
@@ -182,6 +184,13 @@ export default function CarDetail() {
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
   const reservationRef = useRef<HTMLDivElement>(null);
+  const { data: customerProfile } = useGetMyCustomerProfile({
+    query: {
+      enabled: isAuthenticated && user?.role === "CUSTOMER",
+      queryKey: getGetMyCustomerProfileQueryKey(),
+    },
+  });
+  const reservationIdentity = customerProfile?.user ?? user;
 
   const searchParams = useMemo(
     () => new URLSearchParams(typeof window === "undefined" ? "" : window.location.search),
@@ -203,9 +212,9 @@ export default function CarDetail() {
   });
   const createRequest = useCreateRentalRequest();
 
-  const [fullName, setFullName] = useState(user?.fullName || "");
-  const [phone, setPhone] = useState(user?.phone || "");
-  const [email, setEmail] = useState(user?.email || "");
+  const [fullName, setFullName] = useState(reservationIdentity?.fullName || "");
+  const [phone, setPhone] = useState(reservationIdentity?.phone || "");
+  const [email, setEmail] = useState(reservationIdentity?.email || "");
   const [startDate, setStartDate] = useState(startDateFromQuery);
   const [returnDate, setReturnDate] = useState(returnDateFromQuery);
   const [startHour, setStartHour] = useState(startHourFromQuery);
@@ -213,10 +222,10 @@ export default function CarDetail() {
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!fullName && user?.fullName) setFullName(user.fullName);
-    if (!phone && user?.phone) setPhone(user.phone);
-    if (!email && user?.email) setEmail(user.email);
-  }, [email, fullName, phone, user]);
+    if (!fullName && reservationIdentity?.fullName) setFullName(reservationIdentity.fullName);
+    if (!phone && reservationIdentity?.phone) setPhone(reservationIdentity.phone);
+    if (!email && reservationIdentity?.email) setEmail(reservationIdentity.email);
+  }, [email, fullName, phone, reservationIdentity]);
 
   useEffect(() => {
     setStartDate(startDateFromQuery);
@@ -319,8 +328,11 @@ export default function CarDetail() {
 
     if (!car) return;
 
-    if (!fullName.trim() || !phone.trim() || !email.trim() || !startDate || !returnDate || !startHour || !returnHour) {
-      setFormError("Merci de completer les champs essentiels.");
+    const resolvedFullName = fullName.trim() || reservationIdentity?.fullName?.trim() || "";
+    const resolvedPhone = phone.trim() || reservationIdentity?.phone?.trim() || "";
+    const resolvedEmail = email.trim() || reservationIdentity?.email?.trim() || "";
+
+    if (!resolvedFullName || !resolvedPhone || !resolvedEmail || !startDate || !returnDate || !startHour || !returnHour) {
       toast({
         title: "Informations manquantes",
         description: "Remplissez votre nom, telephone, email et les dates de location.",
@@ -340,9 +352,9 @@ export default function CarDetail() {
 
     const reservationPayload = {
       carId: car.id,
-      fullName: fullName.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
+      fullName: resolvedFullName,
+      phone: resolvedPhone,
+      email: resolvedEmail,
       startDate,
       returnDate,
       startHour,
