@@ -3,6 +3,16 @@ import { AlertTriangle, CheckCircle2, Upload } from "lucide-react";
 import { useGetUploadUrl, useUploadDocument } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type SupportedDocumentType = "CIN" | "PASSPORT" | "PERMIS_CONDUIRE" | "AUTRE";
 
@@ -22,6 +32,11 @@ interface DocumentUploadFieldProps {
   rentalRequestId?: number | null;
   helperText?: string;
   allowExistingDocumentSubmit?: boolean;
+  confirmBeforeSubmit?: boolean;
+  confirmTitle?: string;
+  confirmDescription?: string;
+  confirmActionLabel?: string;
+  confirmCancelLabel?: string;
 }
 
 function fileNameFromUrl(fileUrl: string) {
@@ -37,6 +52,11 @@ export function DocumentUploadField({
   rentalRequestId,
   helperText,
   allowExistingDocumentSubmit = false,
+  confirmBeforeSubmit = false,
+  confirmTitle = "Confirmer l'envoi",
+  confirmDescription,
+  confirmActionLabel = "Valider",
+  confirmCancelLabel = "Annuler",
 }: DocumentUploadFieldProps) {
   const { toast } = useToast();
   const getUploadUrl = useGetUploadUrl();
@@ -44,12 +64,20 @@ export function DocumentUploadField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<"idle" | "uploading" | "error">("idle");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   const existingName = existingDocument ? fileNameFromUrl(existingDocument.fileUrl) : null;
   const titleHint = existingDocument
     ? `Actuel: ${existingName}${existingDocument.uploadedAt ? ` · ${new Date(existingDocument.uploadedAt).toLocaleDateString("fr-MA")}` : ""}`
     : helperText;
   const canSubmitExistingDocument = allowExistingDocumentSubmit && Boolean(existingDocument);
+  const confirmText =
+    confirmDescription ||
+    (selectedFile
+      ? `Vous allez envoyer ${selectedFile.name} pour cette demande.`
+      : existingDocument
+        ? `Le document actuel ${existingName || "selectionne"} sera lie a cette demande.`
+        : "Vous allez valider l'envoi de ce document.");
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -116,6 +144,25 @@ export function DocumentUploadField({
 
   const isUploading = progress === "uploading";
 
+  const submitButton = (
+    <Button
+      type="button"
+      size="sm"
+      className="gap-2"
+      disabled={(!selectedFile && !canSubmitExistingDocument) || isUploading}
+      onClick={confirmBeforeSubmit ? () => setIsConfirmOpen(true) : () => void handleUpload()}
+    >
+      {isUploading ? (
+        <>
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+          {selectedFile ? "Envoi..." : "Validation..."}
+        </>
+      ) : (
+        "Soumettre le document"
+      )}
+    </Button>
+  );
+
   return (
     <div className="space-y-2">
       <div className="space-y-1">
@@ -149,22 +196,30 @@ export function DocumentUploadField({
           )}
         </Button>
 
-        <Button
-          type="button"
-          size="sm"
-          className="gap-2"
-          disabled={(!selectedFile && !canSubmitExistingDocument) || isUploading}
-          onClick={handleUpload}
-        >
-          {isUploading ? (
-            <>
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              {selectedFile ? "Envoi..." : "Validation..."}
-            </>
-          ) : (
-            "Soumettre le document"
-          )}
-        </Button>
+        {confirmBeforeSubmit ? (
+          <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+            {submitButton}
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{confirmTitle}</AlertDialogTitle>
+                <AlertDialogDescription>{confirmText}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{confirmCancelLabel}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setIsConfirmOpen(false);
+                    void handleUpload();
+                  }}
+                >
+                  {confirmActionLabel}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          submitButton
+        )}
 
         {selectedFile && <span className="max-w-[220px] truncate text-sm text-muted-foreground">{selectedFile.name}</span>}
         {progress === "error" && (

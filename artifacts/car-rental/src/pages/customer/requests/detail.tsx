@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice, formatDateTime } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
 import { CountdownTimer } from "@/components/countdown-timer";
+import { RequestJourneyStepper } from "@/components/request-journey-stepper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, Calendar, Clock, FileText, X, CheckCircle2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -79,7 +80,7 @@ export default function CustomerRequestDetail() {
             variant: "destructive",
           });
         },
-      }
+      },
     );
   };
 
@@ -132,8 +133,7 @@ export default function CustomerRequestDetail() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Annuler la demande ?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Cette action est irreversible. Votre demande de location sera annulee et le vehicule
-                    sera remis a disposition.
+                    Cette action est irreversible. Votre demande de location sera annulee et le vehicule sera remis a disposition.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -151,6 +151,89 @@ export default function CustomerRequestDetail() {
           )}
         </div>
       </div>
+
+      <RequestJourneyStepper status={request.status} />
+
+      <Card
+        id="documents"
+        className="overflow-hidden rounded-[1.9rem] border border-slate-900/10 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]"
+      >
+        <CardContent className="space-y-6 p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                <FileText className="h-3.5 w-3.5" />
+                Soumission des pieces
+              </div>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+                Validez vos documents pour passer a l'etape suivante
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                Vos documents deja presentes dans le profil apparaissent ici. Vous pouvez les reutiliser ou les remplacer avant de valider cette demande.
+              </p>
+            </div>
+          </div>
+
+          {hasReusableProfileDocuments && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              Nous avons trouve vos documents dans votre profil. Vous pouvez les soumettre directement ou les remplacer pour cette reservation.
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <DocumentUploadField
+              label="CIN / Passeport"
+              docType="CIN"
+              rentalRequestId={id}
+              existingDocument={cinDocument || null}
+              allowExistingDocumentSubmit
+              confirmBeforeSubmit
+              confirmTitle="Valider le document"
+              confirmDescription={
+                cinDocument
+                  ? `Le document ${fileNameFromUrl(cinDocument.fileUrl)} sera rattache a cette demande.`
+                  : "Le document sera rattache a cette demande."
+              }
+              confirmActionLabel="Valider"
+              onUploaded={handleDocsRefresh}
+            />
+
+            <DocumentUploadField
+              label="Permis de conduire"
+              docType="PERMIS_CONDUIRE"
+              rentalRequestId={id}
+              existingDocument={licenseDocument || null}
+              allowExistingDocumentSubmit
+              confirmBeforeSubmit
+              confirmTitle="Valider le document"
+              confirmDescription={
+                licenseDocument
+                  ? `Le document ${fileNameFromUrl(licenseDocument.fileUrl)} sera rattache a cette demande.`
+                  : "Le document sera rattache a cette demande."
+              }
+              confirmActionLabel="Valider"
+              onUploaded={handleDocsRefresh}
+            />
+          </div>
+
+          {documents && documents.length > 0 && (
+            <div className="border-t pt-4">
+              <p className="mb-3 text-xs font-medium text-muted-foreground">Documents envoyes :</p>
+              <ul className="space-y-2">
+                {documents.map((doc) => (
+                  <li key={doc.id} className="flex items-center gap-2 text-sm">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                    <span className="font-medium">
+                      {doc.type === "CIN" ? "CIN / Passeport" : doc.type === "PASSPORT" ? "Passeport" : "Permis de conduire"}
+                    </span>
+                    <span className="truncate text-muted-foreground">— {fileNameFromUrl(doc.fileUrl)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {showDocumentCountdown && request.documentDeadline && (
         <CountdownTimer
@@ -185,8 +268,7 @@ export default function CustomerRequestDetail() {
           <div>
             <h3 className="font-bold">Prochaine etape : Paiement a l'agence</h3>
             <p className="mt-1 text-sm">
-              Votre demande a ete confirmee par telephone. Veuillez vous presenter a notre agence avant
-              la limite de 24h pour finaliser le paiement en especes et recuperer votre vehicule.
+              Votre demande a ete confirmee par telephone. Veuillez vous presenter a notre agence avant la limite de 24h pour finaliser le paiement en especes et recuperer votre vehicule.
             </p>
           </div>
         </div>
@@ -249,64 +331,6 @@ export default function CustomerRequestDetail() {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            Documents requis
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <p className="text-sm text-muted-foreground">
-            Televersez vos documents d'identite pour finaliser votre dossier. Les fichiers acceptes sont
-            les images (JPG, PNG) et les PDF. Vous pouvez remplacer chaque fichier a tout moment.
-          </p>
-
-          {hasReusableProfileDocuments && (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              Nous avons trouve vos documents dans votre profil. Vous pouvez les soumettre directement ou les remplacer pour cette reservation.
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <DocumentUploadField
-              label="CIN / Passeport"
-              docType="CIN"
-              rentalRequestId={id}
-              existingDocument={cinDocument || null}
-              allowExistingDocumentSubmit
-              onUploaded={handleDocsRefresh}
-            />
-
-            <DocumentUploadField
-              label="Permis de conduire"
-              docType="PERMIS_CONDUIRE"
-              rentalRequestId={id}
-              existingDocument={licenseDocument || null}
-              allowExistingDocumentSubmit
-              onUploaded={handleDocsRefresh}
-            />
-          </div>
-
-          {documents && documents.length > 0 && (
-            <div className="border-t pt-4">
-              <p className="mb-3 text-xs font-medium text-muted-foreground">Documents envoyes :</p>
-              <ul className="space-y-2">
-                {documents.map((doc) => (
-                  <li key={doc.id} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-                    <span className="font-medium">
-                      {doc.type === "CIN" ? "CIN / Passeport" : doc.type === "PASSPORT" ? "Passeport" : "Permis de conduire"}
-                    </span>
-                    <span className="truncate text-muted-foreground">— {fileNameFromUrl(doc.fileUrl)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
