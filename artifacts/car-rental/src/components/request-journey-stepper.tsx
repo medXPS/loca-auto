@@ -1,3 +1,6 @@
+﻿"use client";
+
+import { useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -94,10 +97,68 @@ interface RequestJourneyStepperProps {
   className?: string;
 }
 
+function getStepStateLabel(stepIndex: number, currentIndex: number) {
+  if (stepIndex < currentIndex) {
+    return "Terminee";
+  }
+
+  if (stepIndex === currentIndex) {
+    return "Etape en cours";
+  }
+
+  return "Etape a venir";
+}
+
+function getStepStateTone(stepIndex: number, currentIndex: number) {
+  if (stepIndex < currentIndex) {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (stepIndex === currentIndex) {
+    return "border-primary/20 bg-primary/8 text-primary";
+  }
+
+  return "border-slate-200 bg-slate-50 text-slate-600";
+}
+
+function getStepDetails(stepIndex: number, currentIndex: number) {
+  if (stepIndex < currentIndex) {
+    return [
+      "Cette etape a deja ete franchie.",
+      "Vous pouvez consulter les documents et informations deja envoyes.",
+      "Le dossier continue vers la suite du parcours.",
+    ];
+  }
+
+  if (stepIndex === currentIndex) {
+    return [
+      "C'est la phase actuellement active dans votre dossier.",
+      "La prochaine action utile s'affiche ici au bon moment.",
+      "Cliquez sur un autre point pour voir les autres etapes du parcours.",
+    ];
+  }
+
+  return [
+    "Cette etape s'ouvrira quand le dossier avancera.",
+    "Le point est deja prepare pour la suite de votre demande.",
+    "Vous verrez ici les informations correspondantes a ce moment-la.",
+  ];
+}
+
 export function RequestJourneyStepper({ status, className }: RequestJourneyStepperProps) {
   const currentIndex = STATUS_INDEX[status] ?? 0;
   const isCancelled = CANCELLATION_STATUSES.has(status);
   const currentStep = JOURNEY_STEPS[currentIndex] ?? JOURNEY_STEPS[0];
+  const [selectedIndex, setSelectedIndex] = useState(currentIndex);
+
+  useEffect(() => {
+    setSelectedIndex(currentIndex);
+  }, [currentIndex]);
+
+  const selectedStep = JOURNEY_STEPS[selectedIndex] ?? JOURNEY_STEPS[currentIndex] ?? JOURNEY_STEPS[0];
+  const selectedStateLabel = getStepStateLabel(selectedIndex, currentIndex);
+  const selectedStateTone = getStepStateTone(selectedIndex, currentIndex);
+  const selectedStepDetails = getStepDetails(selectedIndex, currentIndex);
 
   return (
     <Card className={cn("overflow-hidden rounded-[1.9rem] border border-primary/10 bg-gradient-to-br from-primary/6 via-background to-secondary/10 shadow-[0_24px_70px_-45px_hsl(var(--primary)/0.5)]", className)}>
@@ -121,6 +182,10 @@ export function RequestJourneyStepper({ status, className }: RequestJourneyStepp
           </div>
         </div>
 
+        <p className="text-sm text-muted-foreground">
+          Cliquez sur un point pour afficher le detail de l'etape juste en dessous.
+        </p>
+
         <div className="overflow-x-auto pb-2">
           <div className="relative min-w-[860px] px-2 pt-2">
             <div className="absolute left-8 right-8 top-[1.95rem] h-0.5 rounded-full bg-border/80" />
@@ -129,46 +194,76 @@ export function RequestJourneyStepper({ status, className }: RequestJourneyStepp
                 const isActive = index === currentIndex;
                 const isComplete = index < currentIndex;
                 const isPending = index > currentIndex;
+                const isSelected = index === selectedIndex;
 
                 return (
-                  <div key={step.title} className="flex min-w-0 flex-col items-center text-center">
+                  <button
+                    key={step.title}
+                    type="button"
+                    onClick={() => setSelectedIndex(index)}
+                    className="group flex min-w-0 flex-col items-center text-center outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5"
+                    aria-pressed={isSelected}
+                    aria-label={`Afficher le detail de l'etape ${step.title}`}
+                  >
                     <div
                       className={cn(
-                        "relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 bg-background text-sm font-bold shadow-sm transition-all",
+                        "relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 bg-background text-sm font-bold shadow-sm transition-all duration-200",
                         isComplete && "border-emerald-500 bg-emerald-500 text-white",
                         isActive && "border-[#F04B45] bg-[#F04B45] text-white shadow-[0_16px_28px_-18px_rgba(240,75,69,0.95)]",
                         isPending && "border-border bg-muted text-muted-foreground",
+                        isSelected && "ring-4 ring-primary/15",
                       )}
                     >
                       {isComplete ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
                     </div>
                     <div className="mt-3 max-w-[120px] space-y-1">
-                      <p className={cn("text-sm font-semibold", isActive ? "text-foreground" : isComplete ? "text-foreground" : "text-muted-foreground")}>
+                      <p className={cn("text-sm font-semibold transition-colors", isActive || isSelected ? "text-foreground" : isComplete ? "text-foreground" : "text-muted-foreground")}>
                         {step.title}
                       </p>
                       <p className="text-[11px] leading-5 text-muted-foreground">{step.description}</p>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-primary/10 bg-background/85 px-4 py-3 shadow-sm">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Etape active</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">{currentStep.title}</p>
+        <div className="rounded-[1.75rem] border border-primary/10 bg-background/90 p-5 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-3xl space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                Point selectionne
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold tracking-tight text-foreground">{selectedStep.title}</h3>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">{selectedStep.description}</p>
+              </div>
+            </div>
+
+            <span className={cn("inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold", selectedStateTone)}>
+              {selectedStateLabel}
+            </span>
           </div>
-          <div className="rounded-2xl border border-primary/10 bg-background/85 px-4 py-3 shadow-sm">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Statut actuel</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">{getStatusLabel(status, "rental")}</p>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            {selectedStepDetails.map((item) => (
+              <div key={item} className="rounded-2xl border border-border/60 bg-slate-50 px-4 py-3 text-sm text-foreground">
+                {item}
+              </div>
+            ))}
           </div>
-          <div className="rounded-2xl border border-primary/10 bg-background/85 px-4 py-3 shadow-sm">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Votre dossier</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">
-              {isCancelled ? "Ferme" : "En cours"}
-            </p>
+
+          <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
+            <span className="rounded-full border border-primary/10 bg-primary/5 px-3 py-1.5 text-primary">
+              Etape active: {currentStep.title}
+            </span>
+            <span className="rounded-full border border-primary/10 bg-background px-3 py-1.5 text-muted-foreground">
+              Statut: {getStatusLabel(status, "rental")}
+            </span>
+            <span className="rounded-full border border-primary/10 bg-background px-3 py-1.5 text-muted-foreground">
+              Dossier {isCancelled ? "ferme" : "en cours"}
+            </span>
           </div>
         </div>
 
