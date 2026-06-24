@@ -5,6 +5,7 @@ import { authMiddleware, requireRole } from "../lib/auth";
 import { logAudit } from "../lib/audit";
 import { createNotification } from "../lib/notify";
 import { sendReceiptEmail } from "../lib/mailer";
+import { buildReceiptHtml, buildReceiptPdf } from "../lib/receipt-pdf";
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 import {
@@ -175,7 +176,7 @@ async function fetchImageBuffer(source: string | null | undefined, baseUrl: stri
   }
 }
 
-async function buildReceiptPdf(args: {
+async function buildReceiptPdfLegacy(args: {
   settings: any;
   request: Awaited<ReturnType<typeof fetchRequestWithCar>> & { car: any };
   receiptNumber: string;
@@ -249,12 +250,12 @@ async function buildReceiptPdf(args: {
   const brandPieces = brandUpper.split(/\s+/).filter(Boolean);
   const brandLine1 = brandPieces[0] || "LOCATION";
   const brandLine2 = brandPieces.slice(1).join(" ") || "AUTO MAROC";
-  const contactLineY = pageTop + 132;
-  const cardsTop = pageTop + 160;
-  const locationTop = cardsTop + 116;
-  const paymentTop = locationTop + 120;
-  const verificationTop = paymentTop + 186;
-  const footerTop = verificationTop + 126;
+  const contactLineY = pageTop + 154;
+  const cardsTop = pageTop + 184;
+  const locationTop = cardsTop + 120;
+  const paymentTop = locationTop + 122;
+  const verificationTop = paymentTop + 182;
+  const footerTop = verificationTop + 124;
 
   const drawGlyph = (kind: string, x: number, y: number, size: number, color: string) => {
     const s = size;
@@ -454,18 +455,21 @@ async function buildReceiptPdf(args: {
     { width: 298, lineGap: 3 },
   );
 
-  const carImageWidth = 182;
-  const carImageHeight = 102;
-  const carImageX = pageRight - carImageWidth + 6;
-  const carImageY = pageTop + 92;
+  const carImageWidth = 176;
+  const carImageHeight = 66;
+  const carImageX = pageRight - carImageWidth;
+  const carImageY = pageTop + 96;
   doc.save();
-  doc.fillOpacity(0.12).ellipse(carImageX + carImageWidth / 2, carImageY + carImageHeight + 12, carImageWidth * 0.34, 9).fill("#000000");
+  doc.fillOpacity(0.1).ellipse(carImageX + carImageWidth / 2, carImageY + carImageHeight + 5, carImageWidth * 0.34, 6).fill("#000000");
   doc.restore();
   if (carBuffer) {
-    doc.image(carBuffer, carImageX, carImageY, { fit: [carImageWidth, carImageHeight], align: "center", valign: "center" });
+    doc.save();
+    doc.roundedRect(carImageX, carImageY, carImageWidth, carImageHeight, 10).clip();
+    doc.image(carBuffer, carImageX, carImageY, { cover: [carImageWidth, carImageHeight], align: "center", valign: "center" });
+    doc.restore();
   } else {
-    doc.roundedRect(carImageX + 18, carImageY + 8, carImageWidth - 36, carImageHeight - 16, 18).fillAndStroke(colors.white, colors.border);
-    drawGlyph("car", carImageX + 60, carImageY + 26, 60, colors.navyDeep);
+    doc.roundedRect(carImageX, carImageY, carImageWidth, carImageHeight, 10).fillAndStroke(colors.white, colors.border);
+    drawGlyph("car", carImageX + 59, carImageY + 7, 58, colors.navyDeep);
   }
 
   doc.moveTo(pageLeft, contactLineY).lineTo(pageRight, contactLineY).strokeColor(colors.border).lineWidth(1).stroke();
@@ -481,7 +485,7 @@ async function buildReceiptPdf(args: {
   const cardGap = 16;
   const halfWidth = (pageWidth - cardGap) / 2;
   const leftCardY = cardsTop;
-  const cardHeight = 104;
+  const cardHeight = 108;
   drawCard(pageLeft, leftCardY, halfWidth, cardHeight, colors.white);
   drawCard(pageLeft + halfWidth + cardGap, leftCardY, halfWidth, cardHeight, colors.white);
   drawSectionHeader(pageLeft + 18, leftCardY + 12, "Agence", "building");
@@ -534,7 +538,7 @@ async function buildReceiptPdf(args: {
     });
   });
 
-  const paymentCardHeight = 166;
+  const paymentCardHeight = 170;
   drawCard(pageLeft, paymentTop, pageWidth, paymentCardHeight, colors.white);
   drawSectionHeader(pageLeft + 18, paymentTop + 12, "Détails de paiement", "wallet");
 
@@ -542,8 +546,8 @@ async function buildReceiptPdf(args: {
   const tableY = paymentTop + 48;
   const tableWidth = pageWidth - 36;
   const rowLeftWidth = tableWidth - 90;
-  const regularRowHeight = 15;
-  const totalRowHeight = 24;
+  const regularRowHeight = 12;
+  const totalRowHeight = 22;
   const paymentRows = [
     ["Prix journalier", formatMoney(Number(requestCar.dailyPrice || paidAmount || 0))],
     ["Sous-total", formatMoney(breakdown.subtotal)],
@@ -555,8 +559,8 @@ async function buildReceiptPdf(args: {
   let cursorY = tableY;
   paymentRows.forEach((row) => {
     doc.moveTo(tableX, cursorY + regularRowHeight).lineTo(tableX + tableWidth, cursorY + regularRowHeight).strokeColor(colors.border).stroke();
-    doc.fillColor(colors.muted).font("Helvetica").fontSize(9).text(row[0], tableX, cursorY + 2, { width: rowLeftWidth });
-    doc.fillColor(colors.text).font("Helvetica").fontSize(9).text(row[1], tableX + rowLeftWidth, cursorY + 2, {
+    doc.fillColor(colors.muted).font("Helvetica").fontSize(8.3).text(row[0], tableX, cursorY + 1, { width: rowLeftWidth });
+    doc.fillColor(colors.text).font("Helvetica").fontSize(8.3).text(row[1], tableX + rowLeftWidth, cursorY + 1, {
       width: 90,
       align: "right",
     });
@@ -572,35 +576,35 @@ async function buildReceiptPdf(args: {
     width: 90,
     align: "right",
   });
-  cursorY += totalRowHeight + 10;
+  cursorY += totalRowHeight + 7;
   doc.fillColor(colors.muted).font("Helvetica").fontSize(8.5).text("Date de paiement", tableX, cursorY, { width: rowLeftWidth });
   doc.fillColor(colors.text).font("Helvetica").fontSize(8.5).text(formatDateTimeWithSeconds(paidAt), tableX + rowLeftWidth, cursorY, {
     width: 90,
     align: "right",
   });
-  cursorY += 14;
+  cursorY += 12;
   doc.fillColor(colors.muted).font("Helvetica").fontSize(8.5).text("Mode de paiement", tableX, cursorY, { width: rowLeftWidth });
   doc.fillColor(colors.text).font("Helvetica").fontSize(8.5).text(formatPaymentMethod(request.paymentMethod), tableX + rowLeftWidth, cursorY, {
     width: 90,
     align: "right",
   });
 
-  const verificationCardHeight = 116;
+  const verificationCardHeight = 112;
   drawCard(pageLeft, verificationTop, pageWidth, verificationCardHeight, colors.white);
   drawSectionHeader(pageLeft + 18, verificationTop + 12, "Vérification et signatures", "shield");
 
   const leftColumnX = pageLeft + 20;
-  const leftColumnY = verificationTop + 52;
-  const qrSize = 78;
+  const leftColumnY = verificationTop + 48;
+  const qrSize = 58;
   doc.image(qrBuffer, leftColumnX, leftColumnY, { width: qrSize, height: qrSize });
-  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8.5).text("QR code", leftColumnX + 102, leftColumnY + 2, {
+  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8.5).text("QR code", leftColumnX + 76, leftColumnY + 2, {
     width: 95,
     characterSpacing: 0.6,
   });
-  doc.fillColor(colors.text).font("Helvetica").fontSize(8.5).text("OU", leftColumnX + 102, leftColumnY + 23, {
+  doc.fillColor(colors.text).font("Helvetica").fontSize(8.5).text("OU", leftColumnX + 76, leftColumnY + 20, {
     width: 95,
   });
-  doc.fillColor(colors.muted).font("Helvetica").fontSize(8.5).text("Visitez le lien ci-dessous", leftColumnX + 102, leftColumnY + 42, {
+  doc.fillColor(colors.muted).font("Helvetica").fontSize(8.5).text("Visitez le lien ci-dessous", leftColumnX + 76, leftColumnY + 39, {
     width: 120,
   });
 
@@ -615,26 +619,26 @@ async function buildReceiptPdf(args: {
     link: verificationUrl,
     underline: true,
   });
-  doc.moveTo(rightStartX, leftColumnY + 52).lineTo(pageRight - 24, leftColumnY + 52).strokeColor(colors.border).stroke();
-  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8.5).text("Signature agence", rightStartX, leftColumnY + 60, {
+  doc.moveTo(rightStartX, leftColumnY + 36).lineTo(pageRight - 24, leftColumnY + 36).strokeColor(colors.border).stroke();
+  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8.5).text("Signature agence", rightStartX, leftColumnY + 43, {
     width: 130,
   });
-  doc.moveTo(rightStartX, leftColumnY + 86).lineTo(rightStartX + 132, leftColumnY + 86).strokeColor(colors.navyDeep).stroke();
+  doc.moveTo(rightStartX, leftColumnY + 58).lineTo(rightStartX + 132, leftColumnY + 58).strokeColor(colors.navyDeep).stroke();
   doc.save();
   doc.strokeColor(colors.navyDeep).lineWidth(1.2);
   doc
-    .moveTo(rightStartX, leftColumnY + 83)
-    .lineTo(rightStartX + 16, leftColumnY + 68)
-    .lineTo(rightStartX + 34, leftColumnY + 77)
-    .lineTo(rightStartX + 58, leftColumnY + 67)
-    .lineTo(rightStartX + 86, leftColumnY + 79)
-    .lineTo(rightStartX + 110, leftColumnY + 71)
+    .moveTo(rightStartX, leftColumnY + 56)
+    .lineTo(rightStartX + 16, leftColumnY + 49)
+    .lineTo(rightStartX + 34, leftColumnY + 58)
+    .lineTo(rightStartX + 58, leftColumnY + 48)
+    .lineTo(rightStartX + 86, leftColumnY + 60)
+    .lineTo(rightStartX + 110, leftColumnY + 52)
     .stroke();
   doc.restore();
-  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8.5).text("Signature client", rightStartX + 146, leftColumnY + 60, {
+  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8.5).text("Signature client", rightStartX + 146, leftColumnY + 43, {
     width: 110,
   });
-  doc.moveTo(rightStartX + 146, leftColumnY + 86).lineTo(pageRight - 24, leftColumnY + 86).strokeColor(colors.border).stroke();
+  doc.moveTo(rightStartX + 146, leftColumnY + 58).lineTo(pageRight - 24, leftColumnY + 58).strokeColor(colors.border).stroke();
 
   doc.roundedRect(pageLeft, footerTop, pageWidth, 46, 14).fill(colors.navyDeep);
   drawGlyph("phone", pageLeft + 12, footerTop + 10, 20, colors.white);
@@ -684,13 +688,23 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
     const baseUrl = `${req.protocol}://${req.get("host")}`;
     const receiptNumber = buildReceiptNumber(result.id);
     const verificationUrl = `${baseUrl}/api/rental-requests/${result.id}/receipt`;
-    const pdfBuffer = await buildReceiptPdf({
+    const receiptArgs = {
       settings: settings || {},
       request: result as any,
       receiptNumber,
       verificationUrl,
       baseUrl,
-    });
+    };
+
+    if (req.query.format === "html") {
+      const receiptHtml = await buildReceiptHtml(receiptArgs);
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "private, no-store");
+      res.send(receiptHtml);
+      return;
+    }
+
+    const pdfBuffer = await buildReceiptPdf(receiptArgs);
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="recu-${receiptNumber}.pdf"`);
