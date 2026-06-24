@@ -17,6 +17,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ReceiptDownloadButton } from "@/components/receipt-download-button";
 import { StatusBadge } from "@/components/status-badge";
 import { cn, formatDateTime, formatPrice, getStatusLabel } from "@/lib/utils";
 
@@ -41,6 +42,7 @@ type RequestSummary = {
     year?: string | number | null;
     mainImageUrl?: string | null;
   } | null;
+  email?: string | null;
   startAt?: string | Date | null;
   startDate?: string | Date | null;
   returnAt?: string | Date | null;
@@ -286,6 +288,9 @@ export function RequestJourneyStepper({ status, request, piecesContent, classNam
   const requestStartDate = formatOptionalDate(request?.startAt ?? request?.startDate);
   const requestReturnDate = formatOptionalDate(request?.returnAt ?? request?.returnDate);
   const requestFinalPrice = formatOptionalPrice(request?.finalPrice ?? request?.estimatedTotalPrice);
+  const requestIdNumber = typeof request?.id === "number" ? request.id : Number(request?.id);
+  const receiptFilename = Number.isFinite(requestIdNumber) && requestIdNumber > 0 ? `receipt-${String(requestIdNumber).padStart(6, "0")}.pdf` : undefined;
+  const canDownloadReceipt = ["RESERVED", "PAID", "ACTIVE_RENTAL", "CAR_DELIVERED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(status);
   const progressStop = JOURNEY_STEPS.length > 1 ? (currentIndex / (JOURNEY_STEPS.length - 1)) * 100 : 0;
   const progressEnd = Math.min(progressStop + 1.5, 100);
   const timelineConnectorStyle = {
@@ -483,6 +488,29 @@ export function RequestJourneyStepper({ status, request, piecesContent, classNam
                 />
               </div>
             </div>
+
+            {canDownloadReceipt && Number.isFinite(requestIdNumber) && requestIdNumber > 0 && receiptFilename ? (
+              <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-slate-50/80 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-sm font-semibold text-slate-900">Reçu de réservation / paiement</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    Le reçu est téléchargeable ici et une copie est envoyée par e-mail après la confirmation du paiement.
+                    {request?.email ? ` Le dossier est lié à ${request.email}.` : ""}
+                  </p>
+                </div>
+
+                <ReceiptDownloadButton requestId={requestIdNumber} filename={receiptFilename} className="rounded-full">
+                  Télécharger le reçu
+                </ReceiptDownloadButton>
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                <p className="text-sm font-semibold text-slate-900">Reçu de réservation</p>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Le reçu sera disponible après la confirmation du paiement et envoyé aussi par e-mail.
+                </p>
+              </div>
+            )}
           </div>
         );
 

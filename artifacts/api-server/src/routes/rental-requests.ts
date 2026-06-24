@@ -4,6 +4,7 @@ import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { logAudit } from "../lib/audit";
 import { createNotification } from "../lib/notify";
+import { sendReceiptEmail } from "../lib/mailer";
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 import {
@@ -252,13 +253,21 @@ async function buildReceiptPdf(args: {
 }
 
 // GET /api/rental-requests/:id/receipt
-router.get("/:id/receipt", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
+router.get("/:id/receipt", authMiddleware, async (req, res) => {
   try {
     const requestId = parseInt(String(req.params.id), 10);
     const result = await fetchRequestWithCar(requestId);
     if (!result) {
       res.status(404).json({ error: "Demande non trouvée" });
       return;
+    }
+
+    if (req.user!.role === "CUSTOMER") {
+      const [customer] = await db.select().from(schema.customersTable).where(eq(schema.customersTable.userId, req.user!.userId)).limit(1);
+      if (!customer || result.customerId !== customer.id) {
+        res.status(403).json({ error: "Accès non autorisé" });
+        return;
+      }
     }
 
     if (!["RESERVED", "PAID", "ACTIVE_RENTAL", "CAR_DELIVERED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(result.status)) {
@@ -705,10 +714,34 @@ router.patch("/:id/confirm-payment", authMiddleware, requireRole("ADMIN", "AGENT
 
     await logAudit({ userId: req.user!.userId, action: "CONFIRM_PAYMENT", entityType: "rental_request", entityId: updated.id });
     const result = await fetchRequestWithCar(updated.id);
+    if (!result) {
+      res.status(404).json({ error: "Demande non trouvée" });
+      return;
+    }
+
+    const [settings] = await db.select().from(schema.companySettingsTable).limit(1);
+    const receiptNumber = `RCPT-${String(result.id).padStart(6, "0")}`;
+    const verificationUrl = `${req.protocol}://${req.get("host")}/api/rental-requests/${result.id}/receipt`;
+
+    try {
+      const pdfBuffer = await buildReceiptPdf({
+        settings: settings || {},
+        request: result as any,
+        receiptNumber,
+        verificationUrl,
+      });
+
+      if (result.email) {
+        await sendReceiptEmail(result.email, receiptNumber, pdfBuffer);
+      }
+    } catch (receiptError) {
+      req.log.error(receiptError);
+    }
+
     res.json({
       ...result,
       receiptUrl: `/api/rental-requests/${updated.id}/receipt`,
-      receiptLabel: `RCPT-${String(updated.id).padStart(5, "0")}`,
+      receiptLabel: receiptNumber,
     });
   } catch (err) {
     req.log.error(err);

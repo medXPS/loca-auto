@@ -17,6 +17,52 @@ function parseHostAndPort(rawHost: string | undefined, rawPort: string | undefin
   };
 }
 
+async function sendPlainEmail(args: {
+  email: string;
+  subject: string;
+  text: string;
+  attachments?: Array<{ filename: string; content: Buffer; contentType?: string }>;
+}) {
+  const { email, subject, text, attachments } = args;
+
+  if (!transporter) {
+    console.info({ email, subject }, "Email skipped; SMTP is not configured");
+    return;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: smtpUser,
+      to: email,
+      subject,
+      text,
+      attachments,
+    });
+  } catch (error) {
+    console.error({ error, email, subject }, "Email send failed");
+  }
+}
+
+export async function sendReceiptEmail(email: string, receiptNumber: string, pdfBuffer: Buffer) {
+  await sendPlainEmail({
+    email,
+    subject: `Votre reçu de paiement ${receiptNumber}`,
+    text:
+      "Bonjour,\n\n" +
+      "Votre paiement a été confirmé.\n" +
+      "Le reçu de réservation / paiement est joint à cet e-mail et reste aussi disponible dans votre espace client.\n\n" +
+      "Cordialement,\n" +
+      "Location Auto Maroc",
+    attachments: [
+      {
+        filename: `recu-${receiptNumber}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf",
+      },
+    ],
+  });
+}
+
 const rawSmtpHost = process.env.SMTP_HOST ?? process.env.SMTP_SMARTHOST;
 const { host: smtpHost, port: smtpPort } = parseHostAndPort(rawSmtpHost, process.env.SMTP_PORT);
 const smtpUser = process.env.SMTP_USER;
