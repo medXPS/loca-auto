@@ -15,7 +15,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { RequestJourneyStepper } from "@/components/request-journey-stepper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Car, Calendar, Clock, FileText, X, CheckCircle2 } from "lucide-react";
+import { Car, Clock, FileText, X, CheckCircle2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -139,24 +139,17 @@ function ReservationOverviewCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-              <Calendar className="h-3.5 w-3.5 text-primary" />
-              Depart
-            </div>
-            <p className="mt-2 text-sm font-semibold text-slate-900">{formatDateTime(reservationStart)}</p>
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
+              Depart: {formatDateTime(reservationStart)}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
+              Retour: {formatDateTime(reservationEnd)}
+            </span>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-              <Calendar className="h-3.5 w-3.5 text-primary" />
-              Retour
-            </div>
-            <p className="mt-2 text-sm font-semibold text-slate-900">{formatDateTime(reservationEnd)}</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
               <Clock className="h-3.5 w-3.5 text-primary" />
               Jours reserves
@@ -164,21 +157,27 @@ function ReservationOverviewCard({
             <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{rentalDaysLabel}</p>
             <p className="mt-1 text-xs text-slate-500">Duree calculee a partir des dates selectionnees.</p>
           </div>
-        </div>
 
-        <div className="rounded-[1.6rem] border border-emerald-200 bg-emerald-50 px-4 py-4">
-          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Prix
-          </div>
-          <p className="mt-3 text-sm text-emerald-900/80">Prix estime</p>
-          <p className="mt-1 text-2xl font-semibold tracking-tight text-emerald-700">{estimatedPriceLabel}</p>
-          <div className="mt-4 border-t border-emerald-200 pt-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Total a payer</p>
-            <p className="mt-2 text-3xl font-semibold tracking-tight text-emerald-700">{totalPriceLabel}</p>
-            <p className="mt-1 text-sm leading-6 text-emerald-800/75">
-              Le montant final s’affiche ici des qu’il est confirme par l’agence.
-            </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                Prix estime
+              </div>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{estimatedPriceLabel}</p>
+              <p className="mt-1 text-xs text-slate-500">Montant indicatif avant cloture du dossier.</p>
+            </div>
+
+            <div className="rounded-[1.6rem] border border-emerald-200 bg-emerald-50 px-4 py-4">
+              <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Total a payer
+              </div>
+              <p className="mt-2 text-3xl font-semibold tracking-tight text-emerald-700">{totalPriceLabel}</p>
+              <p className="mt-1 text-sm leading-6 text-emerald-800/75">
+                Le montant final s'affiche ici des qu'il est confirme par l'agence.
+              </p>
+            </div>
           </div>
         </div>
 
