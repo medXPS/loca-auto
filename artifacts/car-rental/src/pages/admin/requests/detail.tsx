@@ -70,7 +70,7 @@ export default function AdminRequestDetail() {
             {canPrintReceipt && (
               <ReceiptDownloadButton
                 requestId={request.id}
-                filename={`receipt-${String(request.id).padStart(6, "0")}.pdf`}
+                filename={`recu-RCPF-${String(request.id).padStart(6, "0")}.pdf`}
                 className="w-full justify-center"
               >
                 Imprimer le reçu

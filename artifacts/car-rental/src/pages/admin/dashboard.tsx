@@ -284,7 +284,7 @@ export default function AdminDashboard() {
                         {["RESERVED", "CAR_DELIVERED", "RENTED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(req.status) ? (
                           <ReceiptDownloadButton
                             requestId={req.id}
-                            filename={`receipt-${String(req.id).padStart(6, "0")}.pdf`}
+                            filename={`recu-RCPF-${String(req.id).padStart(6, "0")}.pdf`}
                             size="sm"
                             className="w-full justify-center"
                           >

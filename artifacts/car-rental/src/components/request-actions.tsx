@@ -94,7 +94,7 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
           onSuccess();
 
           try {
-            await downloadReceiptPdf(requestId, `receipt-${String(requestId).padStart(6, "0")}.pdf`);
+            await downloadReceiptPdf(requestId, `recu-RCPF-${String(requestId).padStart(6, "0")}.pdf`);
           } catch (error: any) {
             toast({
               title: "Reçu disponible",

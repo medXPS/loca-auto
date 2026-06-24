@@ -123,27 +123,92 @@ function calculateBreakdown(totalPaid: number, insuranceIncluded: boolean) {
   };
 }
 
+function formatDateOnly(value: string | Date) {
+  return new Intl.DateTimeFormat("fr-MA", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function formatDateTimeWithSeconds(value: string | Date) {
+  return new Intl.DateTimeFormat("fr-MA", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(new Date(value));
+}
+
+function buildReceiptNumber(requestId: number) {
+  return `RCPF-${String(requestId).padStart(6, "0")}`;
+}
+
+async function fetchImageBuffer(source: string | null | undefined, baseUrl: string) {
+  if (!source) return null;
+
+  const resolvedSource = source.startsWith("data:")
+    ? source
+    : /^https?:\/\//i.test(source)
+      ? source
+      : source.startsWith("/")
+        ? new URL(source, baseUrl).toString()
+        : null;
+
+  if (!resolvedSource) return null;
+
+  try {
+    if (resolvedSource.startsWith("data:")) {
+      const match = resolvedSource.match(/^data:.*?;base64,(.*)$/i);
+      if (!match?.[1]) return null;
+      return Buffer.from(match[1], "base64");
+    }
+
+    const response = await fetch(resolvedSource);
+    if (!response.ok) return null;
+    return Buffer.from(await response.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
 async function buildReceiptPdf(args: {
   settings: any;
   request: Awaited<ReturnType<typeof fetchRequestWithCar>> & { car: any };
   receiptNumber: string;
   verificationUrl: string;
+  baseUrl: string;
 }) {
-  const { settings, request, receiptNumber, verificationUrl } = args;
+  const { settings, request, receiptNumber, verificationUrl, baseUrl } = args;
+  const companyName = settings.brandName || "Location Auto Maroc";
+  const companyCity = settings.city || "Casablanca";
+  const companyAddress = settings.address || `${companyCity}, Maroc`;
+  const companyPhone = settings.phone || "+212600000000";
+  const requestCar = request.car ?? {};
+  const paidAt = request.paidAtAgencyAt ? new Date(request.paidAtAgencyAt) : new Date();
   const paidAmount = Number(request.finalPrice || request.estimatedTotalPrice || 0);
-  const breakdown = calculateBreakdown(paidAmount, Boolean(request.car?.insuranceIncluded));
+  const breakdown = calculateBreakdown(paidAmount, Boolean(requestCar.insuranceIncluded));
   const days = Math.max(
     1,
-    Math.round((new Date(`${request.returnDate}T00:00:00`).getTime() - new Date(`${request.startDate}T00:00:00`).getTime()) / (1000 * 60 * 60 * 24)) + 1,
+    Math.floor((new Date(`${request.returnDate}T00:00:00`).getTime() - new Date(`${request.startDate}T00:00:00`).getTime()) / (1000 * 60 * 60 * 24)) + 1,
   );
+
+  const [qrBuffer, carBuffer, logoBuffer] = await Promise.all([
+    QRCode.toBuffer(verificationUrl, { margin: 1, width: 180 }),
+    fetchImageBuffer(requestCar.mainImageUrl, baseUrl),
+    fetchImageBuffer(settings.logoUrl, baseUrl),
+  ]);
 
   const doc = new PDFDocument({
     size: "A4",
-    margin: 40,
+    margin: 24,
     bufferPages: true,
     info: {
       Title: `Reçu ${receiptNumber}`,
-      Author: settings.brandName || "Location Auto Maroc",
+      Author: companyName,
       Subject: "Reçu de paiement",
     },
   });
@@ -155,98 +220,438 @@ async function buildReceiptPdf(args: {
     doc.on("error", reject);
   });
 
-  const qrBuffer = await QRCode.toBuffer(verificationUrl, { margin: 1, width: 180 });
+  const colors = {
+    navy: "#163A72",
+    navyDeep: "#0F2D63",
+    blue: "#1F56B4",
+    blueSoft: "#EAF1FF",
+    border: "#D7DFEA",
+    text: "#10213D",
+    muted: "#65748B",
+    success: "#0EA765",
+    successSoft: "#E9F9F1",
+    danger: "#E84A43",
+    dangerSoft: "#FDEDEC",
+    white: "#FFFFFF",
+    soft: "#F8FBFF",
+  } as const;
 
-  const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-  const left = doc.page.margins.left;
-  const top = doc.page.margins.top;
+  const pageLeft = doc.page.margins.left;
+  const pageTop = doc.page.margins.top;
+  const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const pageRight = pageLeft + pageWidth;
+  const heroWedgeX = pageLeft + pageWidth - 150;
+  const receiptBoxX = pageRight - 220;
+  const receiptBoxY = pageTop + 4;
+  const receiptBoxW = 220;
+  const receiptBoxH = 92;
+  const brandUpper = companyName.toUpperCase();
+  const brandPieces = brandUpper.split(/\s+/).filter(Boolean);
+  const brandLine1 = brandPieces[0] || "LOCATION";
+  const brandLine2 = brandPieces.slice(1).join(" ") || "AUTO MAROC";
+  const contactLineY = pageTop + 132;
+  const cardsTop = pageTop + 160;
+  const locationTop = cardsTop + 116;
+  const paymentTop = locationTop + 120;
+  const verificationTop = paymentTop + 186;
+  const footerTop = verificationTop + 126;
 
-  const section = (x: number, y: number, sectionWidth: number, title: string, height: number) => {
-    doc.roundedRect(x, y, sectionWidth, height, 14).fillAndStroke("#f8fafc", "#e2e8f0");
-    doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(10).text(title.toUpperCase(), x + 14, y + 12, { width: sectionWidth - 28 });
+  const drawGlyph = (kind: string, x: number, y: number, size: number, color: string) => {
+    const s = size;
+    doc.save();
+    doc.lineWidth(Math.max(1.1, s * 0.075));
+    doc.strokeColor(color);
+    doc.fillColor(color);
+
+    switch (kind) {
+      case "car":
+        doc.roundedRect(x + s * 0.18, y + s * 0.44, s * 0.64, s * 0.22, s * 0.06).stroke();
+        doc
+          .moveTo(x + s * 0.28, y + s * 0.44)
+          .lineTo(x + s * 0.39, y + s * 0.27)
+          .lineTo(x + s * 0.61, y + s * 0.27)
+          .lineTo(x + s * 0.72, y + s * 0.44)
+          .stroke();
+        doc.circle(x + s * 0.32, y + s * 0.74, s * 0.08).stroke();
+        doc.circle(x + s * 0.68, y + s * 0.74, s * 0.08).stroke();
+        break;
+      case "receipt":
+        doc.roundedRect(x + s * 0.23, y + s * 0.15, s * 0.54, s * 0.7, s * 0.08).stroke();
+        doc.moveTo(x + s * 0.35, y + s * 0.15).lineTo(x + s * 0.35, y + s * 0.23).stroke();
+        doc.moveTo(x + s * 0.5, y + s * 0.15).lineTo(x + s * 0.5, y + s * 0.23).stroke();
+        doc.moveTo(x + s * 0.35, y + s * 0.39).lineTo(x + s * 0.63, y + s * 0.39).stroke();
+        doc.moveTo(x + s * 0.35, y + s * 0.53).lineTo(x + s * 0.58, y + s * 0.53).stroke();
+        break;
+      case "building":
+        doc.roundedRect(x + s * 0.24, y + s * 0.16, s * 0.52, s * 0.7, s * 0.06).stroke();
+        for (let row = 0; row < 2; row += 1) {
+          for (let col = 0; col < 2; col += 1) {
+            const wx = x + s * (0.33 + col * 0.14);
+            const wy = y + s * (0.3 + row * 0.16);
+            doc.roundedRect(wx, wy, s * 0.07, s * 0.07, s * 0.02).fill(color);
+          }
+        }
+        doc.moveTo(x + s * 0.5, y + s * 0.16).lineTo(x + s * 0.5, y + s * 0.86).stroke();
+        break;
+      case "user":
+        doc.circle(x + s * 0.5, y + s * 0.32, s * 0.14).stroke();
+        doc.roundedRect(x + s * 0.28, y + s * 0.56, s * 0.44, s * 0.2, s * 0.1).stroke();
+        break;
+      case "calendar":
+        doc.roundedRect(x + s * 0.16, y + s * 0.24, s * 0.68, s * 0.56, s * 0.08).stroke();
+        doc.moveTo(x + s * 0.28, y + s * 0.16).lineTo(x + s * 0.28, y + s * 0.34).stroke();
+        doc.moveTo(x + s * 0.72, y + s * 0.16).lineTo(x + s * 0.72, y + s * 0.34).stroke();
+        doc.moveTo(x + s * 0.16, y + s * 0.4).lineTo(x + s * 0.84, y + s * 0.4).stroke();
+        break;
+      case "clock":
+        doc.circle(x + s * 0.5, y + s * 0.5, s * 0.3).stroke();
+        doc.moveTo(x + s * 0.5, y + s * 0.5).lineTo(x + s * 0.5, y + s * 0.32).stroke();
+        doc.moveTo(x + s * 0.5, y + s * 0.5).lineTo(x + s * 0.64, y + s * 0.58).stroke();
+        break;
+      case "wallet":
+        doc.roundedRect(x + s * 0.18, y + s * 0.3, s * 0.64, s * 0.42, s * 0.08).stroke();
+        doc.roundedRect(x + s * 0.57, y + s * 0.38, s * 0.17, s * 0.12, s * 0.03).stroke();
+        doc.circle(x + s * 0.66, y + s * 0.44, s * 0.02).fill(color);
+        break;
+      case "pin":
+        doc.circle(x + s * 0.5, y + s * 0.39, s * 0.15).stroke();
+        doc
+          .moveTo(x + s * 0.5, y + s * 0.9)
+          .lineTo(x + s * 0.34, y + s * 0.56)
+          .lineTo(x + s * 0.66, y + s * 0.56)
+          .closePath()
+          .stroke();
+        break;
+      case "phone":
+        doc.save();
+        doc.translate(x + s * 0.34, y + s * 0.34);
+        doc.rotate(-38);
+        doc.roundedRect(-s * 0.05, -s * 0.18, s * 0.1, s * 0.36, s * 0.04).stroke();
+        doc.restore();
+        doc.save();
+        doc.translate(x + s * 0.66, y + s * 0.66);
+        doc.rotate(-38);
+        doc.roundedRect(-s * 0.05, -s * 0.18, s * 0.1, s * 0.36, s * 0.04).stroke();
+        doc.restore();
+        doc.moveTo(x + s * 0.38, y + s * 0.62).lineTo(x + s * 0.59, y + s * 0.41).stroke();
+        break;
+      case "shield":
+        doc
+          .moveTo(x + s * 0.5, y + s * 0.16)
+          .lineTo(x + s * 0.77, y + s * 0.25)
+          .lineTo(x + s * 0.69, y + s * 0.68)
+          .lineTo(x + s * 0.5, y + s * 0.86)
+          .lineTo(x + s * 0.31, y + s * 0.68)
+          .lineTo(x + s * 0.23, y + s * 0.25)
+          .closePath()
+          .stroke();
+        doc.moveTo(x + s * 0.4, y + s * 0.48).lineTo(x + s * 0.48, y + s * 0.58).stroke();
+        doc.moveTo(x + s * 0.48, y + s * 0.58).lineTo(x + s * 0.62, y + s * 0.38).stroke();
+        break;
+      case "check":
+        doc.circle(x + s * 0.5, y + s * 0.5, s * 0.28).stroke();
+        doc.moveTo(x + s * 0.38, y + s * 0.51).lineTo(x + s * 0.46, y + s * 0.6).lineTo(x + s * 0.63, y + s * 0.4).stroke();
+        break;
+      default:
+        doc.circle(x + s * 0.5, y + s * 0.5, s * 0.25).stroke();
+        break;
+    }
+
+    doc.restore();
   };
 
-  const textField = (x: number, y: number, label: string, value: string, widthValue: number) => {
-    doc.fillColor("#64748b").font("Helvetica").fontSize(8).text(label, x, y);
-    doc.fillColor("#0f172a").font("Helvetica-Bold").fontSize(10).text(value || "—", x, y + 12, { width: widthValue });
+  const drawCard = (x: number, y: number, w: number, h: number, fill = colors.white) => {
+    doc.save();
+    doc.fillOpacity(0.04).roundedRect(x, y + 3, w, h, 18).fill("#000000");
+    doc.restore();
+    doc.roundedRect(x, y, w, h, 18).lineWidth(1).fillAndStroke(fill, colors.border);
   };
 
-  doc.fillColor("#0f172a");
-  doc.font("Helvetica-Bold").fontSize(22).text(settings.brandName || "Location Auto Maroc", left, top);
-  doc.font("Helvetica").fontSize(10).fillColor("#475569").text(settings.address || "", left, top + 28, { width: width * 0.6 });
-  doc.text([settings.city, settings.phone].filter(Boolean).join(" • "), left, top + 42, { width: width * 0.6 });
+  const drawSectionHeader = (x: number, y: number, title: string, icon: string) => {
+    doc.circle(x + 18, y + 18, 18).fill(colors.navyDeep);
+    drawGlyph(icon, x + 6, y + 6, 24, colors.white);
+    doc.fillColor(colors.navyDeep).font("Helvetica-Bold").fontSize(12).text(title.toUpperCase(), x + 48, y + 11, {
+      width: 250,
+      characterSpacing: 0.6,
+    });
+  };
 
-  doc.roundedRect(left + width - 200, top - 4, 200, 72, 14).fillAndStroke("#eff6ff", "#bfdbfe");
-  doc.fillColor("#1d4ed8").font("Helvetica-Bold").fontSize(10).text("REÇU DE PAIEMENT", left + width - 184, top + 12, { width: 168, align: "left" });
-  doc.fillColor("#0f172a").font("Helvetica").fontSize(9).text(`N° ${receiptNumber}`, left + width - 184, top + 30);
-  doc.text(`Date: ${formatDate(new Date())}`, left + width - 184, top + 44);
+  const drawKeyValue = (x: number, y: number, label: string, value: string, icon: string, widthValue: number) => {
+    drawGlyph(icon, x, y + 2, 14, colors.navyDeep);
+    doc.fillColor(colors.muted).font("Helvetica").fontSize(8).text(label, x + 20, y, { width: 74 });
+    doc.fillColor(colors.text).font("Helvetica-Bold").fontSize(10).text(value || "—", x + 96, y, {
+      width: widthValue - 96,
+    });
+  };
 
-  doc.roundedRect(left, top + 78, width, 62, 14).fillAndStroke("#0f172a", "#0f172a");
-  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(16).text("Reçu archivable et imprimable", left + 16, top + 95);
-  doc.font("Helvetica").fontSize(9).fillColor("#dbeafe").text("Ce document valide le paiement effectué à l'agence et peut être archivé dans le dossier client.", left + 16, top + 116, { width: width - 32 });
+  doc.rect(0, 0, doc.page.width, doc.page.height).fill(colors.white);
 
-  const firstRowY = top + 158;
-  const boxWidth = (width - 12) / 2;
-  section(left, firstRowY, boxWidth, "Agence", 118);
-  section(left + boxWidth + 12, firstRowY, boxWidth, "Client", 118);
+  doc.save();
+  doc.fillColor(colors.navyDeep);
+  doc
+    .moveTo(heroWedgeX + 28, pageTop - 12)
+    .lineTo(pageRight + 24, pageTop - 12)
+    .lineTo(pageRight + 24, pageTop + 194)
+    .lineTo(heroWedgeX + 78, pageTop + 262)
+    .lineTo(heroWedgeX, pageTop + 208)
+    .lineTo(heroWedgeX, pageTop + 68)
+    .closePath()
+    .fill();
+  doc.fillColor(colors.blue);
+  doc
+    .moveTo(heroWedgeX - 18, pageTop + 52)
+    .lineTo(pageRight + 24, pageTop - 12)
+    .lineTo(pageRight + 24, pageTop + 124)
+    .lineTo(heroWedgeX + 38, pageTop + 182)
+    .lineTo(heroWedgeX - 18, pageTop + 162)
+    .closePath()
+    .fill();
+  doc.restore();
 
-  textField(left + 14, firstRowY + 32, "Nom", settings.brandName || "—", boxWidth - 28);
-  textField(left + 14, firstRowY + 58, "Téléphone", settings.phone || "—", boxWidth - 28);
-  textField(left + 14, firstRowY + 84, "Adresse", settings.address || "—", boxWidth - 28);
+  if (logoBuffer) {
+    doc.image(logoBuffer, pageLeft, pageTop + 4, { fit: [44, 44], align: "center", valign: "center" });
+  } else {
+    drawGlyph("car", pageLeft - 1, pageTop + 3, 46, colors.navyDeep);
+  }
 
-  textField(left + boxWidth + 26, firstRowY + 32, "Nom complet", request.fullName, boxWidth - 52);
-  textField(left + boxWidth + 26, firstRowY + 58, "CIN", request.cinOrPassport || "—", boxWidth - 52);
-  textField(left + boxWidth + 26, firstRowY + 84, "Téléphone", request.phone || "—", boxWidth - 52);
-
-  const rentalY = firstRowY + 132;
-  section(left, rentalY, width, "Location", 126);
-  const rentalCols = [
-    { label: "Réservation", value: `#${request.id}` },
-    { label: "Véhicule", value: request.car ? `${request.car.brand} ${request.car.model}` : `Véhicule #${request.carId}` },
-    { label: "Départ", value: new Date(request.startDate).toLocaleDateString("fr-MA") },
-    { label: "Retour", value: new Date(request.returnDate).toLocaleDateString("fr-MA") },
-    { label: "Jours", value: `${days} jour(s)` },
-    { label: "Agence", value: request.pickupLocation || settings.city || "—" },
-  ];
-  rentalCols.forEach((item, index) => {
-    const x = left + 14 + (index % 3) * ((width - 28) / 3);
-    const y = rentalY + 34 + Math.floor(index / 3) * 36;
-    textField(x, y, item.label, item.value, (width - 28) / 3 - 10);
+  doc.fillColor(colors.navyDeep).font("Helvetica-Bold").fontSize(19).text(brandLine1, pageLeft + 56, pageTop + 1, {
+    width: 188,
+    characterSpacing: 0.8,
+  });
+  doc.fontSize(15).text(brandLine2, pageLeft + 56, pageTop + 23, {
+    width: 188,
+    characterSpacing: 0.8,
   });
 
-  const paymentY = rentalY + 146;
-  section(left, paymentY, width, "Paiement", 206);
+  doc.roundedRect(receiptBoxX, receiptBoxY, receiptBoxW, receiptBoxH, 16).fillAndStroke(colors.white, colors.border);
+  drawGlyph("receipt", receiptBoxX + 12, receiptBoxY + 14, 24, colors.navyDeep);
+  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(9).text("N° REÇU", receiptBoxX + 48, receiptBoxY + 16, {
+    width: 130,
+    characterSpacing: 0.8,
+  });
+  doc.fillColor(colors.blue).font("Helvetica-Bold").fontSize(17).text(receiptNumber, receiptBoxX + 48, receiptBoxY + 33, {
+    width: 152,
+  });
+  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(9).text("DATE", receiptBoxX + 48, receiptBoxY + 58, {
+    width: 120,
+    characterSpacing: 0.8,
+  });
+  doc.fillColor(colors.text).font("Helvetica").fontSize(11).text(formatDateOnly(paidAt), receiptBoxX + 48, receiptBoxY + 73, {
+    width: 120,
+  });
 
+  doc.fillColor(colors.navyDeep).font("Helvetica-Bold").fontSize(28).text("REÇU DE PAIEMENT", pageLeft, pageTop + 64, {
+    width: 300,
+    lineGap: 2,
+  });
+  doc.fillColor(colors.blue).font("Helvetica").fontSize(13).text("Document archivable et imprimable", pageLeft, pageTop + 104, {
+    width: 300,
+  });
+  doc.fillColor(colors.text).font("Helvetica").fontSize(10.5).text(
+    "Ce document valide le paiement effectué à l'agence et peut être archivé dans le dossier client.",
+    pageLeft,
+    pageTop + 124,
+    { width: 298, lineGap: 3 },
+  );
+
+  const carImageWidth = 182;
+  const carImageHeight = 102;
+  const carImageX = pageRight - carImageWidth + 6;
+  const carImageY = pageTop + 92;
+  doc.save();
+  doc.fillOpacity(0.12).ellipse(carImageX + carImageWidth / 2, carImageY + carImageHeight + 12, carImageWidth * 0.34, 9).fill("#000000");
+  doc.restore();
+  if (carBuffer) {
+    doc.image(carBuffer, carImageX, carImageY, { fit: [carImageWidth, carImageHeight], align: "center", valign: "center" });
+  } else {
+    doc.roundedRect(carImageX + 18, carImageY + 8, carImageWidth - 36, carImageHeight - 16, 18).fillAndStroke(colors.white, colors.border);
+    drawGlyph("car", carImageX + 60, carImageY + 26, 60, colors.navyDeep);
+  }
+
+  doc.moveTo(pageLeft, contactLineY).lineTo(pageRight, contactLineY).strokeColor(colors.border).lineWidth(1).stroke();
+  drawGlyph("pin", pageLeft, contactLineY + 10, 16, colors.navyDeep);
+  doc.fillColor(colors.text).font("Helvetica").fontSize(10.2).text(`${companyCity}, Maroc`, pageLeft + 20, contactLineY + 8, {
+    width: 170,
+  });
+  drawGlyph("phone", pageLeft + 172, contactLineY + 10, 16, colors.navyDeep);
+  doc.fillColor(colors.text).font("Helvetica").fontSize(10.2).text(companyPhone, pageLeft + 192, contactLineY + 8, {
+    width: 130,
+  });
+
+  const cardGap = 16;
+  const halfWidth = (pageWidth - cardGap) / 2;
+  const leftCardY = cardsTop;
+  const cardHeight = 104;
+  drawCard(pageLeft, leftCardY, halfWidth, cardHeight, colors.white);
+  drawCard(pageLeft + halfWidth + cardGap, leftCardY, halfWidth, cardHeight, colors.white);
+  drawSectionHeader(pageLeft + 18, leftCardY + 12, "Agence", "building");
+  drawSectionHeader(pageLeft + halfWidth + cardGap + 18, leftCardY + 12, "Client", "user");
+
+  drawKeyValue(pageLeft + 20, leftCardY + 54, "Nom", companyName, "building", halfWidth - 32);
+  drawKeyValue(pageLeft + 20, leftCardY + 76, "Téléphone", companyPhone, "phone", halfWidth - 32);
+  drawKeyValue(pageLeft + 20, leftCardY + 98, "Adresse", companyAddress, "pin", halfWidth - 32);
+
+  const clientX = pageLeft + halfWidth + cardGap + 20;
+  drawKeyValue(clientX, leftCardY + 54, "Nom complet", request.fullName, "user", halfWidth - 32);
+  drawKeyValue(clientX, leftCardY + 76, "CIN", request.cinOrPassport || "—", "receipt", halfWidth - 32);
+  drawKeyValue(clientX, leftCardY + 98, "Téléphone", request.phone || "—", "phone", halfWidth - 32);
+
+  const locationCardHeight = 110;
+  drawCard(pageLeft, locationTop, pageWidth, locationCardHeight, colors.white);
+  drawSectionHeader(pageLeft + 18, locationTop + 12, "Détails de la location", "calendar");
+
+  const gridX = pageLeft + 18;
+  const gridY = locationTop + 52;
+  const gridWidth = pageWidth - 36;
+  const columnWidth = gridWidth / 3;
+  const rowHeight = 32;
+
+  doc.moveTo(gridX + columnWidth, gridY).lineTo(gridX + columnWidth, gridY + rowHeight * 2).strokeColor(colors.border).stroke();
+  doc.moveTo(gridX + columnWidth * 2, gridY).lineTo(gridX + columnWidth * 2, gridY + rowHeight * 2).strokeColor(colors.border).stroke();
+  doc.moveTo(gridX, gridY + rowHeight).lineTo(gridX + gridWidth, gridY + rowHeight).strokeColor(colors.border).stroke();
+
+  const detailCells = [
+    { label: "Réservation", value: `#${request.id}`, icon: "calendar" },
+    { label: "Véhicule", value: requestCar ? `${requestCar.brand ?? ""} ${requestCar.model ?? ""}`.trim() || `Véhicule #${request.carId}` : `Véhicule #${request.carId}`, icon: "car" },
+    { label: "Départ", value: formatDateOnly(request.startDate), icon: "calendar" },
+    { label: "Retour", value: formatDateOnly(request.returnDate), icon: "calendar" },
+    { label: "Durée", value: `${days} jour(s)`, icon: "clock" },
+    { label: "Agence", value: companyCity, icon: "building" },
+  ];
+
+  detailCells.forEach((cell, index) => {
+    const col = index % 3;
+    const row = Math.floor(index / 3);
+    const cellX = gridX + columnWidth * col;
+    const cellY = gridY + rowHeight * row;
+    drawGlyph(cell.icon, cellX + 10, cellY + 8, 16, colors.navyDeep);
+    doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8).text(cell.label.toUpperCase(), cellX + 32, cellY + 7, {
+      width: columnWidth - 44,
+      characterSpacing: 0.7,
+    });
+    doc.fillColor(colors.text).font("Helvetica-Bold").fontSize(11).text(cell.value, cellX + 32, cellY + 19, {
+      width: columnWidth - 44,
+    });
+  });
+
+  const paymentCardHeight = 166;
+  drawCard(pageLeft, paymentTop, pageWidth, paymentCardHeight, colors.white);
+  drawSectionHeader(pageLeft + 18, paymentTop + 12, "Détails de paiement", "wallet");
+
+  const tableX = pageLeft + 18;
+  const tableY = paymentTop + 48;
+  const tableWidth = pageWidth - 36;
+  const rowLeftWidth = tableWidth - 90;
+  const regularRowHeight = 15;
+  const totalRowHeight = 24;
   const paymentRows = [
-    ["Prix journalier", formatMoney(Number(request.car?.dailyPrice || 0))],
+    ["Prix journalier", formatMoney(Number(requestCar.dailyPrice || paidAmount || 0))],
     ["Sous-total", formatMoney(breakdown.subtotal)],
     ["Taxes", formatMoney(breakdown.taxes)],
     ["Assurance", formatMoney(breakdown.assurance)],
     ["Réparations éventuelles", formatMoney(breakdown.repairs)],
-    ["Montant total payé", formatMoney(breakdown.totalPaid)],
-    ["Date de paiement", request.paidAtAgencyAt ? new Date(request.paidAtAgencyAt).toLocaleString("fr-MA") : new Date().toLocaleString("fr-MA")],
-    ["Mode de paiement", formatPaymentMethod(request.paymentMethod)],
   ];
 
-  paymentRows.forEach((row, index) => {
-    const rowY = paymentY + 34 + index * 18;
-    doc.fillColor(index === 5 ? "#1d4ed8" : "#64748b").font(index === 5 ? "Helvetica-Bold" : "Helvetica").fontSize(9).text(row[0], left + 14, rowY);
-    doc.fillColor(index === 5 ? "#1d4ed8" : "#0f172a").font(index === 5 ? "Helvetica-Bold" : "Helvetica").fontSize(9).text(row[1], left + width - 210, rowY, { width: 196, align: "right" });
-    if (index === 4) {
-      doc.moveTo(left + 14, rowY + 15).lineTo(left + width - 14, rowY + 15).strokeColor("#e2e8f0").stroke();
-    }
+  let cursorY = tableY;
+  paymentRows.forEach((row) => {
+    doc.moveTo(tableX, cursorY + regularRowHeight).lineTo(tableX + tableWidth, cursorY + regularRowHeight).strokeColor(colors.border).stroke();
+    doc.fillColor(colors.muted).font("Helvetica").fontSize(9).text(row[0], tableX, cursorY + 2, { width: rowLeftWidth });
+    doc.fillColor(colors.text).font("Helvetica").fontSize(9).text(row[1], tableX + rowLeftWidth, cursorY + 2, {
+      width: 90,
+      align: "right",
+    });
+    cursorY += regularRowHeight;
   });
 
-  const footerY = paymentY + 220;
-  section(left, footerY, width, "Vérification et signatures", 160);
-  doc.image(qrBuffer, left + 18, footerY + 38, { width: 92, height: 92 });
-  textField(left + 130, footerY + 40, "QR code", "Scannez pour vérifier l'authenticité du reçu", 220);
-  textField(left + 130, footerY + 68, "Vérification", verificationUrl, 320);
+  doc.roundedRect(tableX, cursorY + 2, tableWidth, totalRowHeight, 10).fill(colors.navyDeep);
+  doc.fillColor(colors.white).font("Helvetica-Bold").fontSize(9.5).text("MONTANT TOTAL PAYÉ", tableX + 12, cursorY + 8, {
+    width: rowLeftWidth - 8,
+    characterSpacing: 0.7,
+  });
+  doc.fillColor(colors.white).font("Helvetica-Bold").fontSize(10).text(formatMoney(breakdown.totalPaid), tableX + rowLeftWidth, cursorY + 7, {
+    width: 90,
+    align: "right",
+  });
+  cursorY += totalRowHeight + 10;
+  doc.fillColor(colors.muted).font("Helvetica").fontSize(8.5).text("Date de paiement", tableX, cursorY, { width: rowLeftWidth });
+  doc.fillColor(colors.text).font("Helvetica").fontSize(8.5).text(formatDateTimeWithSeconds(paidAt), tableX + rowLeftWidth, cursorY, {
+    width: 90,
+    align: "right",
+  });
+  cursorY += 14;
+  doc.fillColor(colors.muted).font("Helvetica").fontSize(8.5).text("Mode de paiement", tableX, cursorY, { width: rowLeftWidth });
+  doc.fillColor(colors.text).font("Helvetica").fontSize(8.5).text(formatPaymentMethod(request.paymentMethod), tableX + rowLeftWidth, cursorY, {
+    width: 90,
+    align: "right",
+  });
 
-  doc.moveTo(left + width - 210, footerY + 64).lineTo(left + width - 30, footerY + 64).strokeColor("#94a3b8").stroke();
-  doc.fillColor("#475569").font("Helvetica").fontSize(9).text("Signature agence", left + width - 210, footerY + 72, { width: 180, align: "center" });
-  doc.moveTo(left + width - 210, footerY + 112).lineTo(left + width - 30, footerY + 112).strokeColor("#94a3b8").stroke();
-  doc.fillColor("#475569").font("Helvetica").fontSize(9).text("Signature client", left + width - 210, footerY + 120, { width: 180, align: "center" });
+  const verificationCardHeight = 116;
+  drawCard(pageLeft, verificationTop, pageWidth, verificationCardHeight, colors.white);
+  drawSectionHeader(pageLeft + 18, verificationTop + 12, "Vérification et signatures", "shield");
+
+  const leftColumnX = pageLeft + 20;
+  const leftColumnY = verificationTop + 52;
+  const qrSize = 78;
+  doc.image(qrBuffer, leftColumnX, leftColumnY, { width: qrSize, height: qrSize });
+  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8.5).text("QR code", leftColumnX + 102, leftColumnY + 2, {
+    width: 95,
+    characterSpacing: 0.6,
+  });
+  doc.fillColor(colors.text).font("Helvetica").fontSize(8.5).text("OU", leftColumnX + 102, leftColumnY + 23, {
+    width: 95,
+  });
+  doc.fillColor(colors.muted).font("Helvetica").fontSize(8.5).text("Visitez le lien ci-dessous", leftColumnX + 102, leftColumnY + 42, {
+    width: 120,
+  });
+
+  const rightStartX = pageLeft + 246;
+  doc.moveTo(rightStartX - 18, leftColumnY - 4).lineTo(rightStartX - 18, verificationTop + verificationCardHeight - 16).strokeColor(colors.border).stroke();
+  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8.5).text("Vérification", rightStartX, leftColumnY + 1, {
+    width: 140,
+    characterSpacing: 0.6,
+  });
+  doc.fillColor(colors.blue).font("Helvetica-Bold").fontSize(9.5).text(verificationUrl, rightStartX, leftColumnY + 17, {
+    width: pageWidth - (rightStartX - pageLeft) - 24,
+    link: verificationUrl,
+    underline: true,
+  });
+  doc.moveTo(rightStartX, leftColumnY + 52).lineTo(pageRight - 24, leftColumnY + 52).strokeColor(colors.border).stroke();
+  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8.5).text("Signature agence", rightStartX, leftColumnY + 60, {
+    width: 130,
+  });
+  doc.moveTo(rightStartX, leftColumnY + 86).lineTo(rightStartX + 132, leftColumnY + 86).strokeColor(colors.navyDeep).stroke();
+  doc.save();
+  doc.strokeColor(colors.navyDeep).lineWidth(1.2);
+  doc
+    .moveTo(rightStartX, leftColumnY + 83)
+    .lineTo(rightStartX + 16, leftColumnY + 68)
+    .lineTo(rightStartX + 34, leftColumnY + 77)
+    .lineTo(rightStartX + 58, leftColumnY + 67)
+    .lineTo(rightStartX + 86, leftColumnY + 79)
+    .lineTo(rightStartX + 110, leftColumnY + 71)
+    .stroke();
+  doc.restore();
+  doc.fillColor(colors.muted).font("Helvetica-Bold").fontSize(8.5).text("Signature client", rightStartX + 146, leftColumnY + 60, {
+    width: 110,
+  });
+  doc.moveTo(rightStartX + 146, leftColumnY + 86).lineTo(pageRight - 24, leftColumnY + 86).strokeColor(colors.border).stroke();
+
+  doc.roundedRect(pageLeft, footerTop, pageWidth, 46, 14).fill(colors.navyDeep);
+  drawGlyph("phone", pageLeft + 12, footerTop + 10, 20, colors.white);
+  doc.fillColor(colors.white).font("Helvetica-Bold").fontSize(11.5).text("Merci de votre confiance.", pageLeft + 42, footerTop + 10, {
+    width: 190,
+  });
+  doc.fillColor("#D8E5FF").font("Helvetica").fontSize(8.5).text("Pour toute question, contactez notre agence.", pageLeft + 42, footerTop + 26, {
+    width: 210,
+  });
+  drawGlyph("phone", pageLeft + 300, footerTop + 14, 14, colors.white);
+  doc.fillColor(colors.white).font("Helvetica").fontSize(9).text(companyPhone, pageLeft + 320, footerTop + 14, {
+    width: 110,
+  });
+  drawGlyph("pin", pageLeft + 430, footerTop + 14, 14, colors.white);
+  doc.fillColor(colors.white).font("Helvetica").fontSize(9).text(`${companyCity}, Maroc`, pageLeft + 448, footerTop + 14, {
+    width: 110,
+  });
 
   doc.end();
   return pdfDone;
@@ -276,17 +681,19 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
     }
 
     const [settings] = await db.select().from(schema.companySettingsTable).limit(1);
-    const receiptNumber = `RCPT-${String(result.id).padStart(6, "0")}`;
-    const verificationUrl = `${req.protocol}://${req.get("host")}/api/rental-requests/${result.id}/receipt`;
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const receiptNumber = buildReceiptNumber(result.id);
+    const verificationUrl = `${baseUrl}/api/rental-requests/${result.id}/receipt`;
     const pdfBuffer = await buildReceiptPdf({
       settings: settings || {},
       request: result as any,
       receiptNumber,
       verificationUrl,
+      baseUrl,
     });
 
     res.setHeader("Content-Type", "application/pdf");
-    res.setHeader("Content-Disposition", `inline; filename="recu-${result.id}.pdf"`);
+    res.setHeader("Content-Disposition", `inline; filename="recu-${receiptNumber}.pdf"`);
     res.setHeader("Content-Length", pdfBuffer.length.toString());
     res.send(pdfBuffer);
   } catch (err) {
@@ -720,8 +1127,9 @@ router.patch("/:id/confirm-payment", authMiddleware, requireRole("ADMIN", "AGENT
     }
 
     const [settings] = await db.select().from(schema.companySettingsTable).limit(1);
-    const receiptNumber = `RCPT-${String(result.id).padStart(6, "0")}`;
-    const verificationUrl = `${req.protocol}://${req.get("host")}/api/rental-requests/${result.id}/receipt`;
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const receiptNumber = buildReceiptNumber(result.id);
+    const verificationUrl = `${baseUrl}/api/rental-requests/${result.id}/receipt`;
 
     try {
       const pdfBuffer = await buildReceiptPdf({
@@ -729,6 +1137,7 @@ router.patch("/:id/confirm-payment", authMiddleware, requireRole("ADMIN", "AGENT
         request: result as any,
         receiptNumber,
         verificationUrl,
+        baseUrl,
       });
 
       if (result.email) {

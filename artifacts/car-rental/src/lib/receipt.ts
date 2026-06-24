@@ -17,5 +17,5 @@ export async function downloadReceiptPdf(requestId: number, filename?: string) {
     responseType: "blob",
   });
 
-  triggerDownload(blob, filename || `receipt-${String(requestId).padStart(6, "0")}.pdf`);
+  triggerDownload(blob, filename || `recu-RCPF-${String(requestId).padStart(6, "0")}.pdf`);
 }

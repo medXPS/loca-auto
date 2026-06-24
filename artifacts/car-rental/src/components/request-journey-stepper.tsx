@@ -289,7 +289,8 @@ export function RequestJourneyStepper({ status, request, piecesContent, classNam
   const requestReturnDate = formatOptionalDate(request?.returnAt ?? request?.returnDate);
   const requestFinalPrice = formatOptionalPrice(request?.finalPrice ?? request?.estimatedTotalPrice);
   const requestIdNumber = typeof request?.id === "number" ? request.id : Number(request?.id);
-  const receiptFilename = Number.isFinite(requestIdNumber) && requestIdNumber > 0 ? `receipt-${String(requestIdNumber).padStart(6, "0")}.pdf` : undefined;
+  const receiptNumber = Number.isFinite(requestIdNumber) && requestIdNumber > 0 ? `RCPF-${String(requestIdNumber).padStart(6, "0")}` : undefined;
+  const receiptFilename = receiptNumber ? `recu-${receiptNumber}.pdf` : undefined;
   const canDownloadReceipt = ["RESERVED", "PAID", "ACTIVE_RENTAL", "CAR_DELIVERED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(status);
   const progressStop = JOURNEY_STEPS.length > 1 ? (currentIndex / (JOURNEY_STEPS.length - 1)) * 100 : 0;
   const progressEnd = Math.min(progressStop + 1.5, 100);
