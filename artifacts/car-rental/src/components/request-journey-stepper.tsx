@@ -285,7 +285,6 @@ export function RequestJourneyStepper({ status, request, piecesContent, classNam
     : "Informations de réservation";
   const requestStartDate = formatOptionalDate(request?.startAt ?? request?.startDate);
   const requestReturnDate = formatOptionalDate(request?.returnAt ?? request?.returnDate);
-  const requestEstimatedPrice = formatOptionalPrice(request?.estimatedTotalPrice);
   const requestFinalPrice = formatOptionalPrice(request?.finalPrice ?? request?.estimatedTotalPrice);
   const progressStop = JOURNEY_STEPS.length > 1 ? (currentIndex / (JOURNEY_STEPS.length - 1)) * 100 : 0;
   const progressEnd = Math.min(progressStop + 1.5, 100);
@@ -456,18 +455,6 @@ export function RequestJourneyStepper({ status, request, piecesContent, classNam
                     <span className="inline-flex w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                       Réservé
                     </span>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    <MetricCard icon={CalendarDays} tone="sky" label="Départ" value={requestStartDate} helper="Heure de prise en charge." />
-                    <MetricCard icon={CalendarDays} tone="sky" label="Retour" value={requestReturnDate} helper="Heure de restitution prévue." />
-                    <MetricCard
-                      icon={BadgeCheck}
-                      tone="emerald"
-                      label="Prix estimé"
-                      value={requestEstimatedPrice}
-                      helper="Montant estimé avant clôture du dossier."
-                    />
                   </div>
                 </div>
               </div>
