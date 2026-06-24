@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowRight,
   BadgeCheck,
+  CalendarDays,
   CarFront,
   CheckCircle2,
   ClipboardList,
+  FileCheck2,
   FileText,
   Flag,
   PhoneCall,
@@ -17,87 +18,101 @@ import type { LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
-import { cn, getStatusLabel } from "@/lib/utils";
+import { cn, formatDateTime, formatPrice, getStatusLabel } from "@/lib/utils";
+
+type StepId =
+  | "candidature"
+  | "pieces"
+  | "verification"
+  | "confirmation"
+  | "reservation"
+  | "location"
+  | "cloture";
+
+type StepRelation = "completed" | "current" | "future";
+type Tone = "emerald" | "rose" | "sky" | "slate";
+
+type RequestSummary = {
+  id?: number | string | null;
+  car?: {
+    brand?: string | null;
+    model?: string | null;
+    category?: string | null;
+    year?: string | number | null;
+    mainImageUrl?: string | null;
+  } | null;
+  startAt?: string | Date | null;
+  startDate?: string | Date | null;
+  returnAt?: string | Date | null;
+  returnDate?: string | Date | null;
+  estimatedTotalPrice?: number | string | null;
+  finalPrice?: number | string | null;
+};
 
 type JourneyStep = {
+  id: StepId;
   title: string;
   description: string;
   statuses: string[];
   icon: LucideIcon;
-  actionLabel: string;
-  actionHref: string;
-  actionHint: string;
 };
 
 const JOURNEY_STEPS: JourneyStep[] = [
   {
+    id: "candidature",
     title: "Candidature",
-    description: "Demande envoyee et en attente de traitement.",
+    description: "Votre demande a été envoyée et elle est en attente de traitement.",
     statuses: ["PENDING", "UNDER_REVIEW", "CALL_ATTEMPTED"],
     icon: ClipboardList,
-    actionLabel: "Soumettre mes pieces",
-    actionHref: "#documents",
-    actionHint: "Ouvrez la zone d'envoi pour completer le dossier.",
   },
   {
-    title: "Pieces",
-    description: "CIN, passeport et permis a valider.",
+    id: "pieces",
+    title: "Pièces",
+    description: "CIN / Passeport et permis de conduire requis.",
     statuses: ["DOCUMENT_SUBMISSION_WINDOW", "WAITING_DOCUMENTS"],
     icon: FileText,
-    actionLabel: "Soumettre mes pieces",
-    actionHref: "#documents",
-    actionHint: "Vous pouvez reutiliser ou remplacer vos fichiers ici.",
   },
   {
-    title: "Verification",
-    description: "Vos documents sont recus par l'agence.",
+    id: "verification",
+    title: "Vérification",
+    description: "L’agence vérifie la validité des documents envoyés.",
     statuses: ["PENDING_CALL_CONFIRMATION"],
     icon: ShieldCheck,
-    actionLabel: "Verifier les pieces",
-    actionHref: "#documents",
-    actionHint: "Consultez les fichiers deja envoyes et leur etat.",
   },
   {
+    id: "confirmation",
     title: "Confirmation",
-    description: "Appel confirme et conditions finalisees.",
+    description: "L’agence confirme la réservation après vérification.",
     statuses: ["CALL_CONFIRMED", "EXTENDED_PAYMENT_DEADLINE", "WAITING_AGENCY_PAYMENT"],
     icon: PhoneCall,
-    actionLabel: "Voir le paiement",
-    actionHref: "#payment",
-    actionHint: "Le paiement a l'agence est la prochaine etape visible.",
   },
   {
-    title: "Reservation",
-    description: "Le vehicule vous est reserve.",
+    id: "reservation",
+    title: "Réservation",
+    description: "Le véhicule est réservé pour les dates choisies.",
     statuses: ["RESERVED", "PAID"],
     icon: BadgeCheck,
-    actionLabel: "Voir le vehicule reserve",
-    actionHref: "#vehicle",
-    actionHint: "Rouvrez le vehicule deja bloque pour cette demande.",
   },
   {
+    id: "location",
     title: "Location",
-    description: "La voiture est remise ou en cours d'utilisation.",
+    description: "Le véhicule a été remis au client et la location est active.",
     statuses: ["ACTIVE_RENTAL", "CAR_DELIVERED", "RENTED"],
     icon: CarFront,
-    actionLabel: "Voir les details de location",
-    actionHref: "#details",
-    actionHint: "Les dates et le montant sont affiches plus bas.",
   },
   {
-    title: "Cloture",
-    description: "Retour du vehicule et dossier termine.",
+    id: "cloture",
+    title: "Clôture",
+    description: "Retour du véhicule et fermeture du dossier.",
     statuses: ["CAR_RETURNED", "RETURNED", "COMPLETED"],
     icon: Flag,
-    actionLabel: "Retour en haut du dossier",
-    actionHref: "#request-top",
-    actionHint: "Votre demande est cloturee, mais vous pouvez relire le dossier.",
   },
 ];
 
-const STATUS_INDEX = Object.fromEntries(
-  JOURNEY_STEPS.flatMap((step, index) => step.statuses.map((status) => [status, index] as const)),
-) as Record<string, number>;
+const STEP_INDEX_BY_ID = Object.fromEntries(JOURNEY_STEPS.map((step, index) => [step.id, index] as const)) as Record<
+  StepId,
+  number
+>;
 
 const CANCELLATION_STATUSES = new Set(["CANCELLED", "ABANDONED", "REJECTED"]);
 
@@ -106,19 +121,19 @@ function getJourneyMessage(status: string) {
     case "PENDING":
     case "UNDER_REVIEW":
     case "CALL_ATTEMPTED":
-      return "Votre demande a ete prise en compte. La prochaine etape est la validation des pieces.";
+      return "Votre demande a été prise en compte. La prochaine étape est la validation des pièces.";
     case "DOCUMENT_SUBMISSION_WINDOW":
     case "WAITING_DOCUMENTS":
-      return "Soumettez vos documents maintenant pour debloquer la suite du dossier.";
+      return "Soumettez vos documents pour débloquer la suite du dossier.";
     case "PENDING_CALL_CONFIRMATION":
-      return "Nous avons recu vos pieces. L'equipe revient vers vous pour la confirmation.";
+      return "Nous avons reçu vos pièces. L’équipe revient vers vous pour la vérification.";
     case "CALL_CONFIRMED":
     case "EXTENDED_PAYMENT_DEADLINE":
     case "WAITING_AGENCY_PAYMENT":
-      return "Votre dossier est valide. Il ne reste plus qu'a finaliser la reservation a l'agence.";
+      return "Votre dossier est validé. Il ne reste plus qu’à finaliser la réservation à l’agence.";
     case "RESERVED":
     case "PAID":
-      return "Le vehicule est bloque pour vous et la demande avance vers la remise.";
+      return "Le véhicule est bloqué pour vous et la demande avance vers la remise.";
     case "ACTIVE_RENTAL":
     case "CAR_DELIVERED":
     case "RENTED":
@@ -126,163 +141,567 @@ function getJourneyMessage(status: string) {
     case "CAR_RETURNED":
     case "RETURNED":
     case "COMPLETED":
-      return "La demande est terminee. Le dossier est cloture.";
+      return "La demande est terminée. Le dossier est clôturé.";
     case "CANCELLED":
     case "ABANDONED":
     case "REJECTED":
-      return "La demande a ete fermee.";
+      return "La demande a été fermée.";
     default:
-      return `Statut actuel: ${getStatusLabel(status, "rental")}.`;
+      return `Statut actuel : ${getStatusLabel(status, "rental")}.`;
   }
+}
+
+function getStepRelation(stepIndex: number, currentIndex: number): StepRelation {
+  if (stepIndex < currentIndex) return "completed";
+  if (stepIndex === currentIndex) return "current";
+  return "future";
+}
+
+function getStepStateLabel(stepIndex: number, currentIndex: number) {
+  const relation = getStepRelation(stepIndex, currentIndex);
+
+  switch (relation) {
+    case "completed":
+      return "Terminée";
+    case "current":
+      return "Étape en cours";
+    default:
+      return "Étape à venir";
+  }
+}
+
+function getStepStateTone(stepIndex: number, currentIndex: number) {
+  const relation = getStepRelation(stepIndex, currentIndex);
+
+  switch (relation) {
+    case "completed":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700";
+    case "current":
+      return "border-[#F04B45]/20 bg-[#F04B45]/10 text-[#F04B45]";
+    default:
+      return "border-slate-200 bg-slate-50 text-slate-600";
+  }
+}
+
+function getToneIconClasses(tone: Tone) {
+  switch (tone) {
+    case "emerald":
+      return "bg-emerald-500/10 text-emerald-600";
+    case "rose":
+      return "bg-rose-500/10 text-rose-600";
+    case "sky":
+      return "bg-sky-500/10 text-sky-600";
+    default:
+      return "bg-slate-100 text-slate-600";
+  }
+}
+
+function formatOptionalDate(date?: string | Date | null) {
+  return date ? formatDateTime(date) : "À définir";
+}
+
+function formatOptionalPrice(amount?: number | string | null) {
+  return amount === null || amount === undefined ? "À confirmer" : formatPrice(amount);
+}
+
+interface InfoCardProps {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  tone?: Tone;
+}
+
+function InfoCard({ icon: Icon, title, description, tone = "slate" }: InfoCardProps) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl", getToneIconClasses(tone))}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <h4 className="text-sm font-semibold text-slate-900">{title}</h4>
+          <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface MetricCardProps {
+  label: string;
+  value: string;
+  helper?: string;
+  icon?: LucideIcon;
+  tone?: Tone;
+}
+
+function MetricCard({ label, value, helper, icon: Icon, tone = "slate" }: MetricCardProps) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        {Icon && (
+          <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl", getToneIconClasses(tone))}>
+            <Icon className="h-5 w-5" />
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{label}</p>
+          <p className="mt-2 text-lg font-semibold tracking-tight text-slate-900">{value}</p>
+          {helper && <p className="mt-1 text-sm leading-6 text-slate-500">{helper}</p>}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface RequestJourneyStepperProps {
   status: string;
+  request?: RequestSummary | null;
   className?: string;
 }
 
-function getStepStateLabel(stepIndex: number, currentIndex: number) {
-  if (stepIndex < currentIndex) {
-    return "Terminee";
-  }
-
-  if (stepIndex === currentIndex) {
-    return "Etape en cours";
-  }
-
-  return "Etape a venir";
-}
-
-function getStepStateTone(stepIndex: number, currentIndex: number) {
-  if (stepIndex < currentIndex) {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700";
-  }
-
-  if (stepIndex === currentIndex) {
-    return "border-primary/20 bg-primary/8 text-primary";
-  }
-
-  return "border-slate-200 bg-slate-50 text-slate-600";
-}
-
-function getStepDetails(stepIndex: number, currentIndex: number) {
-  if (stepIndex < currentIndex) {
-    return [
-      "Cette etape a deja ete franchie.",
-      "Vous pouvez consulter les documents et informations deja envoyes.",
-      "Le dossier continue vers la suite du parcours.",
-    ];
-  }
-
-  if (stepIndex === currentIndex) {
-    return [
-      "C'est la phase actuellement active dans votre dossier.",
-      "La prochaine action utile s'affiche ici au bon moment.",
-      "Cliquez sur un autre point pour voir les autres etapes du parcours.",
-    ];
-  }
-
-  return [
-    "Cette etape s'ouvrira quand le dossier avancera.",
-    "Le point est deja prepare pour la suite de votre demande.",
-    "Vous verrez ici les informations correspondantes a ce moment-la.",
-  ];
-}
-
-export function RequestJourneyStepper({ status, className }: RequestJourneyStepperProps) {
-  const currentIndex = STATUS_INDEX[status] ?? 0;
-  const isCancelled = CANCELLATION_STATUSES.has(status);
+export function RequestJourneyStepper({ status, request, className }: RequestJourneyStepperProps) {
+  const currentStepId = JOURNEY_STEPS.find((step) => step.statuses.includes(status))?.id ?? "candidature";
+  const currentIndex = STEP_INDEX_BY_ID[currentStepId] ?? 0;
   const currentStep = JOURNEY_STEPS[currentIndex] ?? JOURNEY_STEPS[0];
-  const [selectedIndex, setSelectedIndex] = useState(currentIndex);
+  const [selectedStep, setSelectedStep] = useState<StepId>(currentStep.id);
 
   useEffect(() => {
-    setSelectedIndex(currentIndex);
-  }, [currentIndex]);
+    setSelectedStep(currentStep.id);
+  }, [currentStep.id]);
 
-  const selectedStep = JOURNEY_STEPS[selectedIndex] ?? JOURNEY_STEPS[currentIndex] ?? JOURNEY_STEPS[0];
-  const selectedStateLabel = getStepStateLabel(selectedIndex, currentIndex);
-  const selectedStateTone = getStepStateTone(selectedIndex, currentIndex);
-  const selectedStepDetails = getStepDetails(selectedIndex, currentIndex);
-  const selectedActionVariant =
-    selectedIndex < currentIndex ? "secondary" : selectedIndex === currentIndex ? "default" : "outline";
-  const SelectedStepIcon = selectedStep.icon;
+  const selectedStepIndex = STEP_INDEX_BY_ID[selectedStep] ?? currentIndex;
+  const selectedStepConfig = JOURNEY_STEPS[selectedStepIndex] ?? currentStep;
+  const selectedStateLabel = getStepStateLabel(selectedStepIndex, currentIndex);
+  const selectedStateTone = getStepStateTone(selectedStepIndex, currentIndex);
+  const dossierLabel = request?.id != null ? `#${request.id}` : "ce dossier";
+  const vehicleTitle =
+    request?.car?.brand || request?.car?.model
+      ? `${request?.car?.brand ?? ""} ${request?.car?.model ?? ""}`.trim()
+      : "Véhicule réservé";
+  const vehicleMeta = request?.car
+    ? `${request.car.category ?? "Catégorie"} • ${request.car.year != null ? String(request.car.year) : "à définir"}`
+    : "Informations de réservation";
+  const requestStartDate = formatOptionalDate(request?.startAt ?? request?.startDate);
+  const requestReturnDate = formatOptionalDate(request?.returnAt ?? request?.returnDate);
+  const requestEstimatedPrice = formatOptionalPrice(request?.estimatedTotalPrice);
+  const requestFinalPrice = formatOptionalPrice(request?.finalPrice ?? request?.estimatedTotalPrice);
+  const progressStop = JOURNEY_STEPS.length > 1 ? (currentIndex / (JOURNEY_STEPS.length - 1)) * 100 : 0;
+  const progressEnd = Math.min(progressStop + 1.5, 100);
+  const timelineConnectorStyle = {
+    backgroundImage: `linear-gradient(90deg, rgba(16,185,129,0.95) 0%, rgba(16,185,129,0.95) ${progressStop}%, rgba(240,75,69,0.95) ${progressStop}%, rgba(240,75,69,0.95) ${progressEnd}%, rgba(226,232,240,1) ${progressEnd}%, rgba(226,232,240,1) 100%)`,
+  };
+  const isCancelled = CANCELLATION_STATUSES.has(status);
+  const currentStepTitle = currentStep.title;
+  const SelectedStepIcon = selectedStepConfig.icon;
+
+  const renderSelectedStepContent = () => {
+    switch (selectedStepConfig.id) {
+      case "candidature":
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <InfoCard
+                icon={CheckCircle2}
+                tone="emerald"
+                title="Demande créée avec succès"
+                description={`Le dossier ${dossierLabel} a bien été enregistré.`}
+              />
+              <InfoCard
+                icon={FileText}
+                tone="sky"
+                title="Informations personnelles enregistrées"
+                description="Vos coordonnées sont prêtes pour le traitement."
+              />
+              <InfoCard
+                icon={ClipboardList}
+                tone="slate"
+                title="Dossier ouvert"
+                description="L’équipe peut maintenant poursuivre la vérification."
+              />
+            </div>
+
+            <div className="flex flex-col gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-sm font-semibold text-emerald-900">Votre candidature est en file de traitement.</p>
+                <p className="mt-1 text-sm leading-6 text-emerald-800/80">
+                  Préparez vos pièces justificatives pour accélérer la suite du dossier.
+                </p>
+              </div>
+              <Button asChild size="sm" variant="outline" className="rounded-full border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50">
+                <a href="#documents">Préparer les pièces</a>
+              </Button>
+            </div>
+          </div>
+        );
+
+      case "pieces":
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-600">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900">CIN / Passeport</h4>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">Statut : à fournir pour poursuivre le dossier.</p>
+                    </div>
+                  </div>
+                  <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-700">
+                    Requis
+                  </span>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Button asChild size="sm" variant="outline" className="rounded-full">
+                    <a href="#documents">Remplacer le fichier</a>
+                  </Button>
+                  <Button asChild size="sm" variant="secondary" className="rounded-full">
+                    <a href="#documents">Voir le document</a>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
+                      <FileCheck2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900">Permis de conduire</h4>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">Statut : à fournir pour finaliser la vérification.</p>
+                    </div>
+                  </div>
+                  <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                    Requis
+                  </span>
+                </div>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <Button asChild size="sm" variant="outline" className="rounded-full">
+                    <a href="#documents">Remplacer le fichier</a>
+                  </Button>
+                  <Button asChild size="sm" variant="secondary" className="rounded-full">
+                    <a href="#documents">Voir le document</a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-sky-200 bg-sky-50/70 px-4 py-4">
+              <p className="text-sm font-semibold text-sky-900">CIN / Passport et permis de conduire requis.</p>
+              <p className="mt-1 text-sm leading-6 text-sky-800/80">
+                Vous pouvez remplacer un fichier à tout moment depuis le bloc de soumission des pièces.
+              </p>
+            </div>
+          </div>
+        );
+
+      case "verification":
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <InfoCard
+                icon={ShieldCheck}
+                tone="sky"
+                title="Documents en cours de contrôle"
+                description="L’agence vérifie la lisibilité et la validité de chaque fichier."
+              />
+              <InfoCard
+                icon={BadgeCheck}
+                tone="emerald"
+                title="Identité client"
+                description="Les informations du dossier sont comparées avec les pièces reçues."
+              />
+              <InfoCard
+                icon={FileCheck2}
+                tone="slate"
+                title="Permis de conduire"
+                description="Le permis est analysé avant d’ouvrir la confirmation."
+              />
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-600">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Vérification des documents</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    Le contrôle est effectué par l’agence avant le passage à l’étape de confirmation.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "confirmation":
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <MetricCard
+                icon={PhoneCall}
+                tone="sky"
+                label="Appel de confirmation"
+                value="Programmé"
+                helper="L’équipe confirme les derniers détails avec le client."
+              />
+              <MetricCard
+                icon={BadgeCheck}
+                tone="emerald"
+                label="Conditions acceptées"
+                value="Prêtes à valider"
+                helper="Les conditions de location sont déjà consultables."
+              />
+              <MetricCard
+                icon={ShieldCheck}
+                tone="slate"
+                label="Statut agence"
+                value="Validation finale"
+                helper="Le dossier attend la dernière approbation."
+              />
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+              <p className="text-sm font-semibold text-slate-900">L’agence confirme la réservation après vérification.</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                Cette étape débloque la réservation du véhicule et prépare la remise.
+              </p>
+            </div>
+          </div>
+        );
+
+      case "reservation":
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                {request?.car?.mainImageUrl ? (
+                  <img src={request.car.mainImageUrl} alt={vehicleTitle} className="h-56 w-full object-cover" />
+                ) : (
+                  <div className="flex h-56 w-full items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-sky-50 text-slate-400">
+                    <CarFront className="h-14 w-14" />
+                  </div>
+                )}
+
+                <div className="p-5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <h4 className="text-xl font-semibold tracking-tight text-slate-900">{vehicleTitle}</h4>
+                      <p className="mt-1 text-sm text-slate-500">{vehicleMeta}</p>
+                    </div>
+                    <span className="inline-flex w-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                      Réservé
+                    </span>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                    <MetricCard icon={CalendarDays} tone="sky" label="Départ" value={requestStartDate} helper="Heure de prise en charge." />
+                    <MetricCard icon={CalendarDays} tone="sky" label="Retour" value={requestReturnDate} helper="Heure de restitution prévue." />
+                    <MetricCard
+                      icon={BadgeCheck}
+                      tone="emerald"
+                      label="Prix estimé"
+                      value={requestEstimatedPrice}
+                      helper="Montant estimé avant clôture du dossier."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                <MetricCard
+                  icon={CalendarDays}
+                  tone="slate"
+                  label="Départ"
+                  value={requestStartDate}
+                  helper="Date et heure de début de location."
+                />
+                <MetricCard
+                  icon={CalendarDays}
+                  tone="slate"
+                  label="Retour"
+                  value={requestReturnDate}
+                  helper="Date et heure de fin de location."
+                />
+                <MetricCard
+                  icon={BadgeCheck}
+                  tone="emerald"
+                  label="Total à payer"
+                  value={requestFinalPrice}
+                  helper="Le montant final est affiché ici quand il est connu."
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case "location":
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <InfoCard
+                icon={CarFront}
+                tone="rose"
+                title="Véhicule en possession du client"
+                description="Le véhicule a été remis et la location est désormais active."
+              />
+              <InfoCard
+                icon={ShieldCheck}
+                tone="emerald"
+                title="Respect des conditions d’utilisation"
+                description="Le client doit respecter les règles prévues dans le contrat."
+              />
+              <InfoCard
+                icon={PhoneCall}
+                tone="sky"
+                title="Assistance disponible"
+                description="L’équipe reste joignable si une aide est nécessaire pendant la location."
+              />
+            </div>
+
+            <div className="rounded-2xl border border-[#F04B45]/15 bg-[#F04B45]/6 px-4 py-4">
+              <p className="text-sm font-semibold text-[#F04B45]">Location en cours</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Le véhicule est actuellement entre les mains du client. La demande reste active jusqu’au retour.
+              </p>
+            </div>
+          </div>
+        );
+
+      case "cloture":
+        return (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <MetricCard
+                icon={CalendarDays}
+                tone="slate"
+                label="Date de retour prévue"
+                value={requestReturnDate}
+                helper="L’équipe prépare la clôture autour de cette date."
+              />
+              <MetricCard
+                icon={CarFront}
+                tone="sky"
+                label="Inspection véhicule"
+                value="À réaliser"
+                helper="L’état du véhicule est vérifié au retour."
+              />
+              <MetricCard
+                icon={FileText}
+                tone="emerald"
+                label="Paiement final / reçu"
+                value={requestFinalPrice}
+                helper="Le reçu est émis après la restitution."
+              />
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+              <p className="text-sm font-semibold text-slate-900">Retour du véhicule et fermeture du dossier.</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                Le dossier sera archivé une fois le véhicule inspecté et le reçu final généré.
+              </p>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
-    <Card className={cn("overflow-hidden rounded-[1.9rem] border border-primary/10 bg-gradient-to-br from-primary/6 via-background to-secondary/10 shadow-[0_24px_70px_-45px_hsl(var(--primary)/0.5)]", className)}>
-      <CardContent className="space-y-6 p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-3xl space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+    <Card
+      className={cn(
+        "overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_28px_80px_-48px_rgba(15,23,42,0.32)]",
+        className,
+      )}
+    >
+      <CardContent className="space-y-8 p-6 lg:p-8">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600">
               Parcours de candidature
             </div>
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">Suivi de votre demande</h2>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">{getJourneyMessage(status)}</p>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Suivi de votre demande</h2>
+              <p className="mt-2 text-sm leading-7 text-slate-500">{getJourneyMessage(status)}</p>
             </div>
           </div>
 
           <div className="flex flex-col items-start gap-3 lg:items-end">
             <StatusBadge status={status} className="px-4 py-1.5" />
-            <Button asChild variant="outline" className="rounded-full">
-              <a href="#documents">Soumettre mes pieces</a>
+            <Button asChild size="sm" variant="outline" className="rounded-full">
+              <a href="#documents">Soumettre mes pièces</a>
             </Button>
           </div>
         </div>
 
-        <p className="text-sm text-muted-foreground">Cliquez sur un point pour afficher le detail de l'etape juste en dessous.</p>
+        <p className="text-sm text-slate-500">Cliquez sur une étape pour afficher son détail juste en dessous.</p>
 
         <div className="overflow-x-auto pb-2">
-          <div className="relative min-w-[860px] px-2 pt-2">
-            <div className="absolute left-8 right-8 top-[1.95rem] h-0.5 rounded-full bg-border/80" />
+          <div className="relative min-w-[920px] px-2 pt-4">
+            <div className="absolute left-8 right-8 top-[1.95rem] h-0.5 rounded-full bg-slate-200" />
+            <div className="absolute left-8 right-8 top-[1.95rem] h-0.5 rounded-full" style={timelineConnectorStyle} />
+
             <div className="grid grid-cols-7 gap-3">
               {JOURNEY_STEPS.map((step, index) => {
-                const isActive = index === currentIndex;
-                const isComplete = index < currentIndex;
-                const isPending = index > currentIndex;
-                const isSelected = index === selectedIndex;
+                const relation = getStepRelation(index, currentIndex);
+                const isSelected = step.id === selectedStep;
                 const StepIcon = step.icon;
 
                 return (
                   <button
-                    key={step.title}
+                    key={step.id}
                     type="button"
-                    onClick={() => setSelectedIndex(index)}
-                    className="group flex min-w-0 flex-col items-center text-center outline-none transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5"
+                    onClick={() => setSelectedStep(step.id)}
+                    className="group flex min-w-0 flex-col items-center text-center outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5"
                     aria-pressed={isSelected}
-                    aria-label={`Afficher le detail de l'etape ${step.title}`}
+                    aria-label={`Afficher le détail de l’étape ${step.title}`}
                   >
                     <div
                       className={cn(
-                        "relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 bg-background text-sm font-bold shadow-sm transition-all duration-200",
-                        isComplete && "border-emerald-500 bg-emerald-500 text-white",
-                        isActive && "border-[#F04B45] bg-[#F04B45] text-white shadow-[0_16px_28px_-18px_rgba(240,75,69,0.95)]",
-                        isPending && "border-border bg-muted text-muted-foreground",
-                        isSelected && "ring-4 ring-primary/15",
+                        "relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 text-sm font-semibold transition-all duration-200",
+                        relation === "completed" && "border-emerald-500 bg-emerald-500 text-white",
+                        relation === "current" && "border-[#F04B45] bg-[#F04B45] text-white",
+                        relation === "future" && "border-slate-200 bg-slate-50 text-slate-500",
+                        isSelected &&
+                          relation === "completed" &&
+                          "scale-[1.04] ring-4 ring-emerald-200 shadow-[0_18px_32px_-20px_rgba(16,185,129,0.8)]",
+                        isSelected &&
+                          relation === "current" &&
+                          "scale-[1.04] ring-4 ring-rose-200 shadow-[0_18px_32px_-20px_rgba(240,75,69,0.8)]",
+                        isSelected &&
+                          relation === "future" &&
+                          "scale-[1.04] border-slate-300 bg-white text-slate-600 ring-4 ring-slate-200 shadow-[0_18px_32px_-20px_rgba(148,163,184,0.55)]",
                       )}
                     >
-                      {isComplete ? <CheckCircle2 className="h-4 w-4" /> : <StepIcon className="h-4 w-4" />}
+                      {relation === "completed" ? <CheckCircle2 className="h-4 w-4" /> : <StepIcon className="h-4 w-4" />}
                     </div>
 
-                    <div className="mt-3 max-w-[120px] space-y-1">
+                    <div className="mt-3 max-w-[132px] space-y-1.5">
                       <span
                         className={cn(
-                          "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]",
+                          "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
                           getStepStateTone(index, currentIndex),
-                          isSelected && "ring-2 ring-primary/10",
+                          isSelected && "ring-2 ring-slate-200",
                         )}
                       >
-                        <StepIcon className="h-3 w-3" />
                         {index + 1}
                       </span>
                       <p
                         className={cn(
-                          "text-sm font-semibold transition-colors",
-                          isActive || isSelected ? "text-foreground" : isComplete ? "text-foreground" : "text-muted-foreground",
+                          "text-sm font-semibold leading-5 transition-colors",
+                          isSelected || relation !== "future" ? "text-slate-900" : "text-slate-500",
                         )}
                       >
                         {step.title}
                       </p>
-                      <p className="text-[11px] leading-5 text-muted-foreground">{step.description}</p>
+                      <p className="text-[11px] leading-5 text-slate-500">{step.description}</p>
                     </div>
                   </button>
                 );
@@ -293,71 +712,52 @@ export function RequestJourneyStepper({ status, className }: RequestJourneyStepp
 
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={selectedIndex}
+            key={selectedStepConfig.id}
+            layout
             initial={{ opacity: 0, y: 14, scale: 0.992 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.992 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="rounded-[1.75rem] border border-primary/10 bg-background/90 p-5 shadow-sm"
+            transition={{ duration: 0.24, ease: "easeOut" }}
+            className="rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-5 shadow-sm lg:p-6"
           >
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-600 shadow-sm">
                   <SelectedStepIcon className="h-3.5 w-3.5" />
-                  Point selectionne
+                  Point sélectionné
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold tracking-tight text-foreground">{selectedStep.title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground">{selectedStep.description}</p>
+                  <h3 className="text-xl font-semibold tracking-tight text-slate-900">{selectedStepConfig.title}</h3>
+                  <p className="mt-2 text-sm leading-7 text-slate-500">{selectedStepConfig.description}</p>
                 </div>
               </div>
 
-              <span className={cn("inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold", selectedStateTone)}>
-                {selectedStateLabel}
-              </span>
+              <div className="flex flex-col items-start gap-2 lg:items-end">
+                <span className={cn("inline-flex w-fit items-center rounded-full border px-3 py-1 text-xs font-semibold", selectedStateTone)}>
+                  {selectedStateLabel}
+                </span>
+                <span className="inline-flex w-fit items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-500">
+                  Statut : {getStatusLabel(status, "rental")}
+                </span>
+              </div>
             </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              {selectedStepDetails.map((item) => (
-                <div key={item} className="rounded-2xl border border-border/60 bg-slate-50 px-4 py-3 text-sm text-foreground">
-                  {item}
-                </div>
-              ))}
-            </div>
+            <div className="mt-5">{renderSelectedStepContent()}</div>
 
             <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
-              <span className="rounded-full border border-primary/10 bg-primary/5 px-3 py-1.5 text-primary">
-                Etape active: {currentStep.title}
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-emerald-700">
+                Étape active : {currentStepTitle}
               </span>
-              <span className="rounded-full border border-primary/10 bg-background px-3 py-1.5 text-muted-foreground">
-                Statut: {getStatusLabel(status, "rental")}
+              <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-slate-500">
+                Dossier {isCancelled ? "fermé" : "en cours"}
               </span>
-              <span className="rounded-full border border-primary/10 bg-background px-3 py-1.5 text-muted-foreground">
-                Dossier {isCancelled ? "ferme" : "en cours"}
-              </span>
-            </div>
-
-            <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-dashed border-primary/15 bg-primary/5 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-sm font-semibold text-foreground">{selectedStep.actionHint}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Cette action vous emmene directement au bon endroit dans le dossier.
-                </p>
-              </div>
-
-              <Button asChild variant={selectedActionVariant} className="gap-2 rounded-full">
-                <a href={selectedStep.actionHref}>
-                  {selectedStep.actionLabel}
-                  <ArrowRight className="h-4 w-4" />
-                </a>
-              </Button>
             </div>
           </motion.div>
         </AnimatePresence>
 
         {isCancelled && (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            Cette demande a ete fermee. Vous pouvez repartir sur une nouvelle reservation quand vous voulez.
+            Cette demande a été fermée. Vous pouvez repartir sur une nouvelle réservation quand vous le souhaitez.
           </div>
         )}
       </CardContent>

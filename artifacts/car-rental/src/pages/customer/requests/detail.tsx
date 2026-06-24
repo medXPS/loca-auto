@@ -113,14 +113,14 @@ export default function CustomerRequestDetail() {
     (!requestCinDocument || !requestLicenseDocument);
 
   return (
-    <div id="request-top" className="mx-auto max-w-4xl space-y-6 px-4 py-8">
+    <div id="request-top" className="mx-auto max-w-5xl space-y-6 px-4 py-8">
       <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-serif font-bold tracking-tight">Ma Demande #{request.id}</h1>
-          <p className="mt-1 text-muted-foreground">Creee le {formatDateTime(request.createdAt)}</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Ma Demande #{request.id}</h1>
+          <p className="mt-1 text-muted-foreground">Créée le {formatDateTime(request.createdAt)}</p>
         </div>
         <div className="flex items-center gap-3">
-          <StatusBadge status={request.status} className="px-4 py-1.5 text-lg" />
+          <StatusBadge status={request.status} className="px-4 py-1.5" />
           {canCancel && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -152,7 +152,7 @@ export default function CustomerRequestDetail() {
         </div>
       </div>
 
-      <RequestJourneyStepper status={request.status} />
+      <RequestJourneyStepper status={request.status} request={request} />
 
       <Card
         id="documents"
