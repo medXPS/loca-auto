@@ -7,6 +7,7 @@ import {
   useListDocuments,
   getListDocumentsQueryKey,
 } from "@workspace/api-client-react";
+import { calculateRentalDays } from "@workspace/api-client-react/availability";
 import { useRoute } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice, formatDateTime } from "@/lib/utils";
@@ -34,6 +35,164 @@ import { DocumentUploadField } from "@/components/document-upload-field";
 function fileNameFromUrl(fileUrl: string) {
   const fileName = fileUrl.split("/").pop();
   return fileName && fileName.trim() ? fileName : fileUrl;
+}
+
+type RequestSummary = {
+  id?: number | string | null;
+  status: string;
+  car?: {
+    brand?: string | null;
+    model?: string | null;
+    category?: string | null;
+    year?: string | number | null;
+    mainImageUrl?: string | null;
+  } | null;
+  startAt?: string | Date | null;
+  startDate?: string | Date | null;
+  returnAt?: string | Date | null;
+  returnDate?: string | Date | null;
+  estimatedTotalPrice?: number | string | null;
+  finalPrice?: number | string | null;
+};
+
+function toIsoDateValue(value?: string | Date | null) {
+  if (!value) return "";
+
+  if (typeof value === "string") {
+    return value.slice(0, 10);
+  }
+
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getReservationDays(start?: string | Date | null, end?: string | Date | null) {
+  const startDate = toIsoDateValue(start);
+  const endDate = toIsoDateValue(end);
+
+  if (!startDate || !endDate) {
+    return 0;
+  }
+
+  return calculateRentalDays(startDate, endDate);
+}
+
+function ReservationOverviewCard({
+  request,
+  reservationStart,
+  reservationEnd,
+  rentalDays,
+}: {
+  request: RequestSummary;
+  reservationStart?: string | Date | null;
+  reservationEnd?: string | Date | null;
+  rentalDays: number;
+}) {
+  const carName = [request.car?.brand, request.car?.model].filter(Boolean).join(" ").trim() || "Vehicule reserve";
+  const carMeta =
+    [request.car?.category, request.car?.year != null ? String(request.car.year) : null].filter(Boolean).join(" • ") ||
+    "Resume de la commande";
+  const estimatedPriceLabel = formatPrice(request.estimatedTotalPrice);
+  const totalPriceLabel = formatPrice(request.finalPrice ?? request.estimatedTotalPrice);
+  const rentalDaysLabel = rentalDays > 0 ? `${rentalDays} jour${rentalDays > 1 ? "s" : ""}` : "A definir";
+
+  return (
+    <Card className="overflow-hidden rounded-[1.9rem] border border-slate-900/10 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)] xl:sticky xl:top-6">
+      <div className="relative">
+        {request.car?.mainImageUrl ? (
+          <img src={request.car.mainImageUrl} alt={carName} className="h-56 w-full object-cover" />
+        ) : (
+          <div className="flex h-56 w-full items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-sky-50 text-slate-400">
+            <Car className="h-14 w-14" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/15 to-transparent" />
+
+        <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/70">
+                Commande #{request.id ?? "—"}
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight">{carName}</h2>
+              <p className="mt-1 text-sm text-white/75">{carMeta}</p>
+            </div>
+
+            <StatusBadge status={request.status} className="border-white/15 bg-white/95 px-3 py-1.5 text-xs text-slate-800" />
+          </div>
+        </div>
+      </div>
+
+      <CardHeader className="space-y-1 pb-4">
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+          <Car className="h-3.5 w-3.5" />
+          Resume de la commande
+        </div>
+        <CardTitle className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">
+          Tout ce qu’il faut voir d’un coup d’œil
+        </CardTitle>
+        <p className="text-sm leading-7 text-slate-500">
+          Les dates, la duree et les montants essentiels restent visibles dans cette colonne.
+        </p>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+              <Calendar className="h-3.5 w-3.5 text-primary" />
+              Depart
+            </div>
+            <p className="mt-2 text-sm font-semibold text-slate-900">{formatDateTime(reservationStart)}</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+              <Calendar className="h-3.5 w-3.5 text-primary" />
+              Retour
+            </div>
+            <p className="mt-2 text-sm font-semibold text-slate-900">{formatDateTime(reservationEnd)}</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+              <Clock className="h-3.5 w-3.5 text-primary" />
+              Jours reserves
+            </div>
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{rentalDaysLabel}</p>
+            <p className="mt-1 text-xs text-slate-500">Duree calculee a partir des dates selectionnees.</p>
+          </div>
+        </div>
+
+        <div className="rounded-[1.6rem] border border-emerald-200 bg-emerald-50 px-4 py-4">
+          <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Prix
+          </div>
+          <p className="mt-3 text-sm text-emerald-900/80">Prix estime</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-emerald-700">{estimatedPriceLabel}</p>
+          <div className="mt-4 border-t border-emerald-200 pt-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Total a payer</p>
+            <p className="mt-2 text-3xl font-semibold tracking-tight text-emerald-700">{totalPriceLabel}</p>
+            <p className="mt-1 text-sm leading-6 text-emerald-800/75">
+              Le montant final s’affiche ici des qu’il est confirme par l’agence.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button asChild variant="outline" className="flex-1 rounded-full">
+            <a href="#documents">Soumettre mes pieces</a>
+          </Button>
+          <Button asChild variant="secondary" className="flex-1 rounded-full">
+            <a href="#request-top">Retour en haut</a>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function CustomerRequestDetail() {
@@ -108,19 +267,21 @@ export default function CustomerRequestDetail() {
   const profileLicenseDocument = profileDocuments.find((doc) => doc.type === "PERMIS_CONDUIRE");
   const cinDocument = requestCinDocument || profileCinDocument || null;
   const licenseDocument = requestLicenseDocument || profileLicenseDocument || null;
-  const hasReusableProfileDocuments =
-    Boolean(profileCinDocument || profileLicenseDocument) &&
-    (!requestCinDocument || !requestLicenseDocument);
+  const hasReusableProfileDocuments = Boolean(profileCinDocument || profileLicenseDocument) && (!requestCinDocument || !requestLicenseDocument);
+
+  const requestSummary = request as RequestSummary;
+  const reservationStart = requestSummary.startAt || requestSummary.startDate;
+  const reservationEnd = requestSummary.returnAt || requestSummary.returnDate;
+  const rentalDays = getReservationDays(reservationStart, reservationEnd);
 
   return (
-    <div id="request-top" className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-      <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div id="request-top" className="mx-auto max-w-[96rem] space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mb-8 flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Ma Demande #{request.id}</h1>
-          <p className="mt-1 text-muted-foreground">Créée le {formatDateTime(request.createdAt)}</p>
+          <p className="mt-1 text-muted-foreground">Creee le {formatDateTime(request.createdAt)}</p>
         </div>
         <div className="flex items-center gap-3">
-          <StatusBadge status={request.status} className="px-4 py-1.5" />
           {canCancel && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -152,186 +313,143 @@ export default function CustomerRequestDetail() {
         </div>
       </div>
 
-      <RequestJourneyStepper status={request.status} request={request} />
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[400px_minmax(0,1fr)] xl:items-start">
+        <aside className="space-y-6 xl:sticky xl:top-6">
+          <ReservationOverviewCard
+            request={requestSummary}
+            reservationStart={reservationStart}
+            reservationEnd={reservationEnd}
+            rentalDays={rentalDays}
+          />
+        </aside>
 
-      <Card
-        id="documents"
-        className="overflow-hidden rounded-[1.9rem] border border-slate-900/10 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]"
-      >
-        <CardContent className="space-y-6 p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                <FileText className="h-3.5 w-3.5" />
-                Soumission des pieces
-              </div>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
-                Validez vos documents pour passer a l'etape suivante
-              </h2>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                Vos documents deja presentes dans le profil apparaissent ici. Vous pouvez les reutiliser ou les remplacer avant de valider cette demande.
-              </p>
-            </div>
-          </div>
+        <main className="min-w-0 space-y-6">
+          <RequestJourneyStepper status={request.status} request={request} />
 
-          {hasReusableProfileDocuments && (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              Nous avons trouve vos documents dans votre profil. Vous pouvez les soumettre directement ou les remplacer pour cette reservation.
+          {showDocumentCountdown && request.documentDeadline && (
+            <CountdownTimer
+              deadline={request.documentDeadline}
+              onExpire={handleSuccess}
+              label="Delai pour envoyer vos documents"
+              description="Envoyez votre CIN ou passeport et votre permis avant la fin du compte a rebours pour garder le vehicule bloque."
+              expiredDescription="Le delai d'envoi des documents est depasse. La demande peut etre liberee."
+            />
+          )}
+
+          {showPaymentCountdown && request.paymentDeadline && (
+            <div id="payment">
+              <CountdownTimer deadline={request.paymentDeadline} onExpire={handleSuccess} />
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <DocumentUploadField
-              label="CIN / Passeport"
-              docType="CIN"
-              rentalRequestId={id}
-              existingDocument={cinDocument || null}
-              allowExistingDocumentSubmit
-              confirmBeforeSubmit
-              confirmTitle="Valider le document"
-              confirmDescription={
-                cinDocument
-                  ? `Le document ${fileNameFromUrl(cinDocument.fileUrl)} sera rattache a cette demande.`
-                  : "Le document sera rattache a cette demande."
-              }
-              confirmActionLabel="Valider"
-              onUploaded={handleDocsRefresh}
-            />
-
-            <DocumentUploadField
-              label="Permis de conduire"
-              docType="PERMIS_CONDUIRE"
-              rentalRequestId={id}
-              existingDocument={licenseDocument || null}
-              allowExistingDocumentSubmit
-              confirmBeforeSubmit
-              confirmTitle="Valider le document"
-              confirmDescription={
-                licenseDocument
-                  ? `Le document ${fileNameFromUrl(licenseDocument.fileUrl)} sera rattache a cette demande.`
-                  : "Le document sera rattache a cette demande."
-              }
-              confirmActionLabel="Valider"
-              onUploaded={handleDocsRefresh}
-            />
-          </div>
-
-          {documents && documents.length > 0 && (
-            <div className="border-t pt-4">
-              <p className="mb-3 text-xs font-medium text-muted-foreground">Documents envoyes :</p>
-              <ul className="space-y-2">
-                {documents.map((doc) => (
-                  <li key={doc.id} className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-                    <span className="font-medium">
-                      {doc.type === "CIN" ? "CIN / Passeport" : doc.type === "PASSPORT" ? "Passeport" : "Permis de conduire"}
-                    </span>
-                    <span className="truncate text-muted-foreground">— {fileNameFromUrl(doc.fileUrl)}</span>
-                  </li>
-                ))}
-              </ul>
+          {request.status === "DOCUMENT_SUBMISSION_WINDOW" && (
+            <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+              <FileText className="mt-0.5 h-6 w-6 shrink-0" />
+              <div>
+                <h3 className="font-bold">Documents requis sous 30 minutes</h3>
+                <p className="mt-1 text-sm">
+                  Televersez votre CIN ou passeport et votre permis de conduire pour garder le vehicule bloque.
+                </p>
+              </div>
             </div>
           )}
-        </CardContent>
-      </Card>
 
-      {showDocumentCountdown && request.documentDeadline && (
-        <CountdownTimer
-          deadline={request.documentDeadline}
-          onExpire={handleSuccess}
-          className="mb-8"
-          label="Delai pour envoyer vos documents"
-          description="Envoyez votre CIN ou passeport et votre permis avant la fin du compte a rebours pour garder le vehicule bloque."
-          expiredDescription="Le delai d'envoi des documents est depasse. La demande peut etre liberee."
-        />
-      )}
-
-      {showPaymentCountdown && request.paymentDeadline && (
-        <div id="payment">
-          <CountdownTimer deadline={request.paymentDeadline} onExpire={handleSuccess} className="mb-8" />
-        </div>
-      )}
-
-      {request.status === "DOCUMENT_SUBMISSION_WINDOW" && (
-        <div className="mb-6 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-          <FileText className="mt-0.5 h-6 w-6 shrink-0" />
-          <div>
-            <h3 className="font-bold">Documents requis sous 30 minutes</h3>
-            <p className="mt-1 text-sm">
-              Televersez votre CIN ou passeport et votre permis de conduire pour garder le vehicule bloque.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {(request.status === "CALL_CONFIRMED" || request.status === "EXTENDED_PAYMENT_DEADLINE") && (
-        <div className="mb-6 flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-800">
-          <Clock className="mt-0.5 h-6 w-6 shrink-0" />
-          <div>
-            <h3 className="font-bold">Prochaine etape : Paiement a l'agence</h3>
-            <p className="mt-1 text-sm">
-              Votre demande a ete confirmee par telephone. Veuillez vous presenter a notre agence avant la limite de 24h pour finaliser le paiement en especes et recuperer votre vehicule.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <Card id="vehicle">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Car className="h-5 w-5 text-primary" />
-              Vehicule reserve
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {request.car?.mainImageUrl && (
-              <img
-                src={request.car.mainImageUrl}
-                alt={request.car.model}
-                className="mb-4 h-48 w-full rounded-lg object-cover"
-              />
-            )}
-            <h3 className="text-xl font-bold">
-              {request.car?.brand} {request.car?.model}
-            </h3>
-            <p className="text-muted-foreground">
-              {request.car?.category} • {request.car?.year}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card id="details">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              Details de location
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+          {(request.status === "CALL_CONFIRMED" || request.status === "EXTENDED_PAYMENT_DEADLINE") && (
+            <div className="flex gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-800">
+              <Clock className="mt-0.5 h-6 w-6 shrink-0" />
               <div>
-                <p className="mb-1 text-sm text-muted-foreground">Depart</p>
-                <p className="text-lg font-medium">{formatDateTime((request as any).startAt || request.startDate)}</p>
-              </div>
-              <div>
-                <p className="mb-1 text-sm text-muted-foreground">Retour</p>
-                <p className="text-lg font-medium">{formatDateTime((request as any).returnAt || request.returnDate)}</p>
+                <h3 className="font-bold">Prochaine etape : Paiement a l'agence</h3>
+                <p className="mt-1 text-sm">
+                  Votre demande a ete confirmee par telephone. Veuillez vous presenter a notre agence avant la limite de 24h pour
+                  finaliser le paiement en especes et recuperer votre vehicule.
+                </p>
               </div>
             </div>
+          )}
 
-            <div className="border-t pt-4">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-muted-foreground">Prix estime</p>
-                <p>{formatPrice(request.estimatedTotalPrice)}</p>
+          <Card
+            id="documents"
+            className="overflow-hidden rounded-[1.9rem] border border-slate-900/10 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]"
+          >
+            <CardContent className="space-y-6 p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-3xl">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                    <FileText className="h-3.5 w-3.5" />
+                    Soumission des pieces
+                  </div>
+                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+                    Validez vos documents pour passer a l'etape suivante
+                  </h2>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    Vos documents deja presentes dans le profil apparaissent ici. Vous pouvez les reutiliser ou les remplacer avant de
+                    valider cette demande.
+                  </p>
+                </div>
               </div>
-              <div className="mt-2 flex items-center justify-between border-t border-dashed pt-2 text-xl font-bold text-primary">
-                <p>Total a payer</p>
-                <p>{formatPrice(request.finalPrice || request.estimatedTotalPrice)}</p>
+
+              {hasReusableProfileDocuments && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                  Nous avons trouve vos documents dans votre profil. Vous pouvez les soumettre directement ou les remplacer pour cette
+                  reservation.
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <DocumentUploadField
+                  label="CIN / Passeport"
+                  docType="CIN"
+                  rentalRequestId={id}
+                  existingDocument={cinDocument || null}
+                  allowExistingDocumentSubmit
+                  confirmBeforeSubmit
+                  confirmTitle="Valider le document"
+                  confirmDescription={
+                    cinDocument
+                      ? `Le document ${fileNameFromUrl(cinDocument.fileUrl)} sera rattache a cette demande.`
+                      : "Le document sera rattache a cette demande."
+                  }
+                  confirmActionLabel="Valider"
+                  onUploaded={handleDocsRefresh}
+                />
+
+                <DocumentUploadField
+                  label="Permis de conduire"
+                  docType="PERMIS_CONDUIRE"
+                  rentalRequestId={id}
+                  existingDocument={licenseDocument || null}
+                  allowExistingDocumentSubmit
+                  confirmBeforeSubmit
+                  confirmTitle="Valider le document"
+                  confirmDescription={
+                    licenseDocument
+                      ? `Le document ${fileNameFromUrl(licenseDocument.fileUrl)} sera rattache a cette demande.`
+                      : "Le document sera rattache a cette demande."
+                  }
+                  confirmActionLabel="Valider"
+                  onUploaded={handleDocsRefresh}
+                />
               </div>
-            </div>
-          </CardContent>
-        </Card>
+
+              {documents && documents.length > 0 && (
+                <div className="border-t pt-4">
+                  <p className="mb-3 text-xs font-medium text-muted-foreground">Documents envoyes :</p>
+                  <ul className="space-y-2">
+                    {documents.map((doc) => (
+                      <li key={doc.id} className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                        <span className="font-medium">
+                          {doc.type === "CIN" ? "CIN / Passeport" : doc.type === "PASSPORT" ? "Passeport" : "Permis de conduire"}
+                        </span>
+                        <span className="truncate text-muted-foreground">â€” {fileNameFromUrl(doc.fileUrl)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </main>
       </div>
     </div>
   );
