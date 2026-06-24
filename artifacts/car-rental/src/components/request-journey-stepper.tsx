@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BadgeCheck,
@@ -257,10 +257,11 @@ function MetricCard({ label, value, helper, icon: Icon, tone = "slate" }: Metric
 interface RequestJourneyStepperProps {
   status: string;
   request?: RequestSummary | null;
+  piecesContent?: ReactNode;
   className?: string;
 }
 
-export function RequestJourneyStepper({ status, request, className }: RequestJourneyStepperProps) {
+export function RequestJourneyStepper({ status, request, piecesContent, className }: RequestJourneyStepperProps) {
   const currentStepId = JOURNEY_STEPS.find((step) => step.statuses.includes(status))?.id ?? "candidature";
   const currentIndex = STEP_INDEX_BY_ID[currentStepId] ?? 0;
   const currentStep = JOURNEY_STEPS[currentIndex] ?? JOURNEY_STEPS[0];
@@ -328,72 +329,30 @@ export function RequestJourneyStepper({ status, request, className }: RequestJou
                   Préparez vos pièces justificatives pour accélérer la suite du dossier.
                 </p>
               </div>
-              <Button asChild size="sm" variant="outline" className="rounded-full border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50">
-                <a href="#documents">Préparer les pièces</a>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="rounded-full border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50"
+                onClick={() => setSelectedStep("pieces")}
+              >
+                Préparer les pièces
               </Button>
             </div>
           </div>
         );
 
       case "pieces":
+        if (piecesContent) {
+          return <div className="space-y-6">{piecesContent}</div>;
+        }
+
         return (
           <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-600">
-                      <FileText className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-900">CIN / Passeport</h4>
-                      <p className="mt-1 text-sm leading-6 text-slate-500">Statut : à fournir pour poursuivre le dossier.</p>
-                    </div>
-                  </div>
-                  <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-700">
-                    Requis
-                  </span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Button asChild size="sm" variant="outline" className="rounded-full">
-                    <a href="#documents">Remplacer le fichier</a>
-                  </Button>
-                  <Button asChild size="sm" variant="secondary" className="rounded-full">
-                    <a href="#documents">Voir le document</a>
-                  </Button>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
-                      <FileCheck2 className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-900">Permis de conduire</h4>
-                      <p className="mt-1 text-sm leading-6 text-slate-500">Statut : à fournir pour finaliser la vérification.</p>
-                    </div>
-                  </div>
-                  <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
-                    Requis
-                  </span>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <Button asChild size="sm" variant="outline" className="rounded-full">
-                    <a href="#documents">Remplacer le fichier</a>
-                  </Button>
-                  <Button asChild size="sm" variant="secondary" className="rounded-full">
-                    <a href="#documents">Voir le document</a>
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-sky-200 bg-sky-50/70 px-4 py-4">
-              <p className="text-sm font-semibold text-sky-900">CIN / Passport et permis de conduire requis.</p>
-              <p className="mt-1 text-sm leading-6 text-sky-800/80">
-                Vous pouvez remplacer un fichier à tout moment depuis le bloc de soumission des pièces.
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
+              <p className="text-sm font-semibold text-slate-900">Soumission des pièces</p>
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                Le bloc de soumission des documents s’affichera ici pour compléter votre demande.
               </p>
             </div>
           </div>
@@ -635,8 +594,8 @@ export function RequestJourneyStepper({ status, request, className }: RequestJou
 
           <div className="flex flex-col items-start gap-3 lg:items-end">
             <StatusBadge status={status} className="px-4 py-1.5" />
-            <Button asChild size="sm" variant="outline" className="rounded-full">
-              <a href="#documents">Soumettre mes pièces</a>
+            <Button type="button" size="sm" variant="outline" className="rounded-full" onClick={() => setSelectedStep("pieces")}>
+              Soumettre mes pièces
             </Button>
           </div>
         </div>

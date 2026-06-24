@@ -184,7 +184,7 @@ function ReservationOverviewCard({
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button asChild variant="outline" className="flex-1 rounded-full">
-            <a href="#documents">Soumettre mes pieces</a>
+            <a href="#request-top">Retour au suivi</a>
           </Button>
           <Button asChild variant="secondary" className="flex-1 rounded-full">
             <a href="#request-top">Retour en haut</a>
@@ -273,6 +273,85 @@ export default function CustomerRequestDetail() {
   const reservationStart = requestSummary.startAt || requestSummary.startDate;
   const reservationEnd = requestSummary.returnAt || requestSummary.returnDate;
   const rentalDays = getReservationDays(reservationStart, reservationEnd);
+  const piecesContent = (
+    <div id="journey-pieces" className="space-y-6 rounded-[1.6rem] border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+            <FileText className="h-3.5 w-3.5" />
+            Soumission des pieces
+          </div>
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+            Validez vos documents pour passer a l'etape suivante
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-muted-foreground">
+            Vos documents deja presentes dans le profil apparaissent ici. Vous pouvez les reutiliser ou les remplacer avant de
+            valider cette demande.
+          </p>
+        </div>
+      </div>
+
+      {hasReusableProfileDocuments && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Nous avons trouve vos documents dans votre profil. Vous pouvez les soumettre directement ou les remplacer pour cette
+          reservation.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <DocumentUploadField
+          label="CIN / Passeport"
+          docType="CIN"
+          rentalRequestId={id}
+          existingDocument={cinDocument || null}
+          allowExistingDocumentSubmit
+          confirmBeforeSubmit
+          confirmTitle="Valider le document"
+          confirmDescription={
+            cinDocument
+              ? `Le document ${fileNameFromUrl(cinDocument.fileUrl)} sera rattache a cette demande.`
+              : "Le document sera rattache a cette demande."
+          }
+          confirmActionLabel="Valider"
+          onUploaded={handleDocsRefresh}
+        />
+
+        <DocumentUploadField
+          label="Permis de conduire"
+          docType="PERMIS_CONDUIRE"
+          rentalRequestId={id}
+          existingDocument={licenseDocument || null}
+          allowExistingDocumentSubmit
+          confirmBeforeSubmit
+          confirmTitle="Valider le document"
+          confirmDescription={
+            licenseDocument
+              ? `Le document ${fileNameFromUrl(licenseDocument.fileUrl)} sera rattache a cette demande.`
+              : "Le document sera rattache a cette demande."
+          }
+          confirmActionLabel="Valider"
+          onUploaded={handleDocsRefresh}
+        />
+      </div>
+
+      {documents && documents.length > 0 && (
+        <div className="border-t pt-4">
+          <p className="mb-3 text-xs font-medium text-muted-foreground">Documents envoyes :</p>
+          <ul className="space-y-2">
+            {documents.map((doc) => (
+              <li key={doc.id} className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                <span className="font-medium">
+                  {doc.type === "CIN" ? "CIN / Passeport" : doc.type === "PASSPORT" ? "Passeport" : "Permis de conduire"}
+                </span>
+                <span className="truncate text-muted-foreground">- {fileNameFromUrl(doc.fileUrl)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div id="request-top" className="mx-auto max-w-[96rem] space-y-6 px-4 py-8 sm:px-6 lg:px-8">
@@ -324,7 +403,7 @@ export default function CustomerRequestDetail() {
         </aside>
 
         <main className="min-w-0 space-y-6">
-          <RequestJourneyStepper status={request.status} request={request} />
+          <RequestJourneyStepper status={request.status} request={request} piecesContent={piecesContent} />
 
           {showDocumentCountdown && request.documentDeadline && (
             <CountdownTimer
@@ -367,88 +446,6 @@ export default function CustomerRequestDetail() {
             </div>
           )}
 
-          <Card
-            id="documents"
-            className="overflow-hidden rounded-[1.9rem] border border-slate-900/10 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]"
-          >
-            <CardContent className="space-y-6 p-6">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="max-w-3xl">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                    <FileText className="h-3.5 w-3.5" />
-                    Soumission des pieces
-                  </div>
-                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
-                    Validez vos documents pour passer a l'etape suivante
-                  </h2>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    Vos documents deja presentes dans le profil apparaissent ici. Vous pouvez les reutiliser ou les remplacer avant de
-                    valider cette demande.
-                  </p>
-                </div>
-              </div>
-
-              {hasReusableProfileDocuments && (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                  Nous avons trouve vos documents dans votre profil. Vous pouvez les soumettre directement ou les remplacer pour cette
-                  reservation.
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <DocumentUploadField
-                  label="CIN / Passeport"
-                  docType="CIN"
-                  rentalRequestId={id}
-                  existingDocument={cinDocument || null}
-                  allowExistingDocumentSubmit
-                  confirmBeforeSubmit
-                  confirmTitle="Valider le document"
-                  confirmDescription={
-                    cinDocument
-                      ? `Le document ${fileNameFromUrl(cinDocument.fileUrl)} sera rattache a cette demande.`
-                      : "Le document sera rattache a cette demande."
-                  }
-                  confirmActionLabel="Valider"
-                  onUploaded={handleDocsRefresh}
-                />
-
-                <DocumentUploadField
-                  label="Permis de conduire"
-                  docType="PERMIS_CONDUIRE"
-                  rentalRequestId={id}
-                  existingDocument={licenseDocument || null}
-                  allowExistingDocumentSubmit
-                  confirmBeforeSubmit
-                  confirmTitle="Valider le document"
-                  confirmDescription={
-                    licenseDocument
-                      ? `Le document ${fileNameFromUrl(licenseDocument.fileUrl)} sera rattache a cette demande.`
-                      : "Le document sera rattache a cette demande."
-                  }
-                  confirmActionLabel="Valider"
-                  onUploaded={handleDocsRefresh}
-                />
-              </div>
-
-              {documents && documents.length > 0 && (
-                <div className="border-t pt-4">
-                  <p className="mb-3 text-xs font-medium text-muted-foreground">Documents envoyes :</p>
-                  <ul className="space-y-2">
-                    {documents.map((doc) => (
-                      <li key={doc.id} className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-                        <span className="font-medium">
-                          {doc.type === "CIN" ? "CIN / Passeport" : doc.type === "PASSPORT" ? "Passeport" : "Permis de conduire"}
-                        </span>
-                        <span className="truncate text-muted-foreground">â€” {fileNameFromUrl(doc.fileUrl)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </main>
       </div>
     </div>
