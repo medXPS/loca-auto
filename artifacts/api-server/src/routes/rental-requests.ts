@@ -661,6 +661,24 @@ async function buildReceiptPdfLegacy(args: {
   return pdfDone;
 }
 
+type ReceiptPdfArgs = Parameters<typeof buildReceiptPdfLegacy>[0];
+
+function isMissingChromeError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /Could not find Chrome|Browser was not found|executablePath|Chrome \(ver\./i.test(message);
+}
+
+async function buildReceiptPdfSafe(args: ReceiptPdfArgs) {
+  try {
+    return await buildReceiptPdf(args);
+  } catch (error) {
+    if (isMissingChromeError(error)) {
+      return buildReceiptPdfLegacy(args);
+    }
+    throw error;
+  }
+}
+
 // GET /api/rental-requests/:id/receipt
 router.get("/:id/receipt", authMiddleware, async (req, res) => {
   try {
@@ -704,7 +722,7 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
       return;
     }
 
-    const pdfBuffer = await buildReceiptPdf(receiptArgs);
+    const pdfBuffer = await buildReceiptPdfSafe(receiptArgs);
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="recu-${receiptNumber}.pdf"`);
@@ -1146,7 +1164,7 @@ router.patch("/:id/confirm-payment", authMiddleware, requireRole("ADMIN", "AGENT
     const verificationUrl = `${baseUrl}/api/rental-requests/${result.id}/receipt`;
 
     try {
-      const pdfBuffer = await buildReceiptPdf({
+      const pdfBuffer = await buildReceiptPdfSafe({
         settings: settings || {},
         request: result as any,
         receiptNumber,
