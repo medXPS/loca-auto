@@ -1,4 +1,4 @@
-import { useMemo, useState, type ComponentType } from "react";
+import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useListCars } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
@@ -6,38 +6,8 @@ import { CarCard } from "@/components/car-card";
 import { ReservationSearchBar } from "@/components/reservation-search-bar";
 import { Seo } from "@/components/seo";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowRight,
-  BadgeCheck,
-  CircleCheckBig,
-  MessageCircle,
-  ShieldCheck,
-  Sparkles,
-  Star,
-} from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import { fetchBrands } from "@/lib/fleet-catalog";
-
-function FeaturePill({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex items-start gap-3 rounded-[1.45rem] border border-slate-200/80 bg-white px-4 py-4 shadow-[0_16px_34px_-28px_rgba(16,23,34,0.2)]">
-      <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#F04B45]/10 text-[#F04B45]">
-        <Icon className="h-5 w-5" />
-      </span>
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-slate-900">{title}</p>
-        <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
-      </div>
-    </div>
-  );
-}
 
 function SectionHeading({
   eyebrow,
@@ -56,15 +26,6 @@ function SectionHeading({
     </div>
   );
 }
-
-const trustItems = [
-  { icon: ShieldCheck, title: "Assurance incluse", description: "Couverture complete des la prise en charge." },
-  { icon: BadgeCheck, title: "Prix transparents", description: "Aucun frais cache, prix clairs et justes." },
-  { icon: MessageCircle, title: "Support WhatsApp", description: "Reponse rapide pour toutes vos questions." },
-  { icon: Sparkles, title: "Reservation rapide", description: "Processus simple et 100% en ligne." },
-  { icon: CircleCheckBig, title: "Agence verifiee", description: "Agence locale fiable et certifiee." },
-  { icon: Star, title: "Avis clients", description: "4,8/5 sur +1200 clients satisfaits." },
-];
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -242,13 +203,6 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="relative z-10 -mt-10 px-2 sm:px-6 lg:px-10">
-          <div className="grid gap-4 rounded-[2rem] border border-slate-200/80 bg-white px-5 py-5 shadow-[0_28px_64px_-40px_rgba(16,23,34,0.22)] md:grid-cols-2 xl:grid-cols-3">
-            {trustItems.map((item) => (
-              <FeaturePill key={item.title} {...item} />
-            ))}
-          </div>
-        </div>
       </section>
 
       {brandShowcase.length > 0 && (
