@@ -61,6 +61,20 @@ function buildWhatsAppHref(carName: string, message: string) {
   return `https://wa.me/212600000000?text=${encodeURIComponent(`${carName}\n${message}`)}`;
 }
 
+function looksLikeVideoUrl(url: string) {
+  const normalizedUrl = url.trim().toLowerCase();
+  return (
+    normalizedUrl.startsWith("data:video/") ||
+    /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i.test(normalizedUrl)
+  );
+}
+
+function resolveMediaType(media: GalleryImage) {
+  if (media.mediaType === "IMAGE_360") return "IMAGE_360";
+  if (media.mediaType === "VIDEO" || looksLikeVideoUrl(media.url)) return "VIDEO";
+  return "IMAGE";
+}
+
 function Gallery({
   images,
   mainImageUrl,
@@ -108,12 +122,13 @@ function Gallery({
   }
 
   const activeMedia = visibleMedia[activeIndex];
+  const activeMediaType = resolveMediaType(activeMedia);
 
   return (
     <div className="space-y-3">
       <div className="group relative overflow-hidden rounded-[2rem] bg-muted shadow-[0_24px_60px_-34px_rgba(16,23,34,0.18)]">
         <div className="aspect-[16/10]">
-          {activeMedia.mediaType === "VIDEO" ? (
+          {activeMediaType === "VIDEO" ? (
             <video
               src={activeMedia.url}
               className="h-full w-full object-cover"
@@ -170,6 +185,7 @@ function Gallery({
       {visibleMedia.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
           {visibleMedia.map((item, index) => (
+            // Keep thumbnails resilient if older rows were labeled as images.
             <button
               key={item.id}
               type="button"
@@ -180,7 +196,7 @@ function Gallery({
                   : "border-transparent opacity-70 hover:opacity-100"
               }`}
             >
-              {item.mediaType === "VIDEO" ? (
+              {resolveMediaType(item) === "VIDEO" ? (
                 <video
                   src={item.url}
                   className="h-full w-full object-cover"

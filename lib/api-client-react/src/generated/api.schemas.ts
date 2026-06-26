@@ -131,6 +131,8 @@ export interface CarImage {
   altText?: string | null;
   isMain?: boolean;
   sortOrder?: number;
+  mediaType?: "IMAGE" | "VIDEO" | "IMAGE_360";
+  sourceType?: "URL" | "UPLOAD";
 }
 
 export interface CarDetail {
@@ -246,6 +248,8 @@ export interface CarImageInput {
   altText?: string;
   isMain?: boolean;
   sortOrder?: number;
+  mediaType?: "IMAGE" | "VIDEO" | "IMAGE_360";
+  sourceType?: "URL" | "UPLOAD";
 }
 
 export interface AvailabilityBlock {
@@ -580,6 +584,14 @@ export interface AuditLog {
   userId?: number | null;
   /** @nullable */
   userFullName?: string | null;
+  /** @nullable */
+  userEmail?: string | null;
+  /** @nullable */
+  userRole?: string | null;
+  /** @nullable */
+  ipAddress?: string | null;
+  /** @nullable */
+  userAgent?: string | null;
   action: string;
   entityType: string;
   /** @nullable */
@@ -661,70 +673,70 @@ export interface UploadResponse {
 }
 
 export type ListCarsParams = {
-search?: string;
-brand?: string;
-category?: string;
-city?: string;
-transmission?: string;
-fuelType?: string;
-minPrice?: number;
-maxPrice?: number;
-seats?: number;
-available?: boolean;
-startDate?: string;
-returnDate?: string;
-startHour?: string;
-returnHour?: string;
-startAt?: string;
-returnAt?: string;
-sortBy?: string;
-page?: number;
-limit?: number;
+  search?: string;
+  brand?: string;
+  category?: string;
+  city?: string;
+  transmission?: string;
+  fuelType?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  seats?: number;
+  available?: boolean;
+  startDate?: string;
+  returnDate?: string;
+  startHour?: string;
+  returnHour?: string;
+  startAt?: string;
+  returnAt?: string;
+  sortBy?: string;
+  page?: number;
+  limit?: number;
 };
 
 export type ListRentalRequestsParams = {
-status?: string;
-customerId?: number;
-carId?: number;
-page?: number;
-limit?: number;
+  status?: string;
+  customerId?: number;
+  carId?: number;
+  page?: number;
+  limit?: number;
 };
 
 export type ListCustomersParams = {
-search?: string;
-page?: number;
-limit?: number;
+  search?: string;
+  page?: number;
+  limit?: number;
 };
 
 export type ListExpensesParams = {
-carId?: number;
-type?: string;
-from?: string;
-to?: string;
-page?: number;
-limit?: number;
+  carId?: number;
+  type?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  limit?: number;
 };
 
 export type ListBlogPostsParams = {
-page?: number;
-limit?: number;
+  page?: number;
+  limit?: number;
 };
 
 export type GetDashboardStatsParams = {
-from?: string;
-to?: string;
-period?: string;
+  from?: string;
+  to?: string;
+  period?: string;
 };
 
 export type GetRevenueChartParams = {
-months?: number;
+  months?: number;
 };
 
 export type GetRecentRequestsParams = {
-limit?: number;
+  limit?: number;
 };
 
 export type ListAuditLogsParams = {
-page?: number;
-limit?: number;
+  page?: number;
+  limit?: number;
 };

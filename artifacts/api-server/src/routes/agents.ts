@@ -19,7 +19,10 @@ function publicUser(user: typeof schema.usersTable.$inferSelect) {
   };
 }
 
-function formatAgent(agent: typeof schema.agentsTable.$inferSelect, user: typeof schema.usersTable.$inferSelect) {
+function formatAgent(
+  agent: typeof schema.agentsTable.$inferSelect,
+  user: typeof schema.usersTable.$inferSelect,
+) {
   return {
     ...agent,
     user: publicUser(user),
@@ -29,9 +32,13 @@ function formatAgent(agent: typeof schema.agentsTable.$inferSelect, user: typeof
 // GET /api/agents
 router.get("/", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
-    const rows = await db.select({ agent: schema.agentsTable, user: schema.usersTable })
+    const rows = await db
+      .select({ agent: schema.agentsTable, user: schema.usersTable })
       .from(schema.agentsTable)
-      .leftJoin(schema.usersTable, eq(schema.agentsTable.userId, schema.usersTable.id));
+      .leftJoin(
+        schema.usersTable,
+        eq(schema.agentsTable.userId, schema.usersTable.id),
+      );
     res.json(rows.map(({ agent, user }) => formatAgent(agent, user!)));
   } catch (err) {
     req.log.error(err);
@@ -44,17 +51,28 @@ router.post("/", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     const { fullName, email, password, phone } = req.body;
     const passwordHash = await hashPassword(password);
-    const [user] = await db.insert(schema.usersTable).values({
-      fullName,
-      email,
-      phone,
-      passwordHash,
-      role: "AGENT",
-      status: "ACTIVE",
-      emailVerifiedAt: new Date(),
-    }).returning();
-    const [agent] = await db.insert(schema.agentsTable).values({ userId: user.id, createdBy: req.user!.userId }).returning();
-    await logAudit({ userId: req.user!.userId, action: "CREATE_AGENT", entityType: "agent", entityId: agent.id });
+    const [user] = await db
+      .insert(schema.usersTable)
+      .values({
+        fullName,
+        email,
+        phone,
+        passwordHash,
+        role: "AGENT",
+        status: "ACTIVE",
+        emailVerifiedAt: new Date(),
+      })
+      .returning();
+    const [agent] = await db
+      .insert(schema.agentsTable)
+      .values({ userId: user.id, createdBy: req.user!.userId })
+      .returning();
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: "CREATE_AGENT",
+      entityType: "agent",
+      entityId: agent.id,
+    });
     res.status(201).json(formatAgent(agent, user));
   } catch (err) {
     req.log.error(err);
@@ -65,9 +83,13 @@ router.post("/", authMiddleware, requireRole("ADMIN"), async (req, res) => {
 // GET /api/agents/:id
 router.get("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
-    const [row] = await db.select({ agent: schema.agentsTable, user: schema.usersTable })
+    const [row] = await db
+      .select({ agent: schema.agentsTable, user: schema.usersTable })
       .from(schema.agentsTable)
-      .leftJoin(schema.usersTable, eq(schema.agentsTable.userId, schema.usersTable.id))
+      .leftJoin(
+        schema.usersTable,
+        eq(schema.agentsTable.userId, schema.usersTable.id),
+      )
       .where(eq(schema.agentsTable.id, parseInt(String(req.params.id), 10)))
       .limit(1);
     if (!row) {
@@ -85,26 +107,39 @@ router.get("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
 router.patch("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     const { fullName, phone, status } = req.body;
-    const [agent] = await db.select().from(schema.agentsTable).where(eq(schema.agentsTable.id, parseInt(String(req.params.id), 10))).limit(1);
+    const [agent] = await db
+      .select()
+      .from(schema.agentsTable)
+      .where(eq(schema.agentsTable.id, parseInt(String(req.params.id), 10)))
+      .limit(1);
     if (!agent) {
       res.status(404).json({ error: "Agent non trouve" });
       return;
     }
 
     if (fullName || phone) {
-      await db.update(schema.usersTable)
+      await db
+        .update(schema.usersTable)
         .set({ ...(fullName && { fullName }), ...(phone && { phone }) })
         .where(eq(schema.usersTable.id, agent.userId));
     }
 
     if (status) {
-      await db.update(schema.agentsTable).set({ status }).where(eq(schema.agentsTable.id, agent.id));
+      await db
+        .update(schema.agentsTable)
+        .set({ status })
+        .where(eq(schema.agentsTable.id, agent.id));
     }
 
-    const [row] = await db.select({ agent: schema.agentsTable, user: schema.usersTable })
+    const [row] = await db
+      .select({ agent: schema.agentsTable, user: schema.usersTable })
       .from(schema.agentsTable)
-      .leftJoin(schema.usersTable, eq(schema.agentsTable.userId, schema.usersTable.id))
-      .where(eq(schema.agentsTable.id, agent.id)).limit(1);
+      .leftJoin(
+        schema.usersTable,
+        eq(schema.agentsTable.userId, schema.usersTable.id),
+      )
+      .where(eq(schema.agentsTable.id, agent.id))
+      .limit(1);
     res.json(formatAgent(row!.agent, row!.user!));
   } catch (err) {
     req.log.error(err);
@@ -113,15 +148,27 @@ router.patch("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
 });
 
 // DELETE /api/agents/:id
-router.delete("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
-  try {
-    await db.delete(schema.agentsTable).where(eq(schema.agentsTable.id, parseInt(String(req.params.id), 10)));
-    await logAudit({ userId: req.user!.userId, action: "DELETE_AGENT", entityType: "agent", entityId: parseInt(String(req.params.id), 10) });
-    res.status(204).send();
-  } catch (err) {
-    req.log.error(err);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
+router.delete(
+  "/:id",
+  authMiddleware,
+  requireRole("ADMIN"),
+  async (req, res) => {
+    try {
+      await db
+        .delete(schema.agentsTable)
+        .where(eq(schema.agentsTable.id, parseInt(String(req.params.id), 10)));
+      await logAudit(req, {
+        userId: req.user!.userId,
+        action: "DELETE_AGENT",
+        entityType: "agent",
+        entityId: parseInt(String(req.params.id), 10),
+      });
+      res.status(204).send();
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  },
+);
 
 export default router;

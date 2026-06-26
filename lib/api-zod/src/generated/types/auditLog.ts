@@ -12,6 +12,14 @@ export interface AuditLog {
   userId?: number | null;
   /** @nullable */
   userFullName?: string | null;
+  /** @nullable */
+  userEmail?: string | null;
+  /** @nullable */
+  userRole?: string | null;
+  /** @nullable */
+  ipAddress?: string | null;
+  /** @nullable */
+  userAgent?: string | null;
   action: string;
   entityType: string;
   /** @nullable */

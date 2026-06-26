@@ -293,24 +293,6 @@ export default function Cars() {
 
   const { data, isLoading } = useListCars(carQueryParams);
 
-  const cities = useMemo(() => {
-    const values = new Set<string>();
-
-    for (const car of allCarsData?.cars ?? []) {
-      if (car.city?.trim()) {
-        values.add(car.city.trim());
-      }
-    }
-
-    if (values.size === 0) {
-      ["Casablanca", "Marrakech", "Rabat", "Tanger", "Agadir", "Fes"].forEach((item) => values.add(item));
-    }
-
-    return Array.from(values).sort((a, b) => a.localeCompare(b, "fr"));
-  }, [allCarsData]);
-
-  const totalLabel = `${data?.total || 0} vehicules`;
-
   const applyFilters = (overrides?: Partial<{
     vehicleKey: string;
     agencyId: string;

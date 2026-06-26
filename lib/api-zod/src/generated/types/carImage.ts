@@ -14,4 +14,6 @@ export interface CarImage {
   altText?: string | null;
   isMain?: boolean;
   sortOrder?: number;
+  mediaType?: "IMAGE" | "VIDEO" | "IMAGE_360";
+  sourceType?: "URL" | "UPLOAD";
 }

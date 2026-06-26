@@ -34,6 +34,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+        "503":
+          description: Database not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
 
   # ─── AUTH ────────────────────────────────────────────────────────────────────
   /auth/register:
@@ -1207,7 +1213,20 @@ components:
 
     Car:
       type: object
-      required: [id, brand, model, year, category, fuelType, transmission, seats, doors, dailyPrice, status]
+      required:
+        [
+          id,
+          brand,
+          model,
+          year,
+          category,
+          fuelType,
+          transmission,
+          seats,
+          doors,
+          dailyPrice,
+          status,
+        ]
       properties:
         id: { type: integer }
         brand: { type: string }
@@ -1242,7 +1261,20 @@ components:
 
     CarDetail:
       type: object
-      required: [id, brand, model, year, category, fuelType, transmission, seats, doors, dailyPrice, status]
+      required:
+        [
+          id,
+          brand,
+          model,
+          year,
+          category,
+          fuelType,
+          transmission,
+          seats,
+          doors,
+          dailyPrice,
+          status,
+        ]
       properties:
         id: { type: integer }
         brand: { type: string }
@@ -1293,7 +1325,19 @@ components:
 
     CarInput:
       type: object
-      required: [brand, model, year, category, fuelType, transmission, seats, doors, dailyPrice, city]
+      required:
+        [
+          brand,
+          model,
+          year,
+          category,
+          fuelType,
+          transmission,
+          seats,
+          doors,
+          dailyPrice,
+          city,
+        ]
       properties:
         brand: { type: string }
         model: { type: string }
@@ -1360,6 +1404,12 @@ components:
         altText: { type: ["string", "null"] }
         isMain: { type: boolean }
         sortOrder: { type: integer }
+        mediaType:
+          type: string
+          enum: [IMAGE, VIDEO, IMAGE_360]
+        sourceType:
+          type: string
+          enum: [URL, UPLOAD]
 
     CarImageInput:
       type: object
@@ -1369,6 +1419,12 @@ components:
         altText: { type: string }
         isMain: { type: boolean }
         sortOrder: { type: integer }
+        mediaType:
+          type: string
+          enum: [IMAGE, VIDEO, IMAGE_360]
+        sourceType:
+          type: string
+          enum: [URL, UPLOAD]
 
     AvailabilityBlock:
       type: object
@@ -1389,7 +1445,20 @@ components:
     # ── Rental Requests ───────────────────────────────────────────────────────
     RentalRequest:
       type: object
-      required: [id, carId, fullName, phone, email, startDate, returnDate, estimatedTotalPrice, status, paymentStatus, createdAt]
+      required:
+        [
+          id,
+          carId,
+          fullName,
+          phone,
+          email,
+          startDate,
+          returnDate,
+          estimatedTotalPrice,
+          status,
+          paymentStatus,
+          createdAt,
+        ]
       properties:
         id: { type: integer }
         customerId: { type: ["integer", "null"] }
@@ -1432,7 +1501,16 @@ components:
 
     RentalRequestInput:
       type: object
-      required: [carId, fullName, phone, email, startDate, returnDate, estimatedTotalPrice]
+      required:
+        [
+          carId,
+          fullName,
+          phone,
+          email,
+          startDate,
+          returnDate,
+          estimatedTotalPrice,
+        ]
       properties:
         carId: { type: integer }
         fullName: { type: string }
@@ -1660,9 +1738,23 @@ components:
     # ── Dashboard ─────────────────────────────────────────────────────────────
     DashboardStats:
       type: object
-      required: [totalRevenue, expectedRevenue, pendingRevenue, totalExpenses, netProfit,
-                 totalRequests, pendingRequests, callConfirmedRequests, abandonedRequests,
-                 activeRentals, availableCars, reservedCars, totalCustomers, totalAgents]
+      required:
+        [
+          totalRevenue,
+          expectedRevenue,
+          pendingRevenue,
+          totalExpenses,
+          netProfit,
+          totalRequests,
+          pendingRequests,
+          callConfirmedRequests,
+          abandonedRequests,
+          activeRentals,
+          availableCars,
+          reservedCars,
+          totalCustomers,
+          totalAgents,
+        ]
       properties:
         totalRevenue: { type: number }
         expectedRevenue: { type: number }
@@ -1719,6 +1811,10 @@ components:
         id: { type: integer }
         userId: { type: ["integer", "null"] }
         userFullName: { type: ["string", "null"] }
+        userEmail: { type: ["string", "null"] }
+        userRole: { type: ["string", "null"] }
+        ipAddress: { type: ["string", "null"] }
+        userAgent: { type: ["string", "null"] }
         action: { type: string }
         entityType: { type: string }
         entityId: { type: ["integer", "null"] }

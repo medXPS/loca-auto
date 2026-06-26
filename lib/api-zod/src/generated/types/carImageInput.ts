@@ -11,4 +11,6 @@ export interface CarImageInput {
   altText?: string;
   isMain?: boolean;
   sortOrder?: number;
+  mediaType?: "IMAGE" | "VIDEO" | "IMAGE_360";
+  sourceType?: "URL" | "UPLOAD";
 }

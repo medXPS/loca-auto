@@ -12,7 +12,15 @@ import { CountdownTimer } from "@/components/countdown-timer";
 import { RequestActions } from "@/components/request-actions";
 import { ReceiptDownloadButton } from "@/components/receipt-download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Phone, Mail, Calendar, FileText, History, CreditCard } from "lucide-react";
+import {
+  User,
+  Phone,
+  Mail,
+  Calendar,
+  FileText,
+  History,
+  CreditCard,
+} from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function AdminRequestDetail() {
@@ -25,28 +33,51 @@ export default function AdminRequestDetail() {
   const { data: request, isLoading } = useGetRentalRequest(id, {
     query: { enabled: !!id, queryKey: getGetRentalRequestQueryKey(id) },
   });
-  const { data: auditData, isLoading: isAuditLoading } = useListAuditLogs({ limit: 500 });
+  const { data: auditData, isLoading: isAuditLoading } = useListAuditLogs({
+    limit: 500,
+  });
   const queryClient = useQueryClient();
 
   const handleSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: getGetRentalRequestQueryKey(id) });
+    queryClient.invalidateQueries({
+      queryKey: getGetRentalRequestQueryKey(id),
+    });
     queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey() });
   };
 
-  if (isLoading) return <div className="p-6"><Skeleton className="h-96 w-full rounded-xl" /></div>;
-  if (!request) return <div className="p-6 text-center">Demande introuvable</div>;
+  if (isLoading)
+    return (
+      <div className="p-6">
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    );
+  if (!request)
+    return <div className="p-6 text-center">Demande introuvable</div>;
 
   const showCountdown =
     request.paymentDeadline &&
-    (request.status === "CALL_CONFIRMED" || request.status === "WAITING_AGENCY_PAYMENT" || request.status === "EXTENDED_PAYMENT_DEADLINE");
-  const canPrintReceipt = ["RESERVED", "CAR_DELIVERED", "RENTED", "CAR_RETURNED", "RETURNED", "COMPLETED"].includes(request.status);
+    (request.status === "CALL_CONFIRMED" ||
+      request.status === "WAITING_AGENCY_PAYMENT" ||
+      request.status === "EXTENDED_PAYMENT_DEADLINE");
+  const canPrintReceipt = [
+    "RESERVED",
+    "CAR_DELIVERED",
+    "RENTED",
+    "CAR_RETURNED",
+    "RETURNED",
+    "COMPLETED",
+  ].includes(request.status);
 
   const timelineEntries = (auditData?.logs || [])
     .filter(
       (log) =>
-        log.entityType === "rental_request" && String(log.entityId) === String(id)
+        log.entityType === "rental_request" &&
+        String(log.entityId) === String(id),
     )
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -56,7 +87,9 @@ export default function AdminRequestDetail() {
             Demande #{request.id}
             <StatusBadge status={request.status} />
           </h1>
-          <p className="text-muted-foreground mt-1">Créée le {formatDateTime(request.createdAt)}</p>
+          <p className="text-muted-foreground mt-1">
+            Créée le {formatDateTime(request.createdAt)}
+          </p>
         </div>
 
         <div className="bg-card p-2 rounded-lg border shadow-sm">
@@ -81,7 +114,10 @@ export default function AdminRequestDetail() {
       </div>
 
       {showCountdown && request.paymentDeadline && (
-        <CountdownTimer deadline={request.paymentDeadline} onExpire={handleSuccess} />
+        <CountdownTimer
+          deadline={request.paymentDeadline}
+          onExpire={handleSuccess}
+        />
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -96,7 +132,9 @@ export default function AdminRequestDetail() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Nom complet</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Nom complet
+                </p>
                 <p className="font-medium">{request.fullName}</p>
               </div>
               <div>
@@ -114,12 +152,20 @@ export default function AdminRequestDetail() {
                 </div>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">CIN / Passeport</p>
-                <p className="font-medium">{request.cinOrPassport || "Non renseigné"}</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  CIN / Passeport
+                </p>
+                <p className="font-medium">
+                  {request.cinOrPassport || "Non renseigné"}
+                </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Permis de conduire</p>
-                <p className="font-medium">{request.drivingLicenseNumber || "Non renseigné"}</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Permis de conduire
+                </p>
+                <p className="font-medium">
+                  {request.drivingLicenseNumber || "Non renseigné"}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -143,13 +189,17 @@ export default function AdminRequestDetail() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Date de départ</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Date de départ
+                </p>
                 <p className="font-medium">
                   {new Date(request.startDate).toLocaleDateString("fr-MA")}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground mb-1">Date de retour</p>
+                <p className="text-sm text-muted-foreground mb-1">
+                  Date de retour
+                </p>
                 <p className="font-medium">
                   {new Date(request.returnDate).toLocaleDateString("fr-MA")}
                 </p>
@@ -162,19 +212,29 @@ export default function AdminRequestDetail() {
                 </div>
                 <div className="flex justify-between items-center font-bold text-lg text-primary">
                   <p>Prix final</p>
-                  <p>{formatPrice(request.finalPrice || request.estimatedTotalPrice)}</p>
+                  <p>
+                    {formatPrice(
+                      request.finalPrice || request.estimatedTotalPrice,
+                    )}
+                  </p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                   <div className="rounded-lg border bg-muted/30 p-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Paiement</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Paiement
+                    </p>
                     <div className="mt-2 flex items-center gap-2 font-medium">
                       <CreditCard className="h-4 w-4 text-primary" />
                       {request.paymentStatus || "Non payé"}
                     </div>
                   </div>
                   <div className="rounded-lg border bg-muted/30 p-3">
-                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Mode</p>
-                    <p className="mt-2 font-medium">{request.paymentMethod || "Non renseigné"}</p>
+                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                      Mode
+                    </p>
+                    <p className="mt-2 font-medium">
+                      {request.paymentMethod || "Non renseigné"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -196,7 +256,9 @@ export default function AdminRequestDetail() {
                 {request.notes}
               </p>
             ) : (
-              <p className="text-muted-foreground italic">Aucune note pour cette demande.</p>
+              <p className="text-muted-foreground italic">
+                Aucune note pour cette demande.
+              </p>
             )}
           </CardContent>
         </Card>
@@ -212,9 +274,11 @@ export default function AdminRequestDetail() {
           <CardContent>
             {isAuditLoading ? (
               <div className="space-y-3">
-                {Array(3).fill(0).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
-                ))}
+                {Array(3)
+                  .fill(0)
+                  .map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full rounded-lg" />
+                  ))}
               </div>
             ) : timelineEntries.length > 0 ? (
               <ol className="relative border-l border-muted-foreground/20 ml-3 space-y-4">
@@ -236,14 +300,26 @@ export default function AdminRequestDetail() {
                           {formatDateTime(entry.createdAt)}
                         </time>
                       </div>
-                      {entry.userFullName && (
-                        <p className="text-xs text-muted-foreground">
-                          Par : {entry.userFullName}
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <p>
+                          Par :{" "}
+                          {entry.userFullName || entry.userEmail || "System"}
                         </p>
-                      )}
+                        {entry.userEmail && <p>Email : {entry.userEmail}</p>}
+                        {entry.userRole && <p>Role : {entry.userRole}</p>}
+                        {entry.ipAddress && <p>IP : {entry.ipAddress}</p>}
+                      </div>
                       {entry.details && (
                         <p className="text-xs text-muted-foreground italic mt-1">
                           {entry.details}
+                        </p>
+                      )}
+                      {entry.userAgent && (
+                        <p
+                          className="text-xs text-muted-foreground mt-1 truncate"
+                          title={entry.userAgent}
+                        >
+                          {entry.userAgent}
                         </p>
                       )}
                     </div>
