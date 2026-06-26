@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type FormEvent,
+} from "react";
 import { Link, useLocation, useRoute } from "wouter";
 import {
   getGetCarAvailabilityQueryKey,
@@ -9,7 +16,13 @@ import {
   useGetCar,
   useGetCarAvailability,
 } from "@workspace/api-client-react";
-import { addMinutes, calculateRentalDays, combineIsoDateAndHour, doesIsoRangeOverlapBlocked, formatDisplayDate } from "@workspace/api-client-react/availability";
+import {
+  addMinutes,
+  calculateRentalDays,
+  combineIsoDateAndHour,
+  doesIsoRangeOverlapBlocked,
+  formatDisplayDate,
+} from "@workspace/api-client-react/availability";
 import { DateRangeCalendar } from "@/components/date-range-calendar";
 import { Seo } from "@/components/seo";
 import { Button } from "@/components/ui/button";
@@ -59,7 +72,19 @@ function Gallery({
   brand: string;
   model: string;
 }) {
-  const media = images.length > 0 ? images : mainImageUrl ? [{ id: 0, url: mainImageUrl, altText: null, mediaType: "IMAGE" }] : [];
+  const media = useMemo(
+    () =>
+      [
+        ...(mainImageUrl
+          ? [{ id: 0, url: mainImageUrl, altText: null, mediaType: "IMAGE" }]
+          : []),
+        ...images,
+      ].filter(
+        (item, index, array) =>
+          array.findIndex((candidate) => candidate.url === item.url) === index,
+      ),
+    [images, mainImageUrl],
+  );
   const [current, setCurrent] = useState(0);
   const [failedUrls, setFailedUrls] = useState<Set<string>>(() => new Set());
 
@@ -89,13 +114,21 @@ function Gallery({
       <div className="group relative overflow-hidden rounded-[2rem] bg-muted shadow-[0_24px_60px_-34px_rgba(16,23,34,0.18)]">
         <div className="aspect-[16/10]">
           {activeMedia.mediaType === "VIDEO" ? (
-            <video src={activeMedia.url} className="h-full w-full object-cover" controls />
+            <video
+              src={activeMedia.url}
+              className="h-full w-full object-cover"
+              controls
+            />
           ) : (
             <img
               src={activeMedia.url}
               alt={activeMedia.altText || `${brand} ${model}`}
               className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-              onError={() => setFailedUrls((previous) => new Set(previous).add(activeMedia.url))}
+              onError={() =>
+                setFailedUrls((previous) =>
+                  new Set(previous).add(activeMedia.url),
+                )
+              }
             />
           )}
         </div>
@@ -106,7 +139,12 @@ function Gallery({
           <>
             <button
               type="button"
-              onClick={() => setCurrent((value) => (value - 1 + visibleMedia.length) % visibleMedia.length)}
+              onClick={() =>
+                setCurrent(
+                  (value) =>
+                    (value - 1 + visibleMedia.length) % visibleMedia.length,
+                )
+              }
               className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur transition hover:bg-black/65"
               aria-label="Image precedente"
             >
@@ -114,7 +152,9 @@ function Gallery({
             </button>
             <button
               type="button"
-              onClick={() => setCurrent((value) => (value + 1) % visibleMedia.length)}
+              onClick={() =>
+                setCurrent((value) => (value + 1) % visibleMedia.length)
+              }
               className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur transition hover:bg-black/65"
               aria-label="Image suivante"
             >
@@ -135,17 +175,25 @@ function Gallery({
               type="button"
               onClick={() => setCurrent(index)}
               className={`h-16 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
-                index === activeIndex ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"
+                index === activeIndex
+                  ? "border-primary"
+                  : "border-transparent opacity-70 hover:opacity-100"
               }`}
             >
               {item.mediaType === "VIDEO" ? (
-                <video src={item.url} className="h-full w-full object-cover" muted />
+                <video
+                  src={item.url}
+                  className="h-full w-full object-cover"
+                  muted
+                />
               ) : (
                 <img
                   src={item.url}
                   alt={item.altText || `${brand} ${model} ${index + 1}`}
                   className="h-full w-full object-cover"
-                  onError={() => setFailedUrls((previous) => new Set(previous).add(item.url))}
+                  onError={() =>
+                    setFailedUrls((previous) => new Set(previous).add(item.url))
+                  }
                 />
               )}
             </button>
@@ -193,7 +241,10 @@ export default function CarDetail() {
   const reservationIdentity = customerProfile?.user ?? user;
 
   const searchParams = useMemo(
-    () => new URLSearchParams(typeof window === "undefined" ? "" : window.location.search),
+    () =>
+      new URLSearchParams(
+        typeof window === "undefined" ? "" : window.location.search,
+      ),
     [location],
   );
 
@@ -202,7 +253,8 @@ export default function CarDetail() {
   const startHourFromQuery = searchParams.get("startHour") || "09:00";
   const returnHourFromQuery = searchParams.get("returnHour") || "18:00";
   const shouldFocusReservation =
-    searchParams.get("reserve") === "1" || (typeof window !== "undefined" && window.location.hash === "#reservation");
+    searchParams.get("reserve") === "1" ||
+    (typeof window !== "undefined" && window.location.hash === "#reservation");
 
   const { data: car, isLoading } = useGetCar(id, {
     query: { enabled: isValidId, queryKey: getGetCarQueryKey(id) },
@@ -222,9 +274,12 @@ export default function CarDetail() {
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!fullName && reservationIdentity?.fullName) setFullName(reservationIdentity.fullName);
-    if (!phone && reservationIdentity?.phone) setPhone(reservationIdentity.phone);
-    if (!email && reservationIdentity?.email) setEmail(reservationIdentity.email);
+    if (!fullName && reservationIdentity?.fullName)
+      setFullName(reservationIdentity.fullName);
+    if (!phone && reservationIdentity?.phone)
+      setPhone(reservationIdentity.phone);
+    if (!email && reservationIdentity?.email)
+      setEmail(reservationIdentity.email);
   }, [email, fullName, phone, reservationIdentity]);
 
   useEffect(() => {
@@ -232,13 +287,21 @@ export default function CarDetail() {
     setReturnDate(returnDateFromQuery);
     setStartHour(startHourFromQuery);
     setReturnHour(returnHourFromQuery);
-  }, [returnDateFromQuery, returnHourFromQuery, startDateFromQuery, startHourFromQuery]);
+  }, [
+    returnDateFromQuery,
+    returnHourFromQuery,
+    startDateFromQuery,
+    startHourFromQuery,
+  ]);
 
   useEffect(() => {
     if (!car || !shouldFocusReservation) return;
 
     const timeout = window.setTimeout(() => {
-      reservationRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      reservationRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
     }, 150);
 
     return () => window.clearTimeout(timeout);
@@ -269,7 +332,9 @@ export default function CarDetail() {
         availabilityBlocks,
       )
     ) {
-      setFormError("La periode selectionnee contient deja une reservation ou une demande en cours.");
+      setFormError(
+        "La periode selectionnee contient deja une reservation ou une demande en cours.",
+      );
       return;
     }
 
@@ -285,29 +350,48 @@ export default function CarDetail() {
     if (!car || rentalDays <= 0) return 0;
 
     if (rentalDays >= 7 && car.weeklyPrice) {
-      return Math.floor(rentalDays / 7) * car.weeklyPrice + (rentalDays % 7) * car.dailyPrice;
+      return (
+        Math.floor(rentalDays / 7) * car.weeklyPrice +
+        (rentalDays % 7) * car.dailyPrice
+      );
     }
 
     return rentalDays * car.dailyPrice;
   }, [car, rentalDays]);
 
-  const transmissionLabel = car?.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
+  const transmissionLabel =
+    car?.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
   const fuelLabel = car ? FUEL_TRANSLATIONS[car.fuelType] || car.fuelType : "";
   const hasAirConditioning = Boolean(car?.airConditioning);
   const agency = car ? (car as any).agency : null;
   const ratingSummary = car ? (car as any).ratingSummary : null;
   const carRatings = car ? ((car as any).ratings ?? []) : [];
-  const carStatus = car ? ((car as any).rawStatus || car.status) : "";
+  const carStatus = car ? (car as any).rawStatus || car.status : "";
   const availability = car ? ((car as any).availability ?? null) : null;
-  const hasFutureBlock = Boolean(availability?.hasActiveBlock && availability.availableFrom);
-  const isManualUnavailable = carStatus === "MAINTENANCE" || carStatus === "INACTIVE";
+  const hasFutureBlock = Boolean(
+    availability?.hasActiveBlock && availability.availableFrom,
+  );
+  const isManualUnavailable =
+    carStatus === "MAINTENANCE" || carStatus === "INACTIVE";
   const images = useMemo(
     () =>
       car
         ? [
             ...(car.images || []),
-            ...(car.mainImageUrl ? [{ id: -1, url: car.mainImageUrl, altText: `${car.brand} ${car.model}` }] : []),
-          ].filter((item, index, array) => array.findIndex((candidate) => candidate.url === item.url) === index)
+            ...(car.mainImageUrl
+              ? [
+                  {
+                    id: -1,
+                    url: car.mainImageUrl,
+                    altText: `${car.brand} ${car.model}`,
+                  },
+                ]
+              : []),
+          ].filter(
+            (item, index, array) =>
+              array.findIndex((candidate) => candidate.url === item.url) ===
+              index,
+          )
         : [],
     [car?.brand, car?.images, car?.mainImageUrl, car?.model],
   );
@@ -320,7 +404,9 @@ export default function CarDetail() {
   const backHref = useMemo(() => {
     const paramsCopy = new URLSearchParams(searchParams);
     paramsCopy.delete("reserve");
-    return paramsCopy.toString() ? `/voitures?${paramsCopy.toString()}` : "/voitures";
+    return paramsCopy.toString()
+      ? `/voitures?${paramsCopy.toString()}`
+      : "/voitures";
   }, [searchParams]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -328,14 +414,26 @@ export default function CarDetail() {
 
     if (!car) return;
 
-    const resolvedFullName = fullName.trim() || reservationIdentity?.fullName?.trim() || "";
-    const resolvedPhone = phone.trim() || reservationIdentity?.phone?.trim() || "";
-    const resolvedEmail = email.trim() || reservationIdentity?.email?.trim() || "";
+    const resolvedFullName =
+      fullName.trim() || reservationIdentity?.fullName?.trim() || "";
+    const resolvedPhone =
+      phone.trim() || reservationIdentity?.phone?.trim() || "";
+    const resolvedEmail =
+      email.trim() || reservationIdentity?.email?.trim() || "";
 
-    if (!resolvedFullName || !resolvedPhone || !resolvedEmail || !startDate || !returnDate || !startHour || !returnHour) {
+    if (
+      !resolvedFullName ||
+      !resolvedPhone ||
+      !resolvedEmail ||
+      !startDate ||
+      !returnDate ||
+      !startHour ||
+      !returnHour
+    ) {
       toast({
         title: "Informations manquantes",
-        description: "Remplissez votre nom, telephone, email et les dates de location.",
+        description:
+          "Remplissez votre nom, telephone, email et les dates de location.",
         variant: "destructive",
       });
       return;
@@ -366,7 +464,8 @@ export default function CarDetail() {
       savePendingReservation(reservationPayload);
       toast({
         title: "Compte requis",
-        description: "Creez votre compte pour demarrer la reservation et televerser vos documents.",
+        description:
+          "Creez votre compte pour demarrer la reservation et televerser vos documents.",
       });
       setLocation("/inscription?reservation=1");
       return;
@@ -398,13 +497,18 @@ export default function CarDetail() {
   if (!isValidId) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Link href="/voitures" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+        <Link
+          href="/voitures"
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+        >
           <ArrowLeft className="h-4 w-4" />
           Retour aux vehicules
         </Link>
         <div className="mt-6 rounded-[1.8rem] border border-border/70 bg-white p-8 text-center">
           <p className="text-lg font-semibold">Voiture introuvable</p>
-          <p className="mt-2 text-sm text-muted-foreground">Le vehicule demande n'existe pas ou n'est plus disponible.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Le vehicule demande n'existe pas ou n'est plus disponible.
+          </p>
         </div>
       </div>
     );
@@ -421,13 +525,18 @@ export default function CarDetail() {
   if (!car) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Link href={backHref} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+        <Link
+          href={backHref}
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+        >
           <ArrowLeft className="h-4 w-4" />
           Retour aux resultats
         </Link>
         <div className="mt-6 rounded-[1.8rem] border border-border/70 bg-white p-8 text-center">
           <p className="text-lg font-semibold">Voiture introuvable</p>
-          <p className="mt-2 text-sm text-muted-foreground">Essayez un autre vehicule dans le catalogue.</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Essayez un autre vehicule dans le catalogue.
+          </p>
         </div>
       </div>
     );
@@ -436,12 +545,17 @@ export default function CarDetail() {
   const pageTitle = `${car.brand} ${car.model}`;
   const pageDescription = `Reservez ${car.brand} ${car.model} au Maroc. Prix, caracteristiques et demande rapide en ligne.`;
   const canonical = `https://demo-locationauto.shonenx.shop/voitures/${car.id}`;
-  const mapLocation = agency?.address?.trim() || `${agency?.name || car.city?.trim() || "Casablanca"}, ${agency?.city || "Maroc"}`;
-  const mapQuery = agency?.latitude != null && agency?.longitude != null
-    ? `${agency.latitude},${agency.longitude}`
-    : mapLocation;
+  const mapLocation =
+    agency?.address?.trim() ||
+    `${agency?.name || car.city?.trim() || "Casablanca"}, ${agency?.city || "Maroc"}`;
+  const mapQuery =
+    agency?.latitude != null && agency?.longitude != null
+      ? `${agency.latitude},${agency.longitude}`
+      : mapLocation;
   const mapEmbedUrl = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=13&output=embed`;
-  const mapHref = agency?.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
+  const mapHref =
+    agency?.mapUrl ||
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
 
   return (
     <div className="container mx-auto px-4 py-8 lg:py-10">
@@ -462,7 +576,10 @@ export default function CarDetail() {
               "@type": "Offer",
               price: car.dailyPrice,
               priceCurrency: "MAD",
-              availability: car.status === "AVAILABLE" ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+              availability:
+                car.status === "AVAILABLE"
+                  ? "https://schema.org/InStock"
+                  : "https://schema.org/OutOfStock",
               url: canonical,
             },
           },
@@ -477,12 +594,20 @@ export default function CarDetail() {
       />
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <Link href={backHref} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
+        <Link
+          href={backHref}
+          className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+        >
           <ArrowLeft className="h-4 w-4" />
           Retour aux resultats
         </Link>
 
-        <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="hidden items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80 md:inline-flex">
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80 md:inline-flex"
+        >
           <MessageCircle className="h-4 w-4" />
           WhatsApp
         </a>
@@ -490,13 +615,30 @@ export default function CarDetail() {
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-8">
-          <Gallery images={images} mainImageUrl={car.mainImageUrl} brand={car.brand} model={car.model} />
+          <Gallery
+            images={images}
+            mainImageUrl={car.mainImageUrl}
+            brand={car.brand}
+            model={car.model}
+          />
 
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <StatPill icon={Settings2} label="Transmission" value={transmissionLabel} />
+            <StatPill
+              icon={Settings2}
+              label="Transmission"
+              value={transmissionLabel}
+            />
             <StatPill icon={Fuel} label="Carburant" value={fuelLabel} />
-            <StatPill icon={Users} label="Places" value={`${car.seats} places`} />
-            <StatPill icon={Wind} label="Climatisation" value={hasAirConditioning ? "Oui" : "Non"} />
+            <StatPill
+              icon={Users}
+              label="Places"
+              value={`${car.seats} places`}
+            />
+            <StatPill
+              icon={Wind}
+              label="Climatisation"
+              value={hasAirConditioning ? "Oui" : "Non"}
+            />
           </div>
 
           <Card className="overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]">
@@ -507,19 +649,28 @@ export default function CarDetail() {
                     <Star className="h-3.5 w-3.5" />
                     Avis clients
                   </div>
-                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Notes verifiees</h2>
+                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+                    Notes verifiees
+                  </h2>
                   <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    Seuls les clients ayant termine leur location peuvent publier un avis.
+                    Seuls les clients ayant termine leur location peuvent
+                    publier un avis.
                   </p>
                 </div>
 
                 <div className="rounded-[1.4rem] border border-amber-200 bg-amber-50 px-4 py-4 text-right md:min-w-[180px]">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700/70">Note moyenne</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700/70">
+                    Note moyenne
+                  </p>
                   <p className="mt-1 text-3xl font-semibold text-amber-700">
-                    {ratingSummary?.count ? `${ratingSummary.average}/5` : "Nouveau"}
+                    {ratingSummary?.count
+                      ? `${ratingSummary.average}/5`
+                      : "Nouveau"}
                   </p>
                   <p className="mt-1 text-sm text-amber-700/80">
-                    {ratingSummary?.count ? `${ratingSummary.count} avis verifies` : "Pas encore d'avis"}
+                    {ratingSummary?.count
+                      ? `${ratingSummary.count} avis verifies`
+                      : "Pas encore d'avis"}
                   </p>
                 </div>
               </div>
@@ -527,13 +678,21 @@ export default function CarDetail() {
               {carRatings.length > 0 ? (
                 <div className="grid gap-4 md:grid-cols-2">
                   {carRatings.map((rating: any) => (
-                    <div key={rating.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                    <div
+                      key={rating.id}
+                      className="rounded-2xl border border-border/70 bg-muted/20 p-4"
+                    >
                       <div className="flex items-center justify-between gap-3">
-                        <div className="font-semibold">{rating.customerName}</div>
-                        <div className="text-sm font-medium text-amber-600">{rating.score}/5</div>
+                        <div className="font-semibold">
+                          {rating.customerName}
+                        </div>
+                        <div className="text-sm font-medium text-amber-600">
+                          {rating.score}/5
+                        </div>
                       </div>
                       <p className="mt-2 text-sm text-muted-foreground">
-                        {rating.comment || "Une note a ete laissee sans commentaire detaille."}
+                        {rating.comment ||
+                          "Une note a ete laissee sans commentaire detaille."}
                       </p>
                     </div>
                   ))}
@@ -558,16 +717,25 @@ export default function CarDetail() {
                     <CalendarDays className="h-3.5 w-3.5" />
                     Reservation
                   </div>
-                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Reserver ce vehicule</h2>
+                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+                    Reserver ce vehicule
+                  </h2>
                   <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    Les dates deja reservees ou encore en cours de reservation sont desactivees directement dans le calendrier.
+                    Les dates deja reservees ou encore en cours de reservation
+                    sont desactivees directement dans le calendrier.
                   </p>
                 </div>
 
                 <div className="rounded-[1.4rem] border border-[#F04B45]/10 bg-[#F04B45]/5 px-4 py-4 text-right md:min-w-[180px]">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Prix par jour</p>
-                  <p className="mt-1 text-3xl font-semibold text-[#F04B45]">{formatPrice(car.dailyPrice)}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Paiement a l'agence</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Prix par jour
+                  </p>
+                  <p className="mt-1 text-3xl font-semibold text-[#F04B45]">
+                    {formatPrice(car.dailyPrice)}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Paiement a l'agence
+                  </p>
                 </div>
               </div>
 
@@ -580,7 +748,10 @@ export default function CarDetail() {
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="fullName">
+                    <label
+                      className="text-sm font-medium text-foreground"
+                      htmlFor="fullName"
+                    >
                       Nom complet
                     </label>
                     <Input
@@ -593,7 +764,10 @@ export default function CarDetail() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="phone">
+                    <label
+                      className="text-sm font-medium text-foreground"
+                      htmlFor="phone"
+                    >
                       Telephone
                     </label>
                     <Input
@@ -607,7 +781,10 @@ export default function CarDetail() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground" htmlFor="email">
+                  <label
+                    className="text-sm font-medium text-foreground"
+                    htmlFor="email"
+                  >
                     Email
                   </label>
                   <Input
@@ -623,8 +800,13 @@ export default function CarDetail() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-medium text-foreground">Dates de location</p>
-                      <p className="text-xs text-muted-foreground">Choisissez une plage disponible puis ajustez les heures ci-dessous.</p>
+                      <p className="text-sm font-medium text-foreground">
+                        Dates de location
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Choisissez une plage disponible puis ajustez les heures
+                        ci-dessous.
+                      </p>
                     </div>
                     {availabilityBlocks.length > 0 && (
                       <span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-[11px] font-semibold text-rose-700">
@@ -638,7 +820,10 @@ export default function CarDetail() {
                     startDate={startDate}
                     returnDate={returnDate}
                     blockedRanges={availabilityBlocks}
-                    onChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
+                    onChange={({
+                      startDate: nextStartDate,
+                      returnDate: nextReturnDate,
+                    }) => {
                       setStartDate(nextStartDate);
                       setReturnDate(nextReturnDate);
                     }}
@@ -647,7 +832,10 @@ export default function CarDetail() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="startHour">
+                    <label
+                      className="text-sm font-medium text-foreground"
+                      htmlFor="startHour"
+                    >
                       Heure de depart
                     </label>
                     <Input
@@ -660,7 +848,10 @@ export default function CarDetail() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground" htmlFor="returnHour">
+                    <label
+                      className="text-sm font-medium text-foreground"
+                      htmlFor="returnHour"
+                    >
                       Heure de retour
                     </label>
                     <Input
@@ -675,7 +866,9 @@ export default function CarDetail() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Infos utiles</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Infos utiles
+                    </p>
                     <div className="mt-2 grid gap-2 text-sm text-muted-foreground">
                       <p>{car.city || "Maroc"}</p>
                       <p>
@@ -687,23 +880,39 @@ export default function CarDetail() {
 
                 <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Prix journalier</span>
-                    <span className="font-semibold text-foreground">{formatPrice(car.dailyPrice)}</span>
+                    <span className="text-muted-foreground">
+                      Prix journalier
+                    </span>
+                    <span className="font-semibold text-foreground">
+                      {formatPrice(car.dailyPrice)}
+                    </span>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Duree</span>
-                    <span className="font-semibold text-foreground">{rentalDays > 0 ? `${rentalDays} jour${rentalDays > 1 ? "s" : ""}` : "A choisir"}</span>
+                    <span className="font-semibold text-foreground">
+                      {rentalDays > 0
+                        ? `${rentalDays} jour${rentalDays > 1 ? "s" : ""}`
+                        : "A choisir"}
+                    </span>
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t border-border/70 pt-3 text-lg font-semibold">
                     <span>Total estime</span>
-                    <span className="text-primary">{estimatedTotalPrice > 0 ? formatPrice(estimatedTotalPrice) : formatPrice(car.dailyPrice)}</span>
+                    <span className="text-primary">
+                      {estimatedTotalPrice > 0
+                        ? formatPrice(estimatedTotalPrice)
+                        : formatPrice(car.dailyPrice)}
+                    </span>
                   </div>
                 </div>
 
                 <Button
                   type="submit"
                   className="h-12 w-full rounded-full bg-[#F04B45] text-base text-white hover:bg-[#e63f39]"
-                  disabled={createRequest.isPending || isManualUnavailable || !!formError}
+                  disabled={
+                    createRequest.isPending ||
+                    isManualUnavailable ||
+                    !!formError
+                  }
                 >
                   {createRequest.isPending
                     ? "Envoi en cours..."
@@ -711,14 +920,15 @@ export default function CarDetail() {
                       ? "Indisponible"
                       : formError
                         ? "Période indisponible"
-                      : isAuthenticated
-                        ? "Envoyer la demande"
-                        : "Se connecter pour reserver"}
+                        : isAuthenticated
+                          ? "Envoyer la demande"
+                          : "Se connecter pour reserver"}
                 </Button>
 
                 {!isAuthenticated && (
                   <p className="text-center text-xs text-muted-foreground">
-                    Vous serez redirige vers la connexion avant l'envoi de la demande.
+                    Vous serez redirige vers la connexion avant l'envoi de la
+                    demande.
                   </p>
                 )}
               </form>
@@ -740,7 +950,11 @@ export default function CarDetail() {
                           : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
                     }`}
                   >
-                    {isManualUnavailable ? <Sparkles className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                    {isManualUnavailable ? (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    ) : (
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                    )}
                     {isManualUnavailable
                       ? "Sur demande"
                       : hasFutureBlock && availability?.availableFrom
@@ -749,7 +963,8 @@ export default function CarDetail() {
                   </div>
                   {hasFutureBlock && availability?.availableFrom && (
                     <p className="mt-2 text-sm text-white/65">
-                      Disponible à partir du {formatAvailabilityDate(availability.availableFrom)}
+                      Disponible à partir du{" "}
+                      {formatAvailabilityDate(availability.availableFrom)}
                     </p>
                   )}
                   <h1 className="mt-4 text-3xl font-semibold tracking-tight">
@@ -762,13 +977,21 @@ export default function CarDetail() {
               </div>
 
               <div className="rounded-[1.4rem] border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Prix par jour</p>
-                <p className="mt-1 text-4xl font-semibold tracking-tight text-[#F04B45]">{formatPrice(car.dailyPrice)}</p>
-                <p className="mt-1 text-sm text-white/62">Paiement a l'agence</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                  Prix par jour
+                </p>
+                <p className="mt-1 text-4xl font-semibold tracking-tight text-[#F04B45]">
+                  {formatPrice(car.dailyPrice)}
+                </p>
+                <p className="mt-1 text-sm text-white/62">
+                  Paiement a l'agence
+                </p>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Caracteristiques</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
+                  Caracteristiques
+                </p>
                 <div className="mt-3 grid gap-3 text-sm">
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-white/65">Transmission</span>
@@ -784,20 +1007,33 @@ export default function CarDetail() {
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-white/65">Climatisation</span>
-                    <span className="font-semibold">{hasAirConditioning ? "Oui" : "Non"}</span>
+                    <span className="font-semibold">
+                      {hasAirConditioning ? "Oui" : "Non"}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div className="grid gap-3">
-                <Button asChild className="h-12 rounded-full bg-white text-slate-950 hover:bg-white/95">
+                <Button
+                  asChild
+                  className="h-12 rounded-full bg-white text-slate-950 hover:bg-white/95"
+                >
                   <a href="#reservation">
                     Reserver
                     <ArrowRight className="h-4 w-4" />
                   </a>
                 </Button>
-                <Button asChild variant="outline" className="h-12 rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10">
-                  <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-12 rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10"
+                >
+                  <a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <MessageCircle className="h-4 w-4" />
                     WhatsApp
                   </a>
@@ -817,13 +1053,20 @@ export default function CarDetail() {
                   <MapPin className="h-3.5 w-3.5" />
                   Localisation
                 </div>
-                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">Ou se situe l'agence ?</h2>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+                  Ou se situe l'agence ?
+                </h2>
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                  {car.city || "Casablanca"} et ses environs sont indiques sur la carte pour aider le client a se reperer rapidement.
+                  {car.city || "Casablanca"} et ses environs sont indiques sur
+                  la carte pour aider le client a se reperer rapidement.
                 </p>
               </div>
 
-              <Button asChild variant="outline" className="rounded-full border-border/70 bg-white">
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full border-border/70 bg-white"
+              >
                 <a href={mapHref} target="_blank" rel="noopener noreferrer">
                   Ouvrir dans Google Maps
                   <ArrowRight className="h-4 w-4" />
@@ -846,16 +1089,24 @@ export default function CarDetail() {
         <Card className="h-fit overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]">
           <CardContent className="space-y-4 p-6">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Adresse</p>
-              <p className="mt-2 text-xl font-semibold text-foreground">{car.city || "Casablanca"}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Adresse
+              </p>
+              <p className="mt-2 text-xl font-semibold text-foreground">
+                {car.city || "Casablanca"}
+              </p>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                Verifiez l'emplacement exact de l'agence sur la carte avant de confirmer votre reservation.
+                Verifiez l'emplacement exact de l'agence sur la carte avant de
+                confirmer votre reservation.
               </p>
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
               <p className="font-medium text-foreground">Conseil</p>
-              <p className="mt-1 leading-7">Utilisez la carte pour estimer le trajet jusqu'a l'agence et preparer votre arrivee.</p>
+              <p className="mt-1 leading-7">
+                Utilisez la carte pour estimer le trajet jusqu'a l'agence et
+                preparer votre arrivee.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -863,13 +1114,20 @@ export default function CarDetail() {
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-white/96 px-3 py-3 shadow-[0_-12px_36px_-24px_rgba(16,23,34,0.24)] backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-xl grid-cols-2 gap-3">
-          <Button asChild className="h-12 rounded-full bg-[#F04B45] text-white hover:bg-[#e63f39]">
+          <Button
+            asChild
+            className="h-12 rounded-full bg-[#F04B45] text-white hover:bg-[#e63f39]"
+          >
             <a href="#reservation">
               Reserver
               <ArrowRight className="h-4 w-4" />
             </a>
           </Button>
-          <Button asChild variant="outline" className="h-12 rounded-full border-border/70 bg-white">
+          <Button
+            asChild
+            variant="outline"
+            className="h-12 rounded-full border-border/70 bg-white"
+          >
             <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
               <MessageCircle className="h-4 w-4" />
               WhatsApp
