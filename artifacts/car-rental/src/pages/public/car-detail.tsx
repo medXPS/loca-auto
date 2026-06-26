@@ -250,6 +250,32 @@ function StatPill({
   );
 }
 
+function RatingStars({ value }: { value: number }) {
+  return (
+    <div className="flex items-center gap-0.5 text-amber-300" aria-hidden="true">
+      {Array.from({ length: 5 }, (_, index) => {
+        const starIndex = index + 1;
+        const isFull = value >= starIndex;
+        const isHalf = !isFull && value >= starIndex - 0.5;
+
+        return (
+          <Star
+            key={starIndex}
+            className={[
+              "h-4 w-4",
+              isFull
+                ? "fill-current text-amber-300"
+                : isHalf
+                  ? "fill-current text-amber-300/60"
+                  : "text-white/20",
+            ].join(" ")}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 export default function CarDetail() {
   const [location, setLocation] = useLocation();
   const [match, params] = useRoute("/voitures/:id");
@@ -391,7 +417,9 @@ export default function CarDetail() {
   const hasAirConditioning = Boolean(car?.airConditioning);
   const agency = car ? (car as any).agency : null;
   const ratingSummary = car ? (car as any).ratingSummary : null;
-  const carRatings = car ? ((car as any).ratings ?? []) : [];
+  const ratingValue = ratingSummary?.count
+    ? Math.round(Number(ratingSummary.average) * 2) / 2
+    : 4.5;
   const carStatus = car ? (car as any).rawStatus || car.status : "";
   const availability = car ? ((car as any).availability ?? null) : null;
   const hasFutureBlock = Boolean(
@@ -667,69 +695,19 @@ export default function CarDetail() {
             />
           </div>
 
-          <Card className="overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]">
-            <CardContent className="space-y-5 p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-                    <Star className="h-3.5 w-3.5" />
-                    Avis clients
-                  </div>
-                  <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
-                    Notes verifiees
-                  </h2>
-                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    Seuls les clients ayant termine leur location peuvent
-                    publier un avis.
-                  </p>
-                </div>
-
-                <div className="rounded-[1.4rem] border border-amber-200 bg-amber-50 px-4 py-4 text-right md:min-w-[180px]">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700/70">
-                    Note moyenne
-                  </p>
-                  <p className="mt-1 text-3xl font-semibold text-amber-700">
-                    {ratingSummary?.count
-                      ? `${ratingSummary.average}/5`
-                      : "Nouveau"}
-                  </p>
-                  <p className="mt-1 text-sm text-amber-700/80">
-                    {ratingSummary?.count
-                      ? `${ratingSummary.count} avis verifies`
-                      : "Pas encore d'avis"}
-                  </p>
-                </div>
+          <div className="overflow-hidden rounded-[1.8rem] border border-slate-900/10 bg-slate-950 text-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.4)]">
+            <div className="flex items-center gap-4 p-5">
+              <RatingStars value={ratingValue} />
+              <div className="flex items-end gap-2">
+                <span className="text-3xl font-semibold tracking-tight">
+                  {ratingValue.toFixed(1)}
+                </span>
+                <span className="pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
+                  /5
+                </span>
               </div>
-
-              {carRatings.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {carRatings.map((rating: any) => (
-                    <div
-                      key={rating.id}
-                      className="rounded-2xl border border-border/70 bg-muted/20 p-4"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="font-semibold">
-                          {rating.customerName}
-                        </div>
-                        <div className="text-sm font-medium text-amber-600">
-                          {rating.score}/5
-                        </div>
-                      </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {rating.comment ||
-                          "Une note a ete laissee sans commentaire detaille."}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 py-6 text-sm text-muted-foreground">
-                  Ce vehicule n'a pas encore recu d'avis client.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           <Card
             className="overflow-hidden rounded-[1.9rem] border border-slate-900/10 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]"
