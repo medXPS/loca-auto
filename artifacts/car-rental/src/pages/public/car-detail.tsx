@@ -1105,13 +1105,6 @@ export default function CarDetail() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">Conseil</p>
-              <p className="mt-1 leading-7">
-                Utilisez la carte pour estimer le trajet jusqu'a l'agence et
-                preparer votre arrivee.
-              </p>
-            </div>
           </CardContent>
         </Card>
       </section>
