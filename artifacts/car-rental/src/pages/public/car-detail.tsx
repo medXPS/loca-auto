@@ -42,6 +42,7 @@ import {
   ImageIcon,
   MapPin,
   MessageCircle,
+  PlayCircle,
   Settings2,
   ShieldCheck,
   Sparkles,
@@ -131,14 +132,16 @@ function Gallery({
           {activeMediaType === "VIDEO" ? (
             <video
               src={activeMedia.url}
-              className="h-full w-full object-cover"
+              className="relative z-10 h-full w-full bg-black object-cover"
               controls
+              playsInline
+              preload="metadata"
             />
           ) : (
             <img
               src={activeMedia.url}
               alt={activeMedia.altText || `${brand} ${model}`}
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              className="relative z-10 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
               onError={() =>
                 setFailedUrls((previous) =>
                   new Set(previous).add(activeMedia.url),
@@ -148,7 +151,14 @@ function Gallery({
           )}
         </div>
 
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,31,0.08),rgba(7,15,31,0.34))]" />
+        <div className="pointer-events-none absolute inset-0 z-0 bg-[linear-gradient(180deg,rgba(7,15,31,0.08),rgba(7,15,31,0.34))]" />
+
+        {activeMediaType === "VIDEO" && (
+          <div className="absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full bg-black/55 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur">
+            <PlayCircle className="h-3.5 w-3.5" />
+            Vidéo
+          </div>
+        )}
 
         {visibleMedia.length > 1 && (
           <>
