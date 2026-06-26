@@ -8,6 +8,7 @@
     "migrate": "tsx ./src/migrate.ts",
     "init-super-admin": "tsx ./src/init-super-admin.ts",
     "seed": "tsx ./src/seed.ts",
+    "wait-for-database": "tsx ./src/wait-for-database.ts",
     "test": "tsx ./src/availability.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
