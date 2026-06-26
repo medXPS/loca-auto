@@ -656,15 +656,6 @@ export default function CarDetail() {
           Retour aux resultats
         </Link>
 
-        <a
-          href={whatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hidden items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80 md:inline-flex"
-        >
-          <MessageCircle className="h-4 w-4" />
-          WhatsApp
-        </a>
       </div>
 
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
