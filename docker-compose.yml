@@ -58,8 +58,11 @@ services:
       MFA_ENABLED: ${MFA_ENABLED:-true}
       DOCUMENT_HOLD_MINUTES: ${DOCUMENT_HOLD_MINUTES:-30}
       PAYMENT_DEADLINE_HOURS: ${PAYMENT_DEADLINE_HOURS:-24}
+      UPLOADS_DIR: ${UPLOADS_DIR:-/app/uploads}
     ports:
       - "127.0.0.1:3001:3001"
+    volumes:
+      - uploads-data:/app/uploads
     restart: unless-stopped
     depends_on:
       db:
@@ -122,3 +125,4 @@ services:
 
 volumes:
   postgres-data:
+  uploads-data:

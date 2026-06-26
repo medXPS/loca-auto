@@ -1,4 +1,7 @@
-import { Router } from "express";
+import { Router, type NextFunction, type Request, type Response } from "express";
+import { rm } from "node:fs/promises";
+import path from "node:path";
+import multer from "multer";
 import {
   and,
   asc,
@@ -26,8 +29,90 @@ import {
   resolveAgencyForCar,
   resolveBrandForCar,
 } from "../lib/catalog";
+import {
+  buildPublicUploadUrl,
+  buildStoredUploadFilename,
+  uploadsDir,
+} from "../lib/uploads";
 
 const router = Router();
+
+const carMediaUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, callback) => callback(null, uploadsDir),
+    filename: (_req, file, callback) =>
+      callback(
+        null,
+        buildStoredUploadFilename(file.originalname, file.mimetype),
+      ),
+  }),
+  limits: {
+    fileSize: 250 * 1024 * 1024,
+  },
+});
+
+function parseBooleanField(value: unknown) {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value !== "string") return false;
+
+  const normalized = value.trim().toLowerCase();
+  return ["true", "1", "yes", "on"].includes(normalized);
+}
+
+function parseNumberField(value: unknown, fallback = 0) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  if (typeof value !== "string") return fallback;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function getStringField(value: unknown) {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
+function resolveUploadedMediaType(
+  mimeType: string | undefined,
+  requestedMediaType?: string | null,
+) {
+  const normalizedMimeType = mimeType?.toLowerCase().trim() || "";
+
+  if (normalizedMimeType.startsWith("video/")) return "VIDEO";
+  if (requestedMediaType === "IMAGE_360") return "IMAGE_360";
+  return "IMAGE";
+}
+
+function parseMediaUpload(req: Request, res: Response, next: NextFunction) {
+  carMediaUpload.single("file")(req, res, (err) => {
+    if (!err) {
+      next();
+      return;
+    }
+
+    if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+      res.status(413).json({ error: "Fichier trop volumineux" });
+      return;
+    }
+
+    next(err);
+  });
+}
+
+function resolveStoredUploadPath(url: string) {
+  if (!url.startsWith("/uploads/")) return null;
+  return path.join(uploadsDir, path.basename(url));
+}
+
+async function removeStoredUpload(url: string) {
+  const filePath = resolveStoredUploadPath(url);
+  if (!filePath) return;
+  await rm(filePath, { force: true });
+}
 
 function inferCarMediaType(url: string, mediaType?: string | null) {
   const normalizedUrl = url.trim().toLowerCase();
@@ -363,14 +448,22 @@ router.delete(
   requireRole("ADMIN"),
   async (req, res) => {
     try {
+      const carId = parseInt(String(req.params.id), 10);
+      const images = await db
+        .select({ url: schema.carImagesTable.url })
+        .from(schema.carImagesTable)
+        .where(eq(schema.carImagesTable.carId, carId));
+
       await db
         .delete(schema.carsTable)
-        .where(eq(schema.carsTable.id, parseInt(String(req.params.id), 10)));
+        .where(eq(schema.carsTable.id, carId));
+
+      await Promise.all(images.map((image) => removeStoredUpload(image.url)));
       await logAudit(req, {
         userId: req.user!.userId,
         action: "DELETE_CAR",
         entityType: "car",
-        entityId: parseInt(String(req.params.id), 10),
+        entityId: carId,
       });
       res.status(204).send();
     } catch (err) {
@@ -385,21 +478,32 @@ router.post(
   "/:id/images",
   authMiddleware,
   requireRole("ADMIN", "AGENT"),
+  parseMediaUpload,
   async (req, res) => {
     try {
       const carId = parseInt(String(req.params.id), 10);
-      const {
-        url,
-        altText,
-        isMain,
-        sortOrder,
-        mediaType = "IMAGE",
-        sourceType = "URL",
-      } = req.body;
+      const uploadedFile = req.file;
+      const requestedUrl = getStringField(req.body.url);
+      const requestedMediaType = getStringField(req.body.mediaType);
+      const requestedSourceType = getStringField(req.body.sourceType);
+      const altText = getStringField(req.body.altText) || undefined;
+      const isMain = parseBooleanField(req.body.isMain);
+      const sortOrder = parseNumberField(req.body.sortOrder, 0);
+      const url = uploadedFile
+        ? buildPublicUploadUrl(uploadedFile.filename)
+        : requestedUrl;
+
       if (!url) {
         res.status(400).json({ error: "URL ou fichier requis" });
         return;
       }
+
+      const resolvedMediaType = uploadedFile
+        ? resolveUploadedMediaType(uploadedFile.mimetype, requestedMediaType)
+        : inferCarMediaType(url, requestedMediaType);
+      const resolvedSourceType = uploadedFile
+        ? "UPLOAD"
+        : inferCarSourceType(url, requestedSourceType);
 
       const [media] = await db
         .insert(schema.carImagesTable)
@@ -407,10 +511,13 @@ router.post(
           carId,
           url,
           altText,
-          isMain: Boolean(isMain),
-          sortOrder: Number(sortOrder ?? 0),
-          mediaType,
-          sourceType,
+          isMain,
+          sortOrder,
+          mediaType: resolvedMediaType as
+            | "IMAGE"
+            | "VIDEO"
+            | "IMAGE_360",
+          sourceType: resolvedSourceType as "URL" | "UPLOAD",
         })
         .returning();
 
@@ -420,7 +527,7 @@ router.post(
         sourceType: inferCarSourceType(media.url, media.sourceType),
       };
 
-      if (media.isMain && media.mediaType === "IMAGE") {
+      if (normalizedMedia.isMain && normalizedMedia.mediaType === "IMAGE") {
         await db
           .update(schema.carsTable)
           .set({ mainImageUrl: media.url })
@@ -442,6 +549,15 @@ router.delete(
   requireRole("ADMIN", "AGENT"),
   async (req, res) => {
     try {
+      const imageId = parseInt(String(req.params.imageId), 10);
+      const [image] = await db
+        .select({
+          url: schema.carImagesTable.url,
+        })
+        .from(schema.carImagesTable)
+        .where(eq(schema.carImagesTable.id, imageId))
+        .limit(1);
+
       await db
         .delete(schema.carImagesTable)
         .where(
@@ -452,10 +568,14 @@ router.delete(
             ),
             eq(
               schema.carImagesTable.id,
-              parseInt(String(req.params.imageId), 10),
+              imageId,
             ),
           ),
         );
+
+      if (image) {
+        await removeStoredUpload(image.url);
+      }
       res.status(204).send();
     } catch (err) {
       req.log.error(err);

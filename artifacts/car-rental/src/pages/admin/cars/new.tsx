@@ -6,7 +6,6 @@ import * as z from "zod";
 import {
   getListCarsQueryKey,
   useCreateCar,
-  useUploadCarImage,
 } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { fetchAgencies, fetchBrands } from "@/lib/fleet-catalog";
+import { uploadCarMedia } from "@/lib/car-media-upload";
 
 const NO_VALUE = "__none__";
 
@@ -43,7 +43,7 @@ type MediaDraft = {
   mediaType: MediaType;
   sourceType: MediaSourceType;
   url: string;
-  fileData: string;
+  file: File | null;
   altText: string;
   isMain: boolean;
 };
@@ -54,7 +54,7 @@ function createMediaDraft(overrides: Partial<MediaDraft> = {}): MediaDraft {
     mediaType: "IMAGE",
     sourceType: "URL",
     url: "",
-    fileData: "",
+    file: null,
     altText: "",
     isMain: false,
     ...overrides,
@@ -84,9 +84,9 @@ export default function AdminNewCar() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
   const createCar = useCreateCar();
-  const uploadMedia = useUploadCarImage();
   const queryClient = useQueryClient();
   const basePath = location.startsWith("/agent") ? "/agent" : "/admin";
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [mediaItems, setMediaItems] = useState<MediaDraft[]>([
     createMediaDraft({ isMain: true }),
   ]);
@@ -135,19 +135,18 @@ export default function AdminNewCar() {
   const handleMediaFileChange = (id: string, file?: File) => {
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = String(reader.result || "");
-      setMediaField(id, (item) => ({
-        ...item,
-        sourceType: "UPLOAD",
-        fileData: dataUrl,
-        url: "",
-        mediaType: file.type.startsWith("video/") ? "VIDEO" : "IMAGE",
-        isMain: file.type.startsWith("video/") ? false : item.isMain,
-      }));
-    };
-    reader.readAsDataURL(file);
+    setMediaField(id, (item) => ({
+      ...item,
+      sourceType: "UPLOAD",
+      file,
+      url: "",
+      mediaType: file.type.startsWith("video/")
+        ? "VIDEO"
+        : item.mediaType === "VIDEO"
+          ? "IMAGE"
+          : item.mediaType,
+      isMain: file.type.startsWith("video/") ? false : item.isMain,
+    }));
   };
 
   const handleMediaTypeChange = (id: string, mediaType: MediaType) => {
@@ -201,17 +200,24 @@ export default function AdminNewCar() {
           ...item,
           url:
             item.sourceType === "UPLOAD"
-              ? item.fileData.trim()
+              ? ""
               : item.url.trim(),
           altText: item.altText.trim(),
         }))
-        .filter((item) => item.url.length > 0);
+        .filter((item) =>
+          item.sourceType === "UPLOAD" ? Boolean(item.file) : item.url.length > 0,
+        );
 
       const mainMedia =
         normalizedMedia.find(
-          (item) => item.isMain && item.mediaType === "IMAGE",
+          (item) =>
+            item.isMain &&
+            item.mediaType === "IMAGE" &&
+            item.sourceType === "URL",
         ) ??
-        normalizedMedia.find((item) => item.mediaType === "IMAGE") ??
+        normalizedMedia.find(
+          (item) => item.mediaType === "IMAGE" && item.sourceType === "URL",
+        ) ??
         null;
 
       const payload = {
@@ -221,33 +227,19 @@ export default function AdminNewCar() {
 
       const createdCar = await createCar.mutateAsync({ data: payload as any });
 
-      const uniqueMedia = normalizedMedia.filter(
-        (item, index, array) =>
-          array.findIndex(
-            (candidate) =>
-              candidate.url === item.url &&
-              candidate.mediaType === item.mediaType,
-          ) === index,
-      );
-
+      setIsUploadingMedia(true);
       const uploadResults = await Promise.allSettled(
-        uniqueMedia.map((item, index) =>
-          uploadMedia.mutateAsync({
-            id: createdCar.id,
-            data: {
-              url: item.url,
-              altText:
-                item.altText ||
-                `${createdCar.brand ?? data.brand} ${createdCar.model ?? data.model}`.trim(),
-              isMain: Boolean(
-                mainMedia &&
-                mainMedia.url === item.url &&
-                mainMedia.mediaType === item.mediaType,
-              ),
-              sortOrder: index + 1,
-              mediaType: item.mediaType,
-              sourceType: item.sourceType,
-            } as any,
+        normalizedMedia.map((item, index) =>
+          uploadCarMedia(createdCar.id, {
+            url: item.url,
+            file: item.sourceType === "UPLOAD" ? item.file : null,
+            altText:
+              item.altText ||
+              `${createdCar.brand ?? data.brand} ${createdCar.model ?? data.model}`.trim(),
+            isMain: item.isMain && item.mediaType === "IMAGE",
+            sortOrder: index + 1,
+            mediaType: item.mediaType,
+            sourceType: item.sourceType,
           }),
         ),
       );
@@ -274,6 +266,8 @@ export default function AdminNewCar() {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsUploadingMedia(false);
     }
   };
 
@@ -676,8 +670,7 @@ export default function AdminNewCar() {
                                   ...item,
                                   sourceType: value as MediaSourceType,
                                   url: value === "URL" ? item.url : "",
-                                  fileData:
-                                    value === "UPLOAD" ? item.fileData : "",
+                                  file: value === "UPLOAD" ? item.file : null,
                                 }))
                               }
                             >
@@ -713,16 +706,23 @@ export default function AdminNewCar() {
                             {media.sourceType === "UPLOAD" ? "Fichier" : "URL"}
                           </Label>
                           {media.sourceType === "UPLOAD" ? (
-                            <Input
-                              type="file"
-                              accept="image/*,video/*"
-                              onChange={(event) =>
-                                handleMediaFileChange(
-                                  media.id,
-                                  event.target.files?.[0],
-                                )
-                              }
-                            />
+                            <div className="space-y-2">
+                              <Input
+                                type="file"
+                                accept="image/*,video/*"
+                                onChange={(event) =>
+                                  handleMediaFileChange(
+                                    media.id,
+                                    event.target.files?.[0],
+                                  )
+                                }
+                              />
+                              {media.file && (
+                                <p className="text-xs text-muted-foreground">
+                                  Fichier choisi : {media.file.name}
+                                </p>
+                              )}
+                            </div>
                           ) : (
                             <Input
                               value={media.url}
@@ -791,9 +791,9 @@ export default function AdminNewCar() {
                 </Link>
                 <Button
                   type="submit"
-                  disabled={createCar.isPending || uploadMedia.isPending}
+                  disabled={createCar.isPending || isUploadingMedia}
                 >
-                  {createCar.isPending || uploadMedia.isPending
+                  {createCar.isPending || isUploadingMedia
                     ? "Creation..."
                     : "Creer le vehicule"}
                 </Button>

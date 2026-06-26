@@ -7,7 +7,6 @@ import {
   customFetch,
   useUpdateCar,
   useGetCar,
-  useUploadCarImage,
   getListCarsQueryKey,
   getGetCarQueryKey,
 } from "@workspace/api-client-react";
@@ -30,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { fetchAgencies, fetchBrands } from "@/lib/fleet-catalog";
+import { uploadCarMedia } from "@/lib/car-media-upload";
 
 const NO_VALUE = "__none__";
 
@@ -73,14 +73,14 @@ export default function AdminEditCar() {
     queryFn: fetchAgencies,
   });
   const updateCar = useUpdateCar();
-  const uploadMedia = useUploadCarImage();
   const queryClient = useQueryClient();
   const [mediaUrl, setMediaUrl] = useState("");
   const [mediaAlt, setMediaAlt] = useState("");
   const [mediaType, setMediaType] = useState<"IMAGE" | "VIDEO" | "IMAGE_360">("IMAGE");
   const [sourceType, setSourceType] = useState<"URL" | "UPLOAD">("URL");
-  const [mediaFileData, setMediaFileData] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [isMainMedia, setIsMainMedia] = useState(false);
+  const [isAddingMedia, setIsAddingMedia] = useState(false);
 
   const form = useForm<CarFormValues>({
     resolver: zodResolver(carSchema),
@@ -154,47 +154,51 @@ export default function AdminEditCar() {
 
   const handleFileChange = (file?: File) => {
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setMediaFileData(String(reader.result));
-      setMediaUrl("");
-      setSourceType("UPLOAD");
-      if (file.type.startsWith("video/")) setMediaType("VIDEO");
-    };
-    reader.readAsDataURL(file);
+    setMediaFile(file);
+    setMediaUrl("");
+    setSourceType("UPLOAD");
+    setMediaType((current) =>
+      file.type.startsWith("video/")
+        ? "VIDEO"
+        : current === "VIDEO"
+          ? "IMAGE"
+          : current,
+    );
+    if (file.type.startsWith("video/")) {
+      setIsMainMedia(false);
+    }
   };
 
-  const handleAddMedia = () => {
-    const url = sourceType === "UPLOAD" ? mediaFileData : mediaUrl.trim();
-    if (!url) {
+  const handleAddMedia = async () => {
+    const url = sourceType === "UPLOAD" ? "" : mediaUrl.trim();
+    if (sourceType === "UPLOAD" ? !mediaFile : !url) {
       toast({ title: "Media requis", description: "Ajoutez une URL ou choisissez un fichier.", variant: "destructive" });
       return;
     }
 
-    uploadMedia.mutate({
-      id,
-      data: {
+    try {
+      setIsAddingMedia(true);
+      await uploadCarMedia(id, {
         url,
+        file: sourceType === "UPLOAD" ? mediaFile : null,
         altText: mediaAlt || `${car?.brand ?? ""} ${car?.model ?? ""}`.trim(),
         isMain: isMainMedia && mediaType === "IMAGE",
         mediaType,
         sourceType,
         sortOrder: ((car as any)?.images?.length ?? 0) + 1,
-      } as any,
-    }, {
-      onSuccess: () => {
-        toast({ title: "Media ajoute" });
-        setMediaUrl("");
-        setMediaAlt("");
-        setMediaFileData("");
-        setIsMainMedia(false);
-        setSourceType("URL");
-        refreshCar();
-      },
-      onError: (error: any) => {
-        toast({ title: "Erreur", description: error.message, variant: "destructive" });
-      },
-    });
+      });
+      toast({ title: "Media ajoute" });
+      setMediaUrl("");
+      setMediaAlt("");
+      setMediaFile(null);
+      setIsMainMedia(false);
+      setSourceType("URL");
+      refreshCar();
+    } catch (error: any) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } finally {
+      setIsAddingMedia(false);
+    }
   };
 
   const handleDeleteMedia = async (imageId: number) => {
@@ -422,7 +426,18 @@ export default function AdminEditCar() {
                     </div>
                     <div className="space-y-2">
                       <Label>Source</Label>
-                      <Select value={sourceType} onValueChange={(value) => setSourceType(value as typeof sourceType)}>
+                      <Select
+                        value={sourceType}
+                        onValueChange={(value) => {
+                          const nextSourceType = value as typeof sourceType;
+                          setSourceType(nextSourceType);
+                          if (nextSourceType === "URL") {
+                            setMediaFile(null);
+                          } else {
+                            setMediaUrl("");
+                          }
+                        }}
+                      >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="URL">URL</SelectItem>
@@ -439,7 +454,14 @@ export default function AdminEditCar() {
                   {sourceType === "URL" ? (
                     <Input value={mediaUrl} onChange={(event) => setMediaUrl(event.target.value)} placeholder="https://..." />
                   ) : (
-                    <Input type="file" accept="image/*,video/*" onChange={(event) => handleFileChange(event.target.files?.[0])} />
+                    <div className="space-y-2">
+                      <Input type="file" accept="image/*,video/*" onChange={(event) => handleFileChange(event.target.files?.[0])} />
+                      {mediaFile && (
+                        <p className="text-xs text-muted-foreground">
+                          Fichier choisi : {mediaFile.name}
+                        </p>
+                      )}
+                    </div>
                   )}
 
                   <label className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -453,8 +475,8 @@ export default function AdminEditCar() {
                   </label>
 
                   <div className="flex justify-end">
-                    <Button type="button" onClick={handleAddMedia} disabled={uploadMedia.isPending}>
-                      {uploadMedia.isPending ? "Ajout..." : "Ajouter le media"}
+                    <Button type="button" onClick={handleAddMedia} disabled={isAddingMedia}>
+                      {isAddingMedia ? "Ajout..." : "Ajouter le media"}
                     </Button>
                   </div>
 
