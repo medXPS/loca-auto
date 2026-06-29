@@ -254,7 +254,7 @@ export default function AdminNewCar() {
         failedUploads > 0
           ? {
               title: "Vehicule ajoute",
-              description: `${failedUploads} media(s) n'ont pas pu etre ajoutes. Vous pourrez les completer depuis la fiche du vehicule.`,
+              description: `${failedUploads} média(s) n'ont pas pu être ajoutés. Vous pourrez les compléter depuis la fiche du véhicule.`,
             }
           : { title: "Vehicule ajoute avec succes" },
       );
@@ -281,7 +281,7 @@ export default function AdminNewCar() {
         </Link>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Ajouter un vehicule
+            Ajouter un véhicule
           </h1>
           <p className="text-sm text-muted-foreground">
             Rattachez la voiture a une agence et, si possible, a une marque du
@@ -292,7 +292,7 @@ export default function AdminNewCar() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Details du vehicule</CardTitle>
+          <CardTitle>Détails du véhicule</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -407,7 +407,7 @@ export default function AdminNewCar() {
                   name="model"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Modele</FormLabel>
+                      <FormLabel>Modèle</FormLabel>
                       <FormControl>
                         <Input placeholder="Ex: Clio" {...field} />
                       </FormControl>
@@ -482,7 +482,7 @@ export default function AdminNewCar() {
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Categorie</FormLabel>
+                      <FormLabel>Catégorie</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -597,7 +597,7 @@ export default function AdminNewCar() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <ImagePlus className="h-5 w-5 text-primary" />
-                    Medias du vehicule
+                    Médias du véhicule
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -773,7 +773,7 @@ export default function AdminNewCar() {
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Description du vehicule..."
+                        placeholder="Description du véhicule..."
                         className="h-32"
                         {...field}
                       />
@@ -795,7 +795,7 @@ export default function AdminNewCar() {
                 >
                   {createCar.isPending || isUploadingMedia
                     ? "Creation..."
-                    : "Creer le vehicule"}
+                    : "Créer le véhicule"}
                 </Button>
               </div>
             </form>

@@ -244,7 +244,7 @@ export default function AdminAuditLogs() {
         {!isLoading && filtered.length > PAGE_SIZE && (
           <div className="flex items-center justify-between border-t bg-muted/20 px-6 py-4">
             <span className="text-sm text-muted-foreground">
-              {filtered.length} resultats - page {safePage} / {totalPages}
+              {filtered.length} résultats - page {safePage} / {totalPages}
             </span>
             <div className="flex items-center gap-2">
               <Button

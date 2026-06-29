@@ -11,7 +11,7 @@ export default function Contact() {
 
   const contactItems = [
     {
-      title: "Telephone",
+      title: "Téléphone",
       icon: Phone,
       value: settings?.phone ?? "+212600000000",
       detail: "Reponse directe pendant les heures ouvrables.",
@@ -26,7 +26,7 @@ export default function Contact() {
       title: "Email",
       icon: Mail,
       value: settings?.email ?? "contact@locationauto.ma",
-      detail: "Pour les demandes detaillees ou la documentation.",
+      detail: "Pour les demandes détaillées ou la documentation.",
     },
     {
       title: "Adresse",
@@ -45,10 +45,10 @@ export default function Contact() {
             Contact
           </div>
           <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance md:text-5xl">
-            Parlez-nous de votre besoin, on vous repond vite.
+            Parlez-nous de votre besoin, on vous répond vite.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-8 text-white/72">
-            WhatsApp, telephone, email ou adresse: gardez le canal qui vous arrange pour lancer votre demande sans friction.
+            WhatsApp, téléphone, e-mail ou adresse : choisissez le canal qui vous convient pour lancer votre demande sans friction.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a href={whatsappHref} target="_blank" rel="noopener noreferrer">

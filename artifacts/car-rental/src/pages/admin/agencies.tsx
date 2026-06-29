@@ -221,7 +221,7 @@ export default function AdminAgencies() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-semibold">{agency.name}</span>
                         <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                          {agency.carsCount || 0} vehicule(s)
+                          {agency.carsCount || 0} véhicule(s)
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
@@ -250,7 +250,7 @@ export default function AdminAgencies() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Supprimer cette agence ?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Les vehicules restent dans le catalogue, mais ils ne seront plus rattaches a cette agence.
+                            Les véhicules restent dans le catalogue, mais ils ne seront plus rattachés à cette agence.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -320,7 +320,7 @@ export default function AdminAgencies() {
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Telephone</label>
+                <label className="text-sm font-medium">Téléphone</label>
                 <Input
                   value={draft.phone || ""}
                   onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))}
@@ -389,7 +389,7 @@ export default function AdminAgencies() {
                     <AlertDialogHeader>
                       <AlertDialogTitle>Supprimer cette agence ?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Les vehicules restent dans le catalogue, mais ils ne seront plus rattaches a cette agence.
+                        Les véhicules restent dans le catalogue, mais ils ne seront plus rattachés à cette agence.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

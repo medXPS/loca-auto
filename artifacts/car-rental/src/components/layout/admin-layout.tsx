@@ -42,8 +42,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       return [
         { href: `${basePath}`, label: "Tableau de bord", icon: LayoutDashboard },
         { href: `${basePath}/calendrier`, label: "Calendrier", icon: CalendarDays },
-        { href: `${basePath}/voitures`, label: "Vehicules", icon: Car },
-        { href: `${basePath}/demandes`, label: "Reservations", icon: FileText },
+        { href: `${basePath}/voitures`, label: "Véhicules", icon: Car },
+        { href: `${basePath}/demandes`, label: "Réservations", icon: FileText },
         { href: `${basePath}/clients`, label: "Clients", icon: Users },
         { href: `${basePath}/blog`, label: "Blog", icon: BookOpen },
       ];
@@ -52,22 +52,22 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     return [
       { href: `${basePath}`, label: "Tableau de bord", icon: LayoutDashboard },
       { href: `${basePath}/calendrier`, label: "Calendrier", icon: CalendarDays },
-      { href: `${basePath}/voitures`, label: "Vehicules", icon: Car },
-      { href: `${basePath}/demandes`, label: "Reservations", icon: FileText },
+      { href: `${basePath}/voitures`, label: "Véhicules", icon: Car },
+      { href: `${basePath}/demandes`, label: "Réservations", icon: FileText },
       { href: `${basePath}/clients`, label: "Clients", icon: Users },
       { href: `${basePath}/agents`, label: "Agents", icon: UserCircle },
       { href: `${basePath}/charges`, label: "Charges", icon: Receipt },
       { href: `${basePath}/agences`, label: "Agences", icon: MapPinned },
       { href: `${basePath}/marques`, label: "Marques", icon: BadgeCheck },
       { href: `${basePath}/blog`, label: "Blog", icon: BookOpen },
-      { href: `${basePath}/parametres`, label: "Parametres", icon: Settings },
+      { href: `${basePath}/parametres`, label: "Paramètres", icon: Settings },
       { href: `${basePath}/audit`, label: "Audit", icon: History },
     ];
   }, [basePath, isAgentMode]);
 
   const title = isAgentMode ? "Espace agent" : "Centre admin";
   const subtitle = isAgentMode
-    ? "Operations, calendrier et suivi des reservations."
+    ? "Opérations, calendrier et suivi des réservations."
     : "Pilotage financier, flotte et gouvernance.";
 
   return (
@@ -147,7 +147,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             onClick={logout}
           >
             <LogOut className="w-4 h-4" />
-            Deconnexion
+            Déconnexion
           </Button>
         </div>
       </aside>

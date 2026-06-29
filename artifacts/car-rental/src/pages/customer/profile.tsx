@@ -28,7 +28,7 @@ import { getStatusLabel } from "@/lib/utils";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, { message: "Nom requis" }),
-  phone: z.string().min(10, { message: "Telephone requis" }),
+  phone: z.string().min(10, { message: "Téléphone requis" }),
   cin: z.string().optional(),
   passportNumber: z.string().optional(),
   drivingLicenseNumber: z.string().optional(),
@@ -139,8 +139,8 @@ export default function CustomerProfile() {
   const handleMfaToggle = async (enabled: boolean) => {
     if (!user?.emailVerifiedAt) {
       toast({
-        title: "Verification requise",
-        description: "Veuillez verifier votre adresse e-mail avant de gerer le MFA.",
+        title: "Vérification requise",
+        description: "Veuillez vérifier votre adresse e-mail avant de gérer le MFA.",
       });
       return;
     }
@@ -194,7 +194,7 @@ export default function CustomerProfile() {
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Compte</div>
               <div className="mt-1 flex items-center gap-2 text-sm font-medium">
                 <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                {user?.emailVerifiedAt ? "Email verifie" : "Email a verifier"}
+                {user?.emailVerifiedAt ? "Email vérifié" : "Email à vérifier"}
               </div>
             </div>
             <div className="rounded-2xl border border-primary/10 bg-background/80 px-4 py-3 shadow-sm">
@@ -205,10 +205,10 @@ export default function CustomerProfile() {
               </div>
             </div>
             <div className="rounded-2xl border border-primary/10 bg-background/80 px-4 py-3 shadow-sm">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Securite</div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sécurité</div>
               <div className="mt-1 flex items-center gap-2 text-sm font-medium">
                 <ShieldCheck className={`h-4 w-4 ${mfaEnabled ? "text-emerald-500" : "text-slate-400"}`} />
-                {user?.emailVerifiedAt ? (mfaEnabled ? "MFA activee" : "MFA desactivee") : "Apres verification"}
+                {user?.emailVerifiedAt ? (mfaEnabled ? "MFA activée" : "MFA désactivée") : "Après vérification"}
               </div>
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function CustomerProfile() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Telephone</FormLabel>
+                        <FormLabel>Téléphone</FormLabel>
                         <FormControl>
                           <Input placeholder="+212 6..." {...field} />
                         </FormControl>
@@ -304,7 +304,7 @@ export default function CustomerProfile() {
                   <div className="space-y-2">
                     <Label>Conseil</Label>
                     <div className="rounded-2xl border border-dashed border-primary/15 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
-                      Completez la CIN et le permis pour pre-remplir vos futures reservations.
+                      Complétez la CIN et le permis pour pré-remplir vos futures réservations.
                     </div>
                   </div>
                 </div>
@@ -354,7 +354,7 @@ export default function CustomerProfile() {
               <FileText className="h-5 w-5 text-primary" />
               Mes documents
             </CardTitle>
-            <CardDescription>Vous pouvez televerser puis remplacer vos fichiers sans perdre votre dossier.</CardDescription>
+            <CardDescription>Vous pouvez téléverser puis remplacer vos fichiers sans perdre votre dossier.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6 pt-6">
             <DocumentUploadField
@@ -378,7 +378,7 @@ export default function CustomerProfile() {
               docType="PERMIS_CONDUIRE"
               existingDocument={drivingDoc}
               onUploaded={refreshProfile}
-              helperText="Ajoutez votre permis pour accelerer la reservation."
+              helperText="Ajoutez votre permis pour accélérer la réservation."
             />
 
             <div className="rounded-2xl border border-primary/10 bg-primary/5 p-4">
@@ -409,27 +409,27 @@ export default function CustomerProfile() {
         <CardHeader className="border-b bg-muted/20">
           <CardTitle className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-primary" />
-            Securite du compte
+            Sécurité du compte
           </CardTitle>
-          <CardDescription>Activez ou desactivez la verification MFA apres la premiere validation de votre e-mail.</CardDescription>
+          <CardDescription>Activez ou désactivez la vérification MFA après la première validation de votre e-mail.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4 pt-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={mfaEnabled ? "secondary" : "outline"}>{mfaEnabled ? "MFA activee" : "MFA desactivee"}</Badge>
-              {!user?.emailVerifiedAt && <Badge variant="outline">Verification e-mail requise</Badge>}
+              <Badge variant={mfaEnabled ? "secondary" : "outline"}>{mfaEnabled ? "MFA activée" : "MFA désactivée"}</Badge>
+              {!user?.emailVerifiedAt && <Badge variant="outline">Vérification e-mail requise</Badge>}
             </div>
             <p className="text-sm text-muted-foreground">
               {user?.emailVerifiedAt
-                ? "Quand cette option est activee, une seconde verification sera demandee a chaque connexion."
-                : "La gestion du MFA sera disponible apres la premiere verification de votre adresse e-mail."}
+                ? "Quand cette option est activée, une seconde vérification sera demandée à chaque connexion."
+                : "La gestion du MFA sera disponible après la première vérification de votre adresse e-mail."}
             </p>
           </div>
 
           <div className="flex items-center gap-4 rounded-2xl border border-primary/10 bg-background px-4 py-3 shadow-sm">
             <div className="text-right">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bascule</div>
-              <div className="mt-1 text-sm font-medium">{mfaEnabled ? "Active" : "Desactive"}</div>
+              <div className="mt-1 text-sm font-medium">{mfaEnabled ? "Active" : "Désactivé"}</div>
             </div>
             <Switch checked={mfaEnabled} onCheckedChange={handleMfaToggle} disabled={!user?.emailVerifiedAt || isSaving} />
           </div>
@@ -469,7 +469,7 @@ export default function CustomerProfile() {
                         Du {item.startDate} au {item.returnDate}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {item.existingRating ? "Avis deja publie, vous pouvez le mettre a jour." : "Partagez votre retour apres cette location."}
+                        {item.existingRating ? "Avis déjà publié, vous pouvez le mettre à jour." : "Partagez votre retour après cette location."}
                       </p>
                     </div>
                   </div>
@@ -486,7 +486,7 @@ export default function CustomerProfile() {
             ))
           ) : (
             <div className="rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 py-6 text-sm text-muted-foreground">
-              Aucune location terminee a noter pour le moment.
+              Aucune location terminée à noter pour le moment.
             </div>
           )}
         </CardContent>

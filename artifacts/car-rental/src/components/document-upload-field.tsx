@@ -76,7 +76,7 @@ export function DocumentUploadField({
     (selectedFile
       ? `Vous allez envoyer ${selectedFile.name} pour cette demande.`
       : existingDocument
-        ? `Le document actuel ${existingName || "selectionne"} sera lie a cette demande.`
+        ? `Le document actuel ${existingName || "sélectionné"} sera lié à cette demande.`
         : "Vous allez valider l'envoi de ce document.");
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -130,12 +130,12 @@ export function DocumentUploadField({
       if (inputRef.current) {
         inputRef.current.value = "";
       }
-      toast({ title: selectedFile ? `${label} televerse avec succes` : `${label} soumis avec succes` });
+      toast({ title: selectedFile ? `${label} téléversé avec succès` : `${label} soumis avec succes` });
       onUploaded();
     } catch {
       setProgress("error");
       toast({
-        title: "Erreur de televersement",
+        title: "Erreur de téléversement",
         description: "Reessayez ou contactez le support.",
         variant: "destructive",
       });
@@ -225,7 +225,7 @@ export function DocumentUploadField({
         {progress === "error" && (
           <span className="inline-flex items-center gap-2 text-sm text-destructive">
             <AlertTriangle className="h-4 w-4" />
-            Le televersement a echoue. Reessayez.
+            Le téléversement a échoué. Réessayez.
           </span>
         )}
         <input ref={inputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileChange} />

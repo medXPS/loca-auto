@@ -64,8 +64,8 @@ export default function Login() {
         }
       } catch (error: any) {
         toast({
-          title: "Connexion reussie",
-          description: error?.message || "Connecte, mais la reservation doit etre relancee.",
+          title: "Connexion réussie",
+          description: error?.message || "Connecté, mais la réservation doit être relancée.",
           variant: "destructive",
         });
       }
@@ -88,8 +88,8 @@ export default function Login() {
           setMfaToken(response.mfaToken);
           setMfaEmail(response.user?.email ?? data.email);
           toast({
-            title: "Code de securite envoye",
-            description: "Entrez le code recu par email pour terminer la connexion.",
+            title: "Code de sécurité envoyé",
+            description: "Entrez le code reçu par e-mail pour terminer la connexion.",
           });
           return;
         }
@@ -135,7 +135,7 @@ export default function Login() {
     } catch (error: any) {
       toast({
         title: "Code invalide",
-        description: error?.message || "Verifiez le code recu par email.",
+        description: error?.message || "Vérifiez le code reçu par e-mail.",
         variant: "destructive",
       });
     } finally {
@@ -158,7 +158,7 @@ export default function Login() {
         <Card className="border-border/50 shadow-xl">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl font-bold tracking-tight">
-              {mfaToken ? "Verification MFA" : "Bon retour"}
+              {mfaToken ? "Vérification MFA" : "Bon retour"}
             </CardTitle>
             <CardDescription>
               Entrez vos identifiants pour accéder à votre compte
@@ -168,7 +168,7 @@ export default function Login() {
             {mfaToken ? (
               <form onSubmit={verifyMfa} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Code a 6 chiffres</label>
+                  <label className="text-sm font-medium">Code à 6 chiffres</label>
                   <Input
                     value={mfaCode}
                     onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -179,10 +179,10 @@ export default function Login() {
                   />
                 </div>
                 <Button type="submit" className="w-full h-11" disabled={isVerifyingMfa || mfaCode.length !== 6}>
-                  {isVerifyingMfa ? "Verification..." : "Valider le code"}
+                  {isVerifyingMfa ? "Vérification..." : "Valider le code"}
                 </Button>
                 <Button type="button" variant="ghost" className="w-full" onClick={() => setMfaToken(null)}>
-                  Revenir a la connexion
+                  Revenir à la connexion
                 </Button>
               </form>
             ) : (

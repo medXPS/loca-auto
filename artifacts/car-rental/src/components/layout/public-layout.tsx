@@ -37,7 +37,7 @@ function getDashboardHref(role?: string) {
 
 const navLinks: NavItem[] = [
   { href: "/", label: "Accueil", icon: House },
-  { href: "/voitures", label: "Vehicules", icon: CarFront },
+  { href: "/voitures", label: "Véhicules", icon: CarFront },
   { href: "/blog", label: "Blog", icon: Newspaper },
   { href: "/contact", label: "Contact", icon: Phone },
 ];
@@ -158,7 +158,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                   onClick={handleLogout}
                 >
                   <LogOut className="h-4 w-4" />
-                  Deconnexion
+                  Déconnexion
                 </Button>
               </>
             ) : (
@@ -286,7 +286,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                       onClick={handleLogout}
                     >
                       <LogOut className="h-4 w-4" />
-                      Deconnexion
+                      Déconnexion
                     </Button>
                   </>
                 ) : (
@@ -322,7 +322,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <div className="space-y-5">
                 <SiteLogo tone="light" />
                 <p className="max-w-md text-sm leading-7 text-white/70">
-                  Entreprise de location de voitures au Maroc, pensee pour comparer les offres, lire les prix et reserver rapidement.
+                  Entreprise de location de voitures au Maroc, pensée pour comparer les offres, lire les prix et réserver rapidement.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {socialLinks.map((item) => {
@@ -351,7 +351,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     Accueil
                   </Link>
                   <Link href="/voitures" className="transition-colors hover:text-white">
-                    Vehicules
+                    Véhicules
                   </Link>
                   <Link href="/blog" className="transition-colors hover:text-white">
                     Blog
@@ -360,7 +360,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     Contact
                   </Link>
                   <Link href="/mentions-legales" className="transition-colors hover:text-white">
-                    Mentions legales
+                    Mentions légales
                   </Link>
                 </div>
               </div>
@@ -386,7 +386,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <div className="space-y-4">
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/62">WhatsApp</p>
                 <p className="text-sm leading-7 text-white/70">
-                  Contact rapide pour verifier la disponibilite d&apos;un vehicule et finaliser la reservation.
+                  Contact rapide pour vérifier la disponibilité d&apos;un véhicule et finaliser la réservation.
                 </p>
                 <Button
                   asChild
@@ -403,7 +403,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
             <div className="border-t border-white/8 py-5">
               <div className="container mx-auto px-4 text-center text-xs text-white/50">
-                © {new Date().getFullYear()} Location Auto Maroc. Tous droits reserves.
+                © {new Date().getFullYear()} Location Auto Maroc. Tous droits réservés.
               </div>
             </div>
           </>
@@ -413,7 +413,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <div className="space-y-4">
                 <SiteLogo />
                 <p className="max-w-md text-sm leading-7 text-muted-foreground">
-                  Entreprise de location de voitures au Maroc, pensee pour comparer les offres, lire les prix et reserver rapidement.
+                  Entreprise de location de voitures au Maroc, pensée pour comparer les offres, lire les prix et réserver rapidement.
                 </p>
               </div>
 
@@ -424,7 +424,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     Accueil
                   </Link>
                   <Link href="/voitures" className="transition-colors hover:text-primary">
-                    Vehicules
+                    Véhicules
                   </Link>
                   <Link href="/blog" className="transition-colors hover:text-primary">
                     Blog
@@ -433,7 +433,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     Contact
                   </Link>
                   <Link href="/mentions-legales" className="transition-colors hover:text-primary">
-                    Mentions legales
+                    Mentions légales
                   </Link>
                 </div>
               </div>
@@ -454,7 +454,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <div className="space-y-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">WhatsApp</p>
                 <p className="text-sm leading-7 text-muted-foreground">
-                  Contact rapide pour verifier la disponibilite d&apos;un vehicule et finaliser la reservation.
+                  Contact rapide pour vérifier la disponibilité d&apos;un véhicule et finaliser la réservation.
                 </p>
                 <Button asChild variant="outline" className="rounded-full border-border/70 bg-white px-4 py-2 text-sm font-medium">
                   <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
@@ -467,7 +467,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
             <div className="border-t border-border/70 py-4">
               <div className="container mx-auto px-4 text-center text-xs text-muted-foreground">
-                © {new Date().getFullYear()} Location Auto Maroc. Tous droits reserves.
+                © {new Date().getFullYear()} Location Auto Maroc. Tous droits réservés.
               </div>
             </div>
           </>

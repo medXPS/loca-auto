@@ -16,10 +16,10 @@ export function CountdownTimer({
   deadline,
   className,
   onExpire,
-  label = "Delai de paiement",
-  description = "Vous avez ce temps pour passer a l'agence et payer en especes",
-  expiredLabel = "Delai expire",
-  expiredDescription = "Le delai de paiement est depasse. La reservation peut etre annulee.",
+  label = "Délai de paiement",
+  description = "Vous avez ce temps pour passer à l'agence et payer en espèces",
+  expiredLabel = "Délai expiré",
+  expiredDescription = "Le délai de paiement est dépassé. La réservation peut être annulée.",
 }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
   const [isExpired, setIsExpired] = useState(false);

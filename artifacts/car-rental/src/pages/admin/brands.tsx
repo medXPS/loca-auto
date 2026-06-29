@@ -84,7 +84,7 @@ export default function AdminBrands() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gestion des marques</h1>
-          <p className="text-sm text-muted-foreground">Ajoutez les marques, leurs logos et reutilisez-les ensuite dans les fiches vehicules.</p>
+          <p className="text-sm text-muted-foreground">Ajoutez les marques, leurs logos et réutilisez-les ensuite dans les fiches véhicules.</p>
         </div>
         <Button
           type="button"
@@ -167,7 +167,7 @@ export default function AdminBrands() {
         <Card>
           <CardHeader>
             <CardTitle>Marques disponibles</CardTitle>
-            <CardDescription>Une marque bien renseignee simplifie la selection vehicule et le bandeau de logos public.</CardDescription>
+          <CardDescription>Une marque bien renseignée simplifie la sélection véhicule et le bandeau de logos public.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {isLoading ? (
@@ -193,7 +193,7 @@ export default function AdminBrands() {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">{brand.name}</span>
                       <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        {brand.carsCount || 0} vehicule(s)
+                    {brand.carsCount || 0} véhicule(s)
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground line-clamp-2">

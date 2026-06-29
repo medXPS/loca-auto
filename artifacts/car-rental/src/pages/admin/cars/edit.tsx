@@ -218,14 +218,14 @@ export default function AdminEditCar() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Modifier le vehicule #{id}</h1>
-          <p className="text-sm text-muted-foreground">Ajustez la marque, l'agence, les medias et la disponibilite depuis la meme fiche.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Modifier le véhicule #{id}</h1>
+          <p className="text-sm text-muted-foreground">Ajustez la marque, l'agence, les médias et la disponibilité depuis la même fiche.</p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Details du vehicule</CardTitle>
+          <CardTitle>Détails du véhicule</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -307,7 +307,7 @@ export default function AdminEditCar() {
                   <FormItem><FormLabel>Marque affichee</FormLabel><FormControl><Input {...field} disabled={Boolean(selectedBrandId)} className={selectedBrandId ? "bg-muted" : ""} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="model" render={({ field }) => (
-                  <FormItem><FormLabel>Modele</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Modèle</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="year" render={({ field }) => (
                   <FormItem><FormLabel>Annee</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
@@ -330,7 +330,7 @@ export default function AdminEditCar() {
                       <SelectContent>
                         <SelectItem value="AVAILABLE">Disponible</SelectItem>
                         <SelectItem value="TEMPORARILY_HELD">En attente de paiement</SelectItem>
-                        <SelectItem value="RESERVED">Reservee</SelectItem>
+                        <SelectItem value="RESERVED">Réservée</SelectItem>
                         <SelectItem value="RENTED">Louee</SelectItem>
                         <SelectItem value="MAINTENANCE">En maintenance</SelectItem>
                       </SelectContent>
@@ -341,7 +341,7 @@ export default function AdminEditCar() {
 
                 <FormField control={form.control} name="category" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Categorie</FormLabel>
+                    <FormLabel>Catégorie</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Selectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>

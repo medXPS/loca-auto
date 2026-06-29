@@ -21,8 +21,8 @@ import { Car, MailCheck, Sparkles } from "lucide-react";
 const registerSchema = z.object({
   fullName: z.string().min(2, { message: "Nom complet requis" }),
   email: z.string().email({ message: "Email invalide" }),
-  password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caracteres" }),
-  phone: z.string().min(10, { message: "Numero de telephone invalide" }),
+  password: z.string().min(6, { message: "Le mot de passe doit contenir au moins 6 caractères" }),
+  phone: z.string().min(10, { message: "Numéro de téléphone invalide" }),
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -57,7 +57,7 @@ export default function Register() {
           setVerificationEmail(res.email);
           setVerificationCode("");
           toast({
-            title: "Compte cree",
+            title: "Compte créé",
             description: res.message,
           });
         },
@@ -77,7 +77,7 @@ export default function Register() {
     setAuthTokenGetter(() => res.token);
 
     toast({
-      title: "Email verifie",
+      title: "Email vérifié",
       description: "Bienvenue sur Location Auto Maroc",
     });
 
@@ -90,8 +90,8 @@ export default function Register() {
         }
       } catch (error: any) {
         toast({
-          title: "Email verifie",
-          description: error?.message || "Compte cree, mais la reservation doit etre relancee.",
+          title: "Email vérifié",
+          description: error?.message || "Compte créé, mais la reservation doit etre relancee.",
           variant: "destructive",
         });
       }
@@ -118,8 +118,8 @@ export default function Register() {
         },
         onError: (error: any) => {
           toast({
-            title: "Verification echouee",
-            description: getErrorMessage(error, "Verifiez le code recu par email."),
+            title: "Vérification échouée",
+            description: getErrorMessage(error, "Vérifiez le code reçu par e-mail."),
             variant: "destructive",
           });
         },
@@ -135,14 +135,14 @@ export default function Register() {
       {
         onSuccess: () => {
           toast({
-            title: "Code renvoye",
-            description: "Un nouveau code de verification a ete envoye.",
+            title: "Code renvoyé",
+            description: "Un nouveau code de vérification a été envoyé.",
           });
         },
         onError: (error: any) => {
           toast({
             title: "Impossible de renvoyer le code",
-            description: getErrorMessage(error, "Veuillez reessayer dans quelques instants."),
+            description: getErrorMessage(error, "Veuillez réessayer dans quelques instants."),
             variant: "destructive",
           });
         },
@@ -168,19 +168,19 @@ export default function Register() {
               {verificationEmail ? <MailCheck className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
             </div>
             <CardTitle className="text-2xl font-bold tracking-tight">
-              {verificationEmail ? "Verifiez votre email" : "Creer un compte"}
+              {verificationEmail ? "Vérifiez votre e-mail" : "Créer un compte"}
             </CardTitle>
             <CardDescription>
               {verificationEmail
-                ? `Saisissez le code envoye a ${verificationEmail}.`
-                : "Inscrivez-vous pour gerer vos reservations facilement."}
+                ? `Saisissez le code envoyé à ${verificationEmail}.`
+                : "Inscrivez-vous pour gérer vos réservations facilement."}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {verificationEmail ? (
               <form onSubmit={onVerify} className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Code a 6 chiffres</label>
+                  <label className="text-sm font-medium">Code à 6 chiffres</label>
                   <Input
                     value={verificationCode}
                     onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -191,7 +191,7 @@ export default function Register() {
                   />
                 </div>
                 <Button type="submit" className="h-11 w-full" disabled={verifyEmailMutation.isPending || verificationCode.length !== 6}>
-                  {verifyEmailMutation.isPending ? "Verification..." : "Verifier mon email"}
+                  {verifyEmailMutation.isPending ? "Vérification..." : "Vérifier mon e-mail"}
                 </Button>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button type="button" variant="outline" className="w-full" onClick={resendCode} disabled={resendVerificationMutation.isPending}>
@@ -236,7 +236,7 @@ export default function Register() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Telephone</FormLabel>
+                        <FormLabel>Téléphone</FormLabel>
                         <FormControl>
                           <Input placeholder="+212 6..." type="tel" {...field} />
                         </FormControl>
@@ -258,7 +258,7 @@ export default function Register() {
                     )}
                   />
                   <Button type="submit" className="mt-2 h-11 w-full" disabled={registerMutation.isPending}>
-                    {registerMutation.isPending ? "Creation en cours..." : "Creer mon compte"}
+                    {registerMutation.isPending ? "Création en cours..." : "Créer mon compte"}
                   </Button>
                 </form>
               </Form>
@@ -266,7 +266,7 @@ export default function Register() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm text-muted-foreground">
-              Vous avez deja un compte ?{" "}
+              Vous avez déjà un compte ?{" "}
               <Link href="/connexion" className="font-medium text-primary hover:underline">
                 Se connecter
               </Link>

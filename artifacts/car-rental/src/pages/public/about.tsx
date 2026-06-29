@@ -64,7 +64,7 @@ export default function About() {
                   {[
                     { label: "Villes", value: "30+" },
                     { label: "Agences", value: "60+" },
-                    { label: "Support", value: "7j/7" },
+                    { label: "Assistance", value: "7j/7" },
                   ].map((stat) => (
                     <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/6 px-4 py-3">
                       <p className="text-[10px] uppercase tracking-[0.2em] text-white/56">{stat.label}</p>

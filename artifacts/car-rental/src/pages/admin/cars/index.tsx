@@ -25,7 +25,7 @@ export default function AdminCars() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Flotte de vehicules</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Flotte de véhicules</h1>
           <p className="text-sm text-muted-foreground">Suivez les prix, l'agence de rattachement et le statut reel de la flotte.</p>
         </div>
         <Link href={`${basePath}/voitures/nouvelle`}>
@@ -38,7 +38,7 @@ export default function AdminCars() {
       <div className="flex items-center gap-2 bg-card p-2 rounded-lg border">
         <Search className="w-5 h-5 text-muted-foreground ml-2" />
         <Input
-          placeholder="Rechercher par marque, modele ou matricule..."
+          placeholder="Rechercher par marque, modèle ou matricule..."
           className="border-0 shadow-none focus-visible:ring-0"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -52,7 +52,7 @@ export default function AdminCars() {
               <tr>
                 <th className="px-6 py-4 font-medium">Vehicule</th>
                 <th className="px-6 py-4 font-medium">Agence</th>
-                <th className="px-6 py-4 font-medium">Categorie</th>
+                <th className="px-6 py-4 font-medium">Catégorie</th>
                 <th className="px-6 py-4 font-medium">Prix/Jour</th>
                 <th className="px-6 py-4 font-medium">Matricule</th>
                 <th className="px-6 py-4 font-medium">Statut</th>
@@ -143,7 +143,7 @@ export default function AdminCars() {
                         <EmptyMedia variant="icon"><Car /></EmptyMedia>
                         <EmptyTitle>Aucune voiture trouvee</EmptyTitle>
                         <EmptyDescription>
-                          {search ? "Aucun vehicule ne correspond a votre recherche." : "Commencez par ajouter un vehicule a votre flotte."}
+                          {search ? "Aucun véhicule ne correspond à votre recherche." : "Commencez par ajouter un véhicule à votre flotte."}
                         </EmptyDescription>
                       </EmptyHeader>
                       {!search && (

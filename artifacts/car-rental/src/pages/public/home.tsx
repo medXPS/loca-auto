@@ -91,7 +91,7 @@ function FeaturedCarCard({ car }: { car: Car }) {
 
           <span className="inline-flex w-fit rounded-full border border-white/12 bg-slate-950/44 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
             {availabilityCopy.availableFrom
-              ? `Disponible a partir du ${formatAvailabilityDate(availabilityCopy.availableFrom)}`
+              ? `Disponible à partir du ${formatAvailabilityDate(availabilityCopy.availableFrom)}`
               : availabilityCopy.label}
           </span>
         </div>
@@ -106,7 +106,7 @@ function FeaturedCarCard({ car }: { car: Car }) {
           </div>
 
           <div className="shrink-0 rounded-[1.15rem] border border-white/15 bg-white/94 px-4 py-3 text-right shadow-lg">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">A partir de</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">À partir de</p>
             <p className="text-3xl font-bold tracking-tight text-[#ff4d43]">{formatPrice(car.dailyPrice)}</p>
           </div>
         </div>
@@ -120,7 +120,7 @@ function FeaturedCarCard({ car }: { car: Car }) {
         </div>
 
         <div className="flex items-center justify-between gap-3 rounded-[1.15rem] border border-slate-200 bg-slate-50 px-4 py-3">
-          <span className="text-sm text-slate-700">Reservation rapide</span>
+          <span className="text-sm text-slate-700">Réservation rapide</span>
           <span
             className={`rounded-full px-3 py-1 text-xs font-semibold ${
               availabilityCopy.isBlocked ? "bg-[#ff4d43]/10 text-[#ff4d43]" : "bg-[#17b26a]/10 text-[#168f58]"
@@ -132,7 +132,7 @@ function FeaturedCarCard({ car }: { car: Car }) {
 
         <Button asChild className="h-12 w-full rounded-full bg-[#ff4d43] text-white shadow-[0_18px_30px_-18px_rgba(255,77,67,0.68)] hover:bg-[#f03d32]">
           <Link href={reserveHref}>
-            Reserver maintenant
+            Réserver maintenant
             <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
@@ -266,7 +266,7 @@ export default function Home() {
     <div className="bg-[#f4f6fb]">
       <Seo
         title="Location de voitures au Maroc"
-        description="Trouvez votre vehicule en quelques clics. Comparez les prix, reservez rapidement et contactez l'agence sur WhatsApp."
+        description="Trouvez votre véhicule en quelques clics. Comparez les prix, réservez rapidement et contactez l'agence sur WhatsApp."
         canonical="https://demo-locationauto.shonenx.shop/"
         image="/opengraph.jpg"
         jsonLd={[
@@ -312,8 +312,8 @@ export default function Home() {
                 <span className="block text-[#ff4d43]">vivez le Maroc.</span>
               </h1>
               <p className="mt-6 max-w-xl text-base leading-8 text-white/78">
-                Des voitures selectionnees avec soin, un service premium et des prix clairs. Recherchez, choisissez
-                votre ville et reservez en quelques clics.
+                Des voitures sélectionnées avec soin, un service premium et des prix clairs. Recherchez, choisissez
+                votre ville et réservez en quelques clics.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -349,7 +349,7 @@ export default function Home() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button asChild className="h-13 rounded-2xl bg-[#ff4d43] px-6 text-white shadow-[0_22px_35px_-20px_rgba(255,77,67,0.72)] hover:bg-[#f03d32]">
                   <Link href="/voitures">
-                    Voir les vehicules
+                    Voir les véhicules
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -427,9 +427,9 @@ export default function Home() {
       <section className="container mx-auto px-4 pb-14 pt-18 md:pb-18 md:pt-22">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
-            eyebrow="Selection populaire"
-            title="Nos voitures les plus demandees"
-            description="Une presentation premium et plus proche du design partage, avec un acces direct vers la fiche vehicule et la reservation."
+            eyebrow="Sélection populaire"
+            title="Nos voitures les plus demandées"
+            description="Une présentation premium, fidèle au design partagé, avec un accès direct vers la fiche véhicule et la réservation."
           />
 
           <Link
@@ -468,23 +468,23 @@ export default function Home() {
           <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
             <FeatureColumn
               icon={ShieldCheck}
-              title="Securite garantie"
-              description="Vehicules controles et assures pour votre tranquillite."
+              title="Sécurité garantie"
+              description="Véhicules contrôlés et assurés pour votre tranquillité."
             />
             <FeatureColumn
               icon={CircleDollarSign}
               title="Prix transparents"
-              description="Aucun frais cache, tout est clair des le depart."
+              description="Aucun frais caché, tout est clair dès le départ."
             />
             <FeatureColumn
               icon={Clock3}
-              title="Reservation rapide"
+              title="Réservation rapide"
               description="Reservez en quelques clics et gagnez du temps."
             />
             <FeatureColumn
               icon={Headset}
               title="Support 7j/7"
-              description="Notre equipe reste disponible a tout moment."
+              description="Notre équipe reste disponible à tout moment."
             />
           </div>
         </div>

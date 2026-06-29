@@ -105,13 +105,13 @@ export function DateRangeCalendar({
     }
 
     if (!isIsoRangeValid(nextStartDate, nextReturnDate)) {
-      setWarningMessage("La date de retour doit etre apres la date de depart.");
+      setWarningMessage("La date de retour doit être après la date de départ.");
       onChange({ startDate: nextReturnDate, returnDate: "" });
       return;
     }
 
     if (doesIsoRangeOverlapBlocked({ startDate: nextStartDate, endDate: nextReturnDate }, blockedRanges)) {
-      setWarningMessage("Cette periode contient des dates deja reservees ou une reservation en cours.");
+      setWarningMessage("Cette période contient des dates déjà réservées ou une réservation en cours.");
       onChange({ startDate: lastClickedIsoRef.current ?? nextReturnDate, returnDate: "" });
       return;
     }
@@ -163,8 +163,8 @@ export function DateRangeCalendar({
                   setWarningMessage(null);
                   onChange({ startDate: "", returnDate: "" });
                 }}
-                aria-label="Reinitialiser la periode"
-                title="Reinitialiser"
+                aria-label="Réinitialiser la période"
+                title="Réinitialiser"
                 className={
                   isCompact
                     ? "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary/15 bg-background/80 text-muted-foreground shadow-sm transition-colors hover:bg-background hover:text-foreground"
@@ -172,7 +172,7 @@ export function DateRangeCalendar({
                 }
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                {!isCompact && "Reinitialiser"}
+                {!isCompact && "Réinitialiser"}
               </button>
             )}
           </div>
@@ -185,7 +185,7 @@ export function DateRangeCalendar({
                   : "rounded-2xl border border-primary/10 bg-background/85 px-3 py-2 shadow-sm"
               }
             >
-              <div className="text-[10px] font-medium uppercase text-muted-foreground">Depart</div>
+              <div className="text-[10px] font-medium uppercase text-muted-foreground">Départ</div>
               <div
                 className={
                   isCompact
@@ -193,7 +193,7 @@ export function DateRangeCalendar({
                     : "mt-1 min-h-5 text-sm font-semibold text-foreground"
                 }
               >
-                {startDate ? formatDisplayDate(startDate) : "A choisir"}
+                {startDate ? formatDisplayDate(startDate) : "À choisir"}
               </div>
             </div>
 
@@ -212,7 +212,7 @@ export function DateRangeCalendar({
                     : "mt-1 min-h-5 text-sm font-semibold text-foreground"
                 }
               >
-                {returnDate ? formatDisplayDate(returnDate) : "A choisir"}
+                {returnDate ? formatDisplayDate(returnDate) : "À choisir"}
               </div>
             </div>
           </div>
@@ -276,7 +276,7 @@ export function DateRangeCalendar({
             <div className={isCompact ? "grid gap-1.5 text-[11px] font-medium text-muted-foreground" : "flex flex-wrap items-center gap-3 text-xs font-medium text-muted-foreground"}>
               <span className="inline-flex items-center gap-2">
                 <CalendarCheck2 className="h-3.5 w-3.5 text-primary" />
-                Periode selectionnee
+                Période sélectionnée
               </span>
               <span className="inline-flex items-center gap-2">
                 <CalendarX className="h-3.5 w-3.5" />
@@ -288,7 +288,7 @@ export function DateRangeCalendar({
               <div className={isCompact ? "space-y-1" : "flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4"}>
                 <span className="text-muted-foreground">{selectedLabel}</span>
                 <span className={isCompact ? "block text-xs font-semibold leading-snug text-foreground" : "font-semibold text-foreground"}>
-                  {startDate ? formatDisplayDate(startDate) : "Depart"}
+                  {startDate ? formatDisplayDate(startDate) : "Départ"}
                   {returnDate ? ` - ${formatDisplayDate(returnDate)}` : ""}
                 </span>
               </div>

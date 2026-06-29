@@ -115,12 +115,12 @@ export function RequestActions({ requestId, status, estimatedPrice, onSuccess }:
         method: "PATCH",
         body: JSON.stringify({ hours }),
       });
-      toast({ title: `Delai prolonge de ${hours}h` });
+      toast({ title: `Délai prolongé de ${hours} h` });
       onSuccess();
     } catch (error: any) {
       toast({
         title: "Erreur",
-        description: error?.message || "Impossible de prolonger le delai.",
+        description: error?.message || "Impossible de prolonger le délai.",
         variant: "destructive",
       });
     }

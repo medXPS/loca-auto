@@ -178,7 +178,7 @@ function CatalogueCarRow({ car }: { car: any }) {
 
           <div className="flex flex-col justify-between border-t border-slate-100 p-5 lg:border-l lg:border-t-0">
             <div className="text-right">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">A partir de</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">À partir de</p>
               <p className="mt-1 text-3xl font-semibold text-[#FF4B43]">{formatPrice(car.dailyPrice)}</p>
               <p className="text-xs text-slate-400">/ jour</p>
               <div
@@ -193,7 +193,7 @@ function CatalogueCarRow({ car }: { car: any }) {
             </div>
 
           <Button asChild className="rounded-full bg-[#FF4B43] text-white hover:bg-[#f03b33]">
-            <Link href={`/voitures/${car.id}?reserve=1`}>Reserver maintenant</Link>
+            <Link href={`/voitures/${car.id}?reserve=1`}>Réserver maintenant</Link>
           </Button>
         </div>
       </div>
@@ -390,7 +390,7 @@ export default function Cars() {
 
       <FilterSection title="Intervalle">
         <DateRangeCalendar
-          label="Disponibilite"
+          label="Disponibilité"
           startDate={startDate}
           returnDate={returnDate}
           onChange={({ startDate: nextStartDate, returnDate: nextReturnDate }) => {
@@ -402,13 +402,13 @@ export default function Cars() {
         />
       </FilterSection>
 
-      <FilterSection title="Modele de voiture">
+      <FilterSection title="Modèle de voiture">
         <Select value={vehicleKey} onValueChange={setVehicleKey}>
           <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white">
-            <SelectValue placeholder="Choisir un modele" />
+            <SelectValue placeholder="Choisir un modèle" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL_VALUE}>Tous les modeles</SelectItem>
+            <SelectItem value={ALL_VALUE}>Tous les modèles</SelectItem>
             {vehicleOptions.map((item) => (
               <SelectItem key={item.key} value={item.key}>
                 {item.label}
@@ -418,7 +418,7 @@ export default function Cars() {
         </Select>
       </FilterSection>
 
-      <FilterSection title="Categorie">
+      <FilterSection title="Catégorie">
         <div className="grid gap-3">
           {categoryOptions.map((item) => (
             <FilterCheckRow
@@ -431,7 +431,7 @@ export default function Cars() {
         </div>
       </FilterSection>
 
-      <FilterSection title="Boite de vitesse">
+      <FilterSection title="Boîte de vitesse">
         <div className="grid gap-3">
           {transmissionOptions.map((item) => (
             <FilterCheckRow
@@ -470,7 +470,7 @@ export default function Cars() {
           Appliquer les filtres
         </Button>
         <Button variant="outline" className="w-full rounded-full border-slate-200 bg-white" onClick={handleReset}>
-          Reinitialiser
+          Réinitialiser
         </Button>
       </div>
     </div>
@@ -479,8 +479,8 @@ export default function Cars() {
   return (
     <div className="flex flex-col bg-[radial-gradient(circle_at_top,rgba(255,248,246,0.95),rgba(255,255,255,1)_42%)]">
       <Seo
-        title="Vehicules"
-        description="Parcourez les vehicules disponibles, comparez les prix et lancez une reservation en quelques clics."
+        title="Véhicules"
+        description="Parcourez les véhicules disponibles, comparez les prix et lancez une réservation en quelques clics."
         canonical="https://demo-locationauto.shonenx.shop/voitures"
         image="/opengraph.jpg"
         type="website"
@@ -490,8 +490,8 @@ export default function Cars() {
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
             eyebrow="Catalogue"
-            title="Tous nos vehicules disponibles"
-            description="Affinez les resultats avec les bons filtres, sans saisie libre pour le modele."
+            title="Tous nos véhicules disponibles"
+            description="Affinez les résultats avec les bons filtres, sans saisie libre pour le modèle."
           />
 
           <div className="flex items-center gap-3">
@@ -571,13 +571,13 @@ export default function Cars() {
                   <EmptyMedia variant="icon">
                     <CarFront />
                   </EmptyMedia>
-                  <EmptyTitle>Aucun vehicule pour ces filtres</EmptyTitle>
+                  <EmptyTitle>Aucun véhicule pour ces filtres</EmptyTitle>
                   <EmptyDescription>
-                    Changez l'agence, l'intervalle, le modele ou les options du catalogue pour retrouver des disponibilites.
+                    Changez l'agence, l'intervalle, le modèle ou les options du catalogue pour retrouver des disponibilités.
                   </EmptyDescription>
                 </EmptyHeader>
                 <Button className="rounded-full bg-[#FF4B43] text-white hover:bg-[#f03b33]" onClick={handleReset}>
-                  Reinitialiser
+                  Réinitialiser
                 </Button>
               </Empty>
             )}

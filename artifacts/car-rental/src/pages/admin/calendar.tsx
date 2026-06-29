@@ -263,7 +263,7 @@ export default function AdminCalendarPage() {
                 <Badge variant="outline">Documents 30min</Badge>
                 <Badge variant="outline">Appel a confirmer</Badge>
                 <Badge variant="outline">Paiement 24h</Badge>
-                <Badge variant="outline">Delai prolonge</Badge>
+                <Badge variant="outline">Délai prolongé</Badge>
                 <Badge variant="outline">Location active</Badge>
                 <Badge variant="outline">Abandonnee</Badge>
               </div>

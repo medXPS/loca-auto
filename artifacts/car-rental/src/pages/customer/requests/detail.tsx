@@ -90,11 +90,11 @@ function ReservationOverviewCard({
   reservationEnd?: string | Date | null;
   rentalDays: number;
 }) {
-  const carName = [request.car?.brand, request.car?.model].filter(Boolean).join(" ").trim() || "Vehicule reserve";
+  const carName = [request.car?.brand, request.car?.model].filter(Boolean).join(" ").trim() || "Véhicule réservé";
   const carMeta =
     [request.car?.category, request.car?.year != null ? String(request.car.year) : null].filter(Boolean).join(" • ") ||
-    "Resume de la commande";
-  const rentalDaysLabel = rentalDays > 0 ? `${rentalDays} jour${rentalDays > 1 ? "s" : ""}` : "A definir";
+    "Résumé de la commande";
+  const rentalDaysLabel = rentalDays > 0 ? `${rentalDays} jour${rentalDays > 1 ? "s" : ""}` : "À définir";
 
   return (
     <Card className="overflow-hidden rounded-[1.9rem] border border-slate-900/10 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)] xl:sticky xl:top-6">
@@ -126,13 +126,13 @@ function ReservationOverviewCard({
       <CardHeader className="space-y-1 pb-4">
         <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
           <Car className="h-3.5 w-3.5" />
-          Resume de la commande
+          Résumé de la commande
         </div>
         <CardTitle className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">
           Tout ce qu’il faut voir d’un coup d’œil
         </CardTitle>
         <p className="text-sm leading-7 text-slate-500">
-          Les dates, la duree et les montants essentiels restent visibles dans cette colonne.
+          Les dates, la durée et les montants essentiels restent visibles dans cette colonne.
         </p>
       </CardHeader>
 
@@ -150,10 +150,10 @@ function ReservationOverviewCard({
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
             <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">
               <Clock className="h-3.5 w-3.5 text-primary" />
-              Jours reserves
+              Jours réservés
             </div>
             <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">{rentalDaysLabel}</p>
-            <p className="mt-1 text-xs text-slate-500">Duree calculee a partir des dates selectionnees.</p>
+            <p className="mt-1 text-xs text-slate-500">Durée calculée à partir des dates sélectionnées.</p>
           </div>
         </div>
 
@@ -204,7 +204,7 @@ export default function CustomerRequestDetail() {
       { id },
       {
         onSuccess: () => {
-          toast({ title: "Demande annulee avec succes" });
+          toast({ title: "Demande annulée avec succès" });
           handleSuccess();
         },
         onError: (error: any) => {
@@ -254,13 +254,13 @@ export default function CustomerRequestDetail() {
         <div className="max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
             <FileText className="h-3.5 w-3.5" />
-            Soumission des pieces
+            Soumission des pièces
           </div>
           <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
-            Validez vos documents pour passer a l'etape suivante
+            Validez vos documents pour passer à l'étape suivante
           </h2>
           <p className="mt-2 text-sm leading-7 text-muted-foreground">
-            Vos documents deja presentes dans le profil apparaissent ici. Vous pouvez les reutiliser ou les remplacer avant de
+            Vos documents déjà présents dans le profil apparaissent ici. Vous pouvez les réutiliser ou les remplacer avant de
             valider cette demande.
           </p>
         </div>
@@ -268,7 +268,7 @@ export default function CustomerRequestDetail() {
 
       {hasReusableProfileDocuments && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          Nous avons trouve vos documents dans votre profil. Vous pouvez les soumettre directement ou les remplacer pour cette
+          Nous avons trouvé vos documents dans votre profil. Vous pouvez les soumettre directement ou les remplacer pour cette
           reservation.
         </div>
       )}
@@ -284,8 +284,8 @@ export default function CustomerRequestDetail() {
           confirmTitle="Valider le document"
           confirmDescription={
             cinDocument
-              ? `Le document ${fileNameFromUrl(cinDocument.fileUrl)} sera rattache a cette demande.`
-              : "Le document sera rattache a cette demande."
+              ? `Le document ${fileNameFromUrl(cinDocument.fileUrl)} sera rattaché à cette demande.`
+              : "Le document sera rattaché à cette demande."
           }
           confirmActionLabel="Valider"
           onUploaded={handleDocsRefresh}
@@ -301,8 +301,8 @@ export default function CustomerRequestDetail() {
           confirmTitle="Valider le document"
           confirmDescription={
             licenseDocument
-              ? `Le document ${fileNameFromUrl(licenseDocument.fileUrl)} sera rattache a cette demande.`
-              : "Le document sera rattache a cette demande."
+              ? `Le document ${fileNameFromUrl(licenseDocument.fileUrl)} sera rattaché à cette demande.`
+              : "Le document sera rattaché à cette demande."
           }
           confirmActionLabel="Valider"
           onUploaded={handleDocsRefresh}
@@ -311,7 +311,7 @@ export default function CustomerRequestDetail() {
 
       {documents && documents.length > 0 && (
         <div className="border-t pt-4">
-          <p className="mb-3 text-xs font-medium text-muted-foreground">Documents envoyes :</p>
+          <p className="mb-3 text-xs font-medium text-muted-foreground">Documents envoyés :</p>
           <ul className="space-y-2">
             {documents.map((doc) => (
               <li key={doc.id} className="flex items-center gap-2 text-sm">
@@ -333,7 +333,7 @@ export default function CustomerRequestDetail() {
       <div className="mb-8 flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Ma Demande #{request.id}</h1>
-          <p className="mt-1 text-muted-foreground">Creee le {formatDateTime(request.createdAt)}</p>
+          <p className="mt-1 text-muted-foreground">Créée le {formatDateTime(request.createdAt)}</p>
         </div>
         <div className="flex items-center gap-3">
           {canCancel && (
@@ -348,7 +348,7 @@ export default function CustomerRequestDetail() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Annuler la demande ?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Cette action est irreversible. Votre demande de location sera annulee et le vehicule sera remis a disposition.
+                    Cette action est irréversible. Votre demande de location sera annulée et le véhicule sera remis à disposition.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -384,9 +384,9 @@ export default function CustomerRequestDetail() {
             <CountdownTimer
               deadline={request.documentDeadline}
               onExpire={handleSuccess}
-              label="Delai pour envoyer vos documents"
-              description="Envoyez votre CIN ou passeport et votre permis avant la fin du compte a rebours pour garder le vehicule bloque."
-              expiredDescription="Le delai d'envoi des documents est depasse. La demande peut etre liberee."
+              label="Délai pour envoyer vos documents"
+              description="Envoyez votre CIN ou passeport et votre permis avant la fin du compte à rebours pour garder le véhicule bloqué."
+              expiredDescription="Le délai d'envoi des documents est dépassé. La demande peut être libérée."
             />
           )}
 
@@ -402,7 +402,7 @@ export default function CustomerRequestDetail() {
               <div>
                 <h3 className="font-bold">Documents requis sous 30 minutes</h3>
                 <p className="mt-1 text-sm">
-                  Televersez votre CIN ou passeport et votre permis de conduire pour garder le vehicule bloque.
+                  Téléversez votre CIN ou passeport et votre permis de conduire pour garder le véhicule bloqué.
                 </p>
               </div>
             </div>
@@ -415,7 +415,7 @@ export default function CustomerRequestDetail() {
                 <h3 className="font-bold">Prochaine etape : Paiement a l'agence</h3>
                 <p className="mt-1 text-sm">
                   Votre demande a ete confirmee par telephone. Veuillez vous presenter a notre agence avant la limite de 24h pour
-                  finaliser le paiement en especes et recuperer votre vehicule.
+                  finaliser le paiement en espèces et récupérer votre véhicule.
                 </p>
               </div>
             </div>

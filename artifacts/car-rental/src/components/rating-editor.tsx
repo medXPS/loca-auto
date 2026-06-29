@@ -53,7 +53,7 @@ export function RatingEditor({
               "rounded-full p-2 transition",
               score >= value ? "bg-primary/10 text-primary" : "bg-background text-muted-foreground hover:text-primary",
             )}
-            aria-label={`${value} etoile${value > 1 ? "s" : ""}`}
+            aria-label={`${value} étoile${value > 1 ? "s" : ""}`}
           >
             <Star className={cn("h-5 w-5", score >= value && "fill-current")} />
           </button>
@@ -64,7 +64,7 @@ export function RatingEditor({
         value={comment}
         onChange={(event) => setComment(event.target.value)}
         className="min-h-24 bg-background"
-        placeholder="Comment s'est passee votre location ?"
+        placeholder="Comment s'est passée votre location ?"
       />
 
       <Button

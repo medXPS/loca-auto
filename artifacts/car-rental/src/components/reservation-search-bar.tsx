@@ -61,7 +61,7 @@ export function ReservationSearchBar({
           )}
 
           <div className={cn("border border-white/10 bg-white/8", isCompact ? "rounded-[1.15rem] px-3.5 py-3.5" : "rounded-2xl px-4 py-4")}>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Ville de depart</p>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Ville de départ</p>
             <Select value={city || "all"} onValueChange={handleCityChange}>
               <SelectTrigger
                 className={cn(
@@ -94,7 +94,7 @@ export function ReservationSearchBar({
                   )}
                 >
                   <CalendarDays className="h-4 w-4 text-white/55" />
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Date de depart</p>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Date de départ</p>
                   <p className={cn("mt-1 font-semibold text-white", isCompact ? "text-[0.9rem]" : "text-sm")}>
                     {startDate ? formatDisplayDate(startDate) : "Choisir"}
                   </p>

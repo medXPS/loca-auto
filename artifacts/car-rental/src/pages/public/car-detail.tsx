@@ -369,7 +369,7 @@ export default function CarDetail() {
     const returnAt = combineIsoDateAndHour(returnDate, returnHour);
 
     if (returnAt <= startAt) {
-      setFormError("La date de retour doit etre apres la date de depart.");
+      setFormError("La date de retour doit être après la date de départ.");
       return;
     }
 
@@ -385,7 +385,7 @@ export default function CarDetail() {
       )
     ) {
       setFormError(
-        "La periode selectionnee contient deja une reservation ou une demande en cours.",
+        "La période sélectionnée contient déjà une réservation ou une demande en cours.",
       );
       return;
     }
@@ -452,7 +452,7 @@ export default function CarDetail() {
 
   const whatsappHref = buildWhatsAppHref(
     car ? `${car.brand} ${car.model}` : "Location Auto Maroc",
-    `Bonjour, je souhaite reserver${car ? ` ${car.brand} ${car.model}` : ""}${startDate ? ` du ${formatDisplayDate(startDate)}` : ""}${returnDate ? ` au ${formatDisplayDate(returnDate)}` : ""}${estimatedTotalPrice > 0 ? `. Budget estime : ${formatPrice(estimatedTotalPrice)}` : ""}.`,
+    `Bonjour, je souhaite réserver${car ? ` ${car.brand} ${car.model}` : ""}${startDate ? ` du ${formatDisplayDate(startDate)}` : ""}${returnDate ? ` au ${formatDisplayDate(returnDate)}` : ""}${estimatedTotalPrice > 0 ? `. Budget estimé : ${formatPrice(estimatedTotalPrice)}` : ""}.`,
   );
 
   const backHref = useMemo(() => {
@@ -487,7 +487,7 @@ export default function CarDetail() {
       toast({
         title: "Informations manquantes",
         description:
-          "Remplissez votre nom, telephone, email et les dates de location.",
+          "Remplissez votre nom, votre téléphone, votre e-mail et les dates de location.",
         variant: "destructive",
       });
       return;
@@ -519,7 +519,7 @@ export default function CarDetail() {
       toast({
         title: "Compte requis",
         description:
-          "Creez votre compte pour demarrer la reservation et televerser vos documents.",
+          "Créez votre compte pour démarrer la réservation et téléverser vos documents.",
       });
       setLocation("/inscription?reservation=1");
       return;
@@ -533,7 +533,7 @@ export default function CarDetail() {
         onSuccess: (request: any) => {
           toast({
             title: "Demande envoyee",
-            description: "Notre equipe vous contactera tres rapidement.",
+            description: "Notre équipe vous contactera très rapidement.",
           });
           setLocation(`/dashboard/demandes/${request.id}`);
         },
@@ -556,12 +556,12 @@ export default function CarDetail() {
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour aux vehicules
+          Retour aux véhicules
         </Link>
         <div className="mt-6 rounded-[1.8rem] border border-border/70 bg-white p-8 text-center">
           <p className="text-lg font-semibold">Voiture introuvable</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Le vehicule demande n'existe pas ou n'est plus disponible.
+            Le véhicule demandé n'existe pas ou n'est plus disponible.
           </p>
         </div>
       </div>
@@ -584,12 +584,12 @@ export default function CarDetail() {
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour aux resultats
+          Retour aux résultats
         </Link>
         <div className="mt-6 rounded-[1.8rem] border border-border/70 bg-white p-8 text-center">
           <p className="text-lg font-semibold">Voiture introuvable</p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Essayez un autre vehicule dans le catalogue.
+            Essayez un autre véhicule dans le catalogue.
           </p>
         </div>
       </div>
@@ -597,7 +597,7 @@ export default function CarDetail() {
   }
 
   const pageTitle = `${car.brand} ${car.model}`;
-  const pageDescription = `Reservez ${car.brand} ${car.model} au Maroc. Prix, caracteristiques et demande rapide en ligne.`;
+  const pageDescription = `Réservez ${car.brand} ${car.model} au Maroc. Prix, caractéristiques et demande rapide en ligne.`;
   const canonical = `https://demo-locationauto.shonenx.shop/voitures/${car.id}`;
   const mapLocation =
     agency?.address?.trim() ||
@@ -653,7 +653,7 @@ export default function CarDetail() {
           className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour aux resultats
+          Retour aux résultats
         </Link>
 
       </div>
@@ -710,14 +710,14 @@ export default function CarDetail() {
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                     <CalendarDays className="h-3.5 w-3.5" />
-                    Reservation
+                    Réservation
                   </div>
                   <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
-                    Reserver ce vehicule
+                    Réserver ce véhicule
                   </h2>
                   <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    Les dates deja reservees ou encore en cours de reservation
-                    sont desactivees directement dans le calendrier.
+                    Les dates déjà réservées ou encore en cours de réservation
+                    sont désactivées directement dans le calendrier.
                   </p>
                 </div>
 
@@ -729,7 +729,7 @@ export default function CarDetail() {
                     {formatPrice(car.dailyPrice)}
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Paiement a l'agence
+                    Paiement à l'agence
                   </p>
                 </div>
               </div>
@@ -763,7 +763,7 @@ export default function CarDetail() {
                       className="text-sm font-medium text-foreground"
                       htmlFor="phone"
                     >
-                      Telephone
+                      Téléphone
                     </label>
                     <Input
                       id="phone"
@@ -811,7 +811,7 @@ export default function CarDetail() {
                   </div>
 
                   <DateRangeCalendar
-                    label="Disponibilite"
+                    label="Disponibilité"
                     startDate={startDate}
                     returnDate={returnDate}
                     blockedRanges={availabilityBlocks}
@@ -831,7 +831,7 @@ export default function CarDetail() {
                       className="text-sm font-medium text-foreground"
                       htmlFor="startHour"
                     >
-                      Heure de depart
+                      Heure de départ
                     </label>
                     <Input
                       id="startHour"
@@ -883,11 +883,11 @@ export default function CarDetail() {
                     </span>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Duree</span>
+                    <span className="text-muted-foreground">Durée</span>
                     <span className="font-semibold text-foreground">
                       {rentalDays > 0
                         ? `${rentalDays} jour${rentalDays > 1 ? "s" : ""}`
-                        : "A choisir"}
+                        : "À choisir"}
                     </span>
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t border-border/70 pt-3 text-lg font-semibold">
@@ -917,7 +917,7 @@ export default function CarDetail() {
                         ? "Période indisponible"
                         : isAuthenticated
                           ? "Envoyer la demande"
-                          : "Se connecter pour reserver"}
+                          : "Se connecter pour réserver"}
                 </Button>
 
                 {!isAuthenticated && (
@@ -979,7 +979,7 @@ export default function CarDetail() {
                   {formatPrice(car.dailyPrice)}
                 </p>
                 <p className="mt-1 text-sm text-white/62">
-                  Paiement a l'agence
+                  Paiement à l'agence
                 </p>
               </div>
 
@@ -1015,7 +1015,7 @@ export default function CarDetail() {
                   className="h-12 rounded-full bg-white text-slate-950 hover:bg-white/95"
                 >
                   <a href="#reservation">
-                    Reserver
+                    Réserver
                     <ArrowRight className="h-4 w-4" />
                   </a>
                 </Button>
@@ -1049,7 +1049,7 @@ export default function CarDetail() {
                   Localisation
                 </div>
                 <h2 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
-                  Ou se situe l'agence ?
+                  Où se situe l'agence ?
                 </h2>
                 <p className="mt-2 text-sm leading-7 text-muted-foreground">
                   {car.city || "Casablanca"} et ses environs sont indiques sur
@@ -1091,8 +1091,8 @@ export default function CarDetail() {
                 {car.city || "Casablanca"}
               </p>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                Verifiez l'emplacement exact de l'agence sur la carte avant de
-                confirmer votre reservation.
+                Vérifiez l'emplacement exact de l'agence sur la carte avant de
+                confirmer votre réservation.
               </p>
             </div>
 
@@ -1107,7 +1107,7 @@ export default function CarDetail() {
             className="h-12 rounded-full bg-[#F04B45] text-white hover:bg-[#e63f39]"
           >
             <a href="#reservation">
-              Reserver
+              Réserver
               <ArrowRight className="h-4 w-4" />
             </a>
           </Button>

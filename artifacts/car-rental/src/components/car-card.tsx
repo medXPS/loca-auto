@@ -124,7 +124,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
                   </p>
                   {ratingSummary?.count > 0 && (
                     <p className="mt-1 text-xs font-medium text-amber-600">
-                      {ratingSummary.average}/5 - {ratingSummary.count} avis verifies
+                      {ratingSummary.average}/5 - {ratingSummary.count} avis vérifiés
                     </p>
                   )}
                   {availabilityCopy.isBlocked && (
@@ -168,7 +168,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
                 </Button>
                 <Button asChild className="rounded-full bg-[#F04B45] px-5 text-primary-foreground">
                   <Link href={reserveHref}>
-                    Reserver
+                    Réserver
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -260,7 +260,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
         <div className="flex gap-2">
           <Button asChild className="flex-1 rounded-full bg-[#F04B45] text-white hover:bg-[#ec3c36]">
             <Link href={reserveHref}>
-              Reserver
+              Réserver
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
