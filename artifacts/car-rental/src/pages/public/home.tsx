@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useMemo, useState, type ComponentType } from "react";
 import { Link, useLocation } from "wouter";
 import { Car, useListCars } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
@@ -188,9 +188,6 @@ export default function Home() {
   const [city, setCity] = useState("");
   const [startDate, setStartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
-  const brandRailRef = useRef<HTMLDivElement | null>(null);
-  const brandAnimationFrameRef = useRef<number | null>(null);
-  const isBrandRailPausedRef = useRef(false);
 
   const { data: featuredCars, isLoading } = useListCars({
     limit: 6,
@@ -264,48 +261,6 @@ export default function Home() {
 
     setLocation(`/reservation${params.toString() ? `?${params.toString()}` : ""}`);
   };
-
-  const normalizeBrandRail = () => {
-    const rail = brandRailRef.current;
-    if (!rail) return;
-
-    const resetPoint = rail.scrollWidth / 2;
-
-    if (resetPoint <= 0) return;
-    if (rail.scrollLeft >= resetPoint) rail.scrollLeft -= resetPoint;
-    if (rail.scrollLeft < 0) rail.scrollLeft += resetPoint;
-  };
-
-  useEffect(() => {
-    const rail = brandRailRef.current;
-    if (!rail || animatedBrandCards.length === 0) return;
-
-    let lastTimestamp = 0;
-
-    const step = (timestamp: number) => {
-      if (!brandRailRef.current) return;
-      if (!lastTimestamp) lastTimestamp = timestamp;
-
-      const delta = timestamp - lastTimestamp;
-      lastTimestamp = timestamp;
-
-      if (!isBrandRailPausedRef.current) {
-        rail.scrollLeft += (delta * 34) / 1000;
-        normalizeBrandRail();
-      }
-
-      brandAnimationFrameRef.current = window.requestAnimationFrame(step);
-    };
-
-    brandAnimationFrameRef.current = window.requestAnimationFrame(step);
-
-    return () => {
-      if (brandAnimationFrameRef.current !== null) {
-        window.cancelAnimationFrame(brandAnimationFrameRef.current);
-        brandAnimationFrameRef.current = null;
-      }
-    };
-  }, [animatedBrandCards.length]);
 
   return (
     <div className="bg-[#f4f6fb]">
@@ -442,32 +397,27 @@ export default function Home() {
                 </div>
               </div>
 
-              <div
-                ref={brandRailRef}
-                className="mt-5 flex snap-x gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-4"
-                onMouseEnter={() => {
-                  isBrandRailPausedRef.current = true;
-                }}
-                onMouseLeave={() => {
-                  isBrandRailPausedRef.current = false;
-                }}
-              >
-                {animatedBrandCards.map((brand, index) => (
-                  <div
-                    key={`${brand.key}-${index}`}
-                    data-brand-card
-                    className="flex min-w-[220px] snap-start items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-white px-6 py-3.5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.24)]"
-                  >
-                    <div className="flex h-10 w-[4.5rem] items-center justify-center rounded-xl bg-slate-50">
-                      {brand.logoUrl ? (
-                        <img src={brand.logoUrl} alt={brand.name} className="max-h-8 max-w-14 object-contain" />
-                      ) : (
-                        <span className="text-sm font-bold text-slate-700">{brand.name.slice(0, 2).toUpperCase()}</span>
-                      )}
+              <div className="group mt-5 overflow-hidden">
+                <div
+                  className="flex w-max items-center gap-3 md:gap-4 group-hover:[animation-play-state:paused]"
+                  style={{ animation: "home-brand-marquee 24s linear infinite" }}
+                >
+                  {animatedBrandCards.map((brand, index) => (
+                    <div
+                      key={`${brand.key}-${index}`}
+                      className="flex min-w-[220px] flex-none items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-white px-6 py-3.5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.24)]"
+                    >
+                      <div className="flex h-10 w-[4.5rem] items-center justify-center rounded-xl bg-slate-50">
+                        {brand.logoUrl ? (
+                          <img src={brand.logoUrl} alt={brand.name} className="max-h-8 max-w-14 object-contain" />
+                        ) : (
+                          <span className="text-sm font-bold text-slate-700">{brand.name.slice(0, 2).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <span className="text-sm font-semibold text-slate-600">{brand.name}</span>
                     </div>
-                    <span className="text-sm font-semibold text-slate-600">{brand.name}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -539,6 +489,13 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <style>{`
+        @keyframes home-brand-marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(calc(-50% - 0.5rem)); }
+        }
+      `}</style>
     </div>
   );
 }
