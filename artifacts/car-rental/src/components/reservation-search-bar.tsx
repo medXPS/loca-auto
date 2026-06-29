@@ -8,6 +8,7 @@ import { DateRangeCalendar } from "@/components/date-range-calendar";
 import { cn } from "@/lib/utils";
 
 type ReservationSearchBarProps = {
+  title?: string;
   cities: string[];
   city: string;
   startDate: string;
@@ -20,6 +21,7 @@ type ReservationSearchBarProps = {
 };
 
 export function ReservationSearchBar({
+  title,
   cities,
   city,
   startDate,
@@ -47,11 +49,17 @@ export function ReservationSearchBar({
     >
       <div
         className={cn(
-          "overflow-hidden border border-white/12 bg-white/8 shadow-[0_24px_70px_-35px_rgba(0,0,0,0.42)] backdrop-blur-xl",
+          "overflow-hidden border border-white/12 bg-[linear-gradient(180deg,rgba(20,27,39,0.88),rgba(15,23,35,0.82))] shadow-[0_28px_80px_-36px_rgba(0,0,0,0.58)] backdrop-blur-xl",
           isCompact ? "rounded-[1.65rem]" : "rounded-[1.9rem]",
         )}
       >
         <div className={cn("grid gap-3", isCompact ? "p-3.5" : "p-4")}>
+          {title && (
+            <div className="px-1 pt-1">
+              <p className="text-lg font-semibold uppercase tracking-[0.08em] text-white">{title}</p>
+            </div>
+          )}
+
           <div className={cn("border border-white/10 bg-white/8", isCompact ? "rounded-[1.15rem] px-3.5 py-3.5" : "rounded-2xl px-4 py-4")}>
             <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Ville de depart</p>
             <Select value={city || "all"} onValueChange={handleCityChange}>
