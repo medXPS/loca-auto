@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { Link, useLocation } from "wouter";
 import { Car, useListCars } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
@@ -191,6 +191,9 @@ export default function Home() {
   const [startDate, setStartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
   const brandRailRef = useRef<HTMLDivElement | null>(null);
+  const brandAnimationFrameRef = useRef<number | null>(null);
+  const brandResumeTimeoutRef = useRef<number | null>(null);
+  const isBrandRailPausedRef = useRef(false);
 
   const { data: featuredCars, isLoading } = useListCars({
     limit: 6,
@@ -244,6 +247,7 @@ export default function Home() {
   const visibleBrandCards = useMemo(() => {
     if (brandShowcase.length === 0) return [];
     if (brandShowcase.length >= 6) return brandShowcase;
+
     const padded = [...brandShowcase];
 
     while (padded.length < 6) {
@@ -252,6 +256,7 @@ export default function Home() {
 
     return padded;
   }, [brandShowcase]);
+  const animatedBrandCards = useMemo(() => [...visibleBrandCards, ...visibleBrandCards], [visibleBrandCards]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -263,12 +268,86 @@ export default function Home() {
     setLocation(`/reservation${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
-  const scrollBrands = (direction: number) => {
-    brandRailRef.current?.scrollBy({
-      left: direction * 260,
-      behavior: "smooth",
-    });
+  const normalizeBrandRail = () => {
+    const rail = brandRailRef.current;
+    if (!rail) return;
+
+    const resetPoint = rail.scrollWidth / 2;
+
+    if (resetPoint <= 0) return;
+    if (rail.scrollLeft >= resetPoint) rail.scrollLeft -= resetPoint;
+    if (rail.scrollLeft < 0) rail.scrollLeft += resetPoint;
   };
+
+  const pauseBrandRailTemporarily = (duration = 1600) => {
+    isBrandRailPausedRef.current = true;
+
+    if (brandResumeTimeoutRef.current !== null) {
+      window.clearTimeout(brandResumeTimeoutRef.current);
+    }
+
+    brandResumeTimeoutRef.current = window.setTimeout(() => {
+      isBrandRailPausedRef.current = false;
+      brandResumeTimeoutRef.current = null;
+    }, duration);
+  };
+
+  const scrollBrands = (direction: number) => {
+    const rail = brandRailRef.current;
+    if (!rail) return;
+
+    pauseBrandRailTemporarily();
+    normalizeBrandRail();
+
+    const cardWidth = rail.querySelector<HTMLElement>("[data-brand-card]")?.offsetWidth ?? 190;
+    const nextPosition = rail.scrollLeft + direction * (cardWidth + 16);
+    const resetPoint = rail.scrollWidth / 2;
+    let target = nextPosition;
+
+    if (resetPoint > 0) {
+      if (target < 0) target += resetPoint;
+      if (target >= resetPoint) target -= resetPoint;
+    }
+
+    rail.scrollTo({ left: target, behavior: "smooth" });
+    window.setTimeout(normalizeBrandRail, 360);
+  };
+
+  useEffect(() => {
+    const rail = brandRailRef.current;
+    if (!rail || animatedBrandCards.length === 0) return;
+
+    let lastTimestamp = 0;
+
+    const step = (timestamp: number) => {
+      if (!brandRailRef.current) return;
+      if (!lastTimestamp) lastTimestamp = timestamp;
+
+      const delta = timestamp - lastTimestamp;
+      lastTimestamp = timestamp;
+
+      if (!isBrandRailPausedRef.current) {
+        rail.scrollLeft += (delta * 34) / 1000;
+        normalizeBrandRail();
+      }
+
+      brandAnimationFrameRef.current = window.requestAnimationFrame(step);
+    };
+
+    brandAnimationFrameRef.current = window.requestAnimationFrame(step);
+
+    return () => {
+      if (brandAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(brandAnimationFrameRef.current);
+        brandAnimationFrameRef.current = null;
+      }
+
+      if (brandResumeTimeoutRef.current !== null) {
+        window.clearTimeout(brandResumeTimeoutRef.current);
+        brandResumeTimeoutRef.current = null;
+      }
+    };
+  }, [animatedBrandCards.length]);
 
   return (
     <div className="bg-[#f4f6fb]">
@@ -403,7 +482,6 @@ export default function Home() {
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#ff4d43]">Marques disponibles</p>
                   <p className="mt-2 text-sm text-slate-500">Un bandeau vivant avec les logos des plus grandes marques.</p>
                 </div>
-
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
@@ -427,10 +505,25 @@ export default function Home() {
               <div
                 ref={brandRailRef}
                 className="mt-5 flex snap-x gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                onMouseEnter={() => {
+                  isBrandRailPausedRef.current = true;
+                  if (brandResumeTimeoutRef.current !== null) {
+                    window.clearTimeout(brandResumeTimeoutRef.current);
+                    brandResumeTimeoutRef.current = null;
+                  }
+                }}
+                onMouseLeave={() => {
+                  isBrandRailPausedRef.current = false;
+                  if (brandResumeTimeoutRef.current !== null) {
+                    window.clearTimeout(brandResumeTimeoutRef.current);
+                    brandResumeTimeoutRef.current = null;
+                  }
+                }}
               >
-                {visibleBrandCards.map((brand, index) => (
+                {animatedBrandCards.map((brand, index) => (
                   <div
                     key={`${brand.key}-${index}`}
+                    data-brand-card
                     className="flex min-w-[190px] snap-start items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-white px-5 py-4 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.24)]"
                   >
                     <div className="flex h-12 w-16 items-center justify-center rounded-xl bg-slate-50">
