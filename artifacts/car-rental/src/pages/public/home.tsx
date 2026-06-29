@@ -10,8 +10,6 @@ import { getAvailabilityCopy, formatAvailabilityDate } from "@/lib/car-availabil
 import { CATEGORY_TRANSLATIONS, FUEL_TRANSLATIONS, formatPrice } from "@/lib/utils";
 import {
   ArrowRight,
-  ChevronLeft,
-  ChevronRight,
   CircleDollarSign,
   Clock3,
   Fuel,
@@ -192,7 +190,6 @@ export default function Home() {
   const [returnDate, setReturnDate] = useState("");
   const brandRailRef = useRef<HTMLDivElement | null>(null);
   const brandAnimationFrameRef = useRef<number | null>(null);
-  const brandResumeTimeoutRef = useRef<number | null>(null);
   const isBrandRailPausedRef = useRef(false);
 
   const { data: featuredCars, isLoading } = useListCars({
@@ -279,40 +276,6 @@ export default function Home() {
     if (rail.scrollLeft < 0) rail.scrollLeft += resetPoint;
   };
 
-  const pauseBrandRailTemporarily = (duration = 1600) => {
-    isBrandRailPausedRef.current = true;
-
-    if (brandResumeTimeoutRef.current !== null) {
-      window.clearTimeout(brandResumeTimeoutRef.current);
-    }
-
-    brandResumeTimeoutRef.current = window.setTimeout(() => {
-      isBrandRailPausedRef.current = false;
-      brandResumeTimeoutRef.current = null;
-    }, duration);
-  };
-
-  const scrollBrands = (direction: number) => {
-    const rail = brandRailRef.current;
-    if (!rail) return;
-
-    pauseBrandRailTemporarily();
-    normalizeBrandRail();
-
-    const cardWidth = rail.querySelector<HTMLElement>("[data-brand-card]")?.offsetWidth ?? 190;
-    const nextPosition = rail.scrollLeft + direction * (cardWidth + 16);
-    const resetPoint = rail.scrollWidth / 2;
-    let target = nextPosition;
-
-    if (resetPoint > 0) {
-      if (target < 0) target += resetPoint;
-      if (target >= resetPoint) target -= resetPoint;
-    }
-
-    rail.scrollTo({ left: target, behavior: "smooth" });
-    window.setTimeout(normalizeBrandRail, 360);
-  };
-
   useEffect(() => {
     const rail = brandRailRef.current;
     if (!rail || animatedBrandCards.length === 0) return;
@@ -340,11 +303,6 @@ export default function Home() {
       if (brandAnimationFrameRef.current !== null) {
         window.cancelAnimationFrame(brandAnimationFrameRef.current);
         brandAnimationFrameRef.current = null;
-      }
-
-      if (brandResumeTimeoutRef.current !== null) {
-        window.clearTimeout(brandResumeTimeoutRef.current);
-        brandResumeTimeoutRef.current = null;
       }
     };
   }, [animatedBrandCards.length]);
@@ -477,63 +435,37 @@ export default function Home() {
         <section className="relative z-10 -mt-16">
           <div className="container mx-auto px-4">
             <div className="rounded-[2rem] border border-white/80 bg-white px-5 py-6 shadow-[0_28px_70px_-40px_rgba(15,23,42,0.28)] md:px-6">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#ff4d43]">Marques disponibles</p>
                   <p className="mt-2 text-sm text-slate-500">Un bandeau vivant avec les logos des plus grandes marques.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    aria-label="Defiler vers la gauche"
-                    onClick={() => scrollBrands(-1)}
-                    className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Defiler vers la droite"
-                    onClick={() => scrollBrands(1)}
-                    className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
                 </div>
               </div>
 
               <div
                 ref={brandRailRef}
-                className="mt-5 flex snap-x gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="mt-5 flex snap-x gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-4"
                 onMouseEnter={() => {
                   isBrandRailPausedRef.current = true;
-                  if (brandResumeTimeoutRef.current !== null) {
-                    window.clearTimeout(brandResumeTimeoutRef.current);
-                    brandResumeTimeoutRef.current = null;
-                  }
                 }}
                 onMouseLeave={() => {
                   isBrandRailPausedRef.current = false;
-                  if (brandResumeTimeoutRef.current !== null) {
-                    window.clearTimeout(brandResumeTimeoutRef.current);
-                    brandResumeTimeoutRef.current = null;
-                  }
                 }}
               >
                 {animatedBrandCards.map((brand, index) => (
                   <div
                     key={`${brand.key}-${index}`}
                     data-brand-card
-                    className="flex min-w-[190px] snap-start items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-white px-5 py-4 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.24)]"
+                    className="flex min-w-[220px] snap-start items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-white px-6 py-3.5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.24)]"
                   >
-                    <div className="flex h-12 w-16 items-center justify-center rounded-xl bg-slate-50">
+                    <div className="flex h-10 w-[4.5rem] items-center justify-center rounded-xl bg-slate-50">
                       {brand.logoUrl ? (
                         <img src={brand.logoUrl} alt={brand.name} className="max-h-8 max-w-14 object-contain" />
                       ) : (
                         <span className="text-sm font-bold text-slate-700">{brand.name.slice(0, 2).toUpperCase()}</span>
                       )}
                     </div>
-                    <span className="text-sm font-medium text-slate-600">{brand.name}</span>
+                    <span className="text-sm font-semibold text-slate-600">{brand.name}</span>
                   </div>
                 ))}
               </div>
