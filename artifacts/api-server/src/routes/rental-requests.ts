@@ -273,21 +273,24 @@ async function buildReceiptPdfLegacy(args: {
   const pageWidth =
     doc.page.width - doc.page.margins.left - doc.page.margins.right;
   const pageRight = pageLeft + pageWidth;
-  const heroWedgeX = pageLeft + pageWidth - 150;
+  const heroPanelX = pageRight - 236;
+  const heroPanelY = pageTop - 2;
+  const heroPanelW = 236;
+  const heroPanelH = 180;
   const receiptBoxX = pageRight - 220;
-  const receiptBoxY = pageTop + 4;
+  const receiptBoxY = pageTop + 2;
   const receiptBoxW = 220;
-  const receiptBoxH = 92;
+  const receiptBoxH = 88;
   const brandUpper = companyName.toUpperCase();
   const brandPieces = brandUpper.split(/\s+/).filter(Boolean);
   const brandLine1 = brandPieces[0] || "LOCATION";
   const brandLine2 = brandPieces.slice(1).join(" ") || "AUTO MAROC";
-  const contactLineY = pageTop + 154;
-  const cardsTop = pageTop + 184;
+  const contactLineY = pageTop + 146;
+  const cardsTop = pageTop + 176;
   const locationTop = cardsTop + 120;
-  const locationCardHeight = 132;
-  const paymentCardHeight = 170;
-  const verificationCardHeight = 112;
+  const locationCardHeight = 136;
+  const paymentCardHeight = 176;
+  const verificationCardHeight = 118;
   const paymentTop = locationTop + locationCardHeight + 12;
   const verificationTop = paymentTop + paymentCardHeight + 12;
   const footerTop = verificationTop + verificationCardHeight + 12;
@@ -526,25 +529,12 @@ async function buildReceiptPdfLegacy(args: {
   doc.rect(0, 0, doc.page.width, doc.page.height).fill(colors.white);
 
   doc.save();
-  doc.fillColor(colors.navyDeep);
   doc
-    .moveTo(heroWedgeX + 28, pageTop - 12)
-    .lineTo(pageRight + 24, pageTop - 12)
-    .lineTo(pageRight + 24, pageTop + 194)
-    .lineTo(heroWedgeX + 78, pageTop + 262)
-    .lineTo(heroWedgeX, pageTop + 208)
-    .lineTo(heroWedgeX, pageTop + 68)
-    .closePath()
-    .fill();
-  doc.fillColor(colors.blue);
+    .roundedRect(heroPanelX, heroPanelY, heroPanelW, heroPanelH, 22)
+    .fillAndStroke(colors.blueSoft, colors.border);
   doc
-    .moveTo(heroWedgeX - 18, pageTop + 52)
-    .lineTo(pageRight + 24, pageTop - 12)
-    .lineTo(pageRight + 24, pageTop + 124)
-    .lineTo(heroWedgeX + 38, pageTop + 182)
-    .lineTo(heroWedgeX - 18, pageTop + 162)
-    .closePath()
-    .fill();
+    .roundedRect(heroPanelX + 16, heroPanelY + 14, 70, 6, 3)
+    .fill(colors.blue);
   doc.restore();
 
   if (logoBuffer) {
@@ -632,9 +622,9 @@ async function buildReceiptPdfLegacy(args: {
     );
 
   const carImageWidth = 176;
-  const carImageHeight = 66;
+  const carImageHeight = 62;
   const carImageX = pageRight - carImageWidth;
-  const carImageY = pageTop + 96;
+  const carImageY = pageTop + 92;
   doc.save();
   doc
     .fillOpacity(0.1)
@@ -690,7 +680,7 @@ async function buildReceiptPdfLegacy(args: {
   const cardGap = 16;
   const halfWidth = (pageWidth - cardGap) / 2;
   const leftCardY = cardsTop;
-  const cardHeight = 108;
+  const cardHeight = 112;
   drawCard(pageLeft, leftCardY, halfWidth, cardHeight, colors.white);
   drawCard(
     pageLeft + halfWidth + cardGap,
@@ -770,7 +760,7 @@ async function buildReceiptPdfLegacy(args: {
   const gridY = locationTop + 52;
   const gridWidth = pageWidth - 36;
   const columnWidth = gridWidth / 3;
-  const rowHeight = 40;
+  const rowHeight = 41;
 
   doc
     .moveTo(gridX + columnWidth, gridY)
@@ -847,8 +837,8 @@ async function buildReceiptPdfLegacy(args: {
   const tableY = paymentTop + 48;
   const tableWidth = pageWidth - 36;
   const rowLeftWidth = tableWidth - 90;
-  const regularRowHeight = 12;
-  const totalRowHeight = 22;
+  const regularRowHeight = 13;
+  const totalRowHeight = 24;
   const paymentRows = [
     [
       "Prix journalier",
@@ -870,12 +860,12 @@ async function buildReceiptPdfLegacy(args: {
     doc
       .fillColor(colors.muted)
       .font("Helvetica")
-      .fontSize(8.3)
+      .fontSize(8.1)
       .text(row[0], tableX, cursorY + 1, { width: rowLeftWidth });
     doc
       .fillColor(colors.text)
       .font("Helvetica")
-      .fontSize(8.3)
+      .fontSize(8.1)
       .text(row[1], tableX + rowLeftWidth, cursorY + 1, {
         width: 90,
         align: "right",
@@ -889,7 +879,7 @@ async function buildReceiptPdfLegacy(args: {
   doc
     .fillColor(colors.white)
     .font("Helvetica-Bold")
-    .fontSize(9.5)
+    .fontSize(9.3)
     .text("MONTANT TOTAL PAYÉ", tableX + 12, cursorY + 8, {
       width: rowLeftWidth - 8,
       characterSpacing: 0.7,
@@ -897,7 +887,7 @@ async function buildReceiptPdfLegacy(args: {
   doc
     .fillColor(colors.white)
     .font("Helvetica-Bold")
-    .fontSize(10)
+    .fontSize(9.8)
     .text(
       formatMoney(breakdown.totalPaid),
       tableX + rowLeftWidth,
@@ -956,8 +946,8 @@ async function buildReceiptPdfLegacy(args: {
   );
 
   const leftColumnX = pageLeft + 20;
-  const leftColumnY = verificationTop + 48;
-  const qrSize = 58;
+  const leftColumnY = verificationTop + 44;
+  const qrSize = 60;
   doc.image(qrBuffer, leftColumnX, leftColumnY, {
     width: qrSize,
     height: qrSize,
@@ -965,7 +955,7 @@ async function buildReceiptPdfLegacy(args: {
   doc
     .fillColor(colors.muted)
     .font("Helvetica-Bold")
-    .fontSize(8.5)
+    .fontSize(8.2)
     .text("QR code", leftColumnX + 76, leftColumnY + 2, {
       width: 95,
       characterSpacing: 0.6,
@@ -973,14 +963,14 @@ async function buildReceiptPdfLegacy(args: {
   doc
     .fillColor(colors.text)
     .font("Helvetica")
-    .fontSize(8.5)
+    .fontSize(8.2)
     .text("OU", leftColumnX + 76, leftColumnY + 20, {
       width: 95,
     });
   doc
     .fillColor(colors.muted)
     .font("Helvetica")
-    .fontSize(8.5)
+    .fontSize(8.2)
     .text("Visitez le lien ci-dessous", leftColumnX + 76, leftColumnY + 39, {
       width: 120,
     });
@@ -994,7 +984,7 @@ async function buildReceiptPdfLegacy(args: {
   doc
     .fillColor(colors.muted)
     .font("Helvetica-Bold")
-    .fontSize(8.5)
+    .fontSize(8.2)
     .text("Vérification", rightStartX, leftColumnY + 1, {
       width: 140,
       characterSpacing: 0.6,
@@ -1002,7 +992,7 @@ async function buildReceiptPdfLegacy(args: {
   doc
     .fillColor(colors.blue)
     .font("Helvetica-Bold")
-    .fontSize(9.5)
+    .fontSize(9.2)
     .text(verificationUrl, rightStartX, leftColumnY + 17, {
       width: pageWidth - (rightStartX - pageLeft) - 24,
       link: verificationUrl,
@@ -1016,7 +1006,7 @@ async function buildReceiptPdfLegacy(args: {
   doc
     .fillColor(colors.muted)
     .font("Helvetica-Bold")
-    .fontSize(8.5)
+    .fontSize(8.2)
     .text("Signature agence", rightStartX, leftColumnY + 43, {
       width: 130,
     });
@@ -1039,7 +1029,7 @@ async function buildReceiptPdfLegacy(args: {
   doc
     .fillColor(colors.muted)
     .font("Helvetica-Bold")
-    .fontSize(8.5)
+    .fontSize(8.2)
     .text("Signature client", rightStartX + 146, leftColumnY + 43, {
       width: 110,
     });
