@@ -99,16 +99,9 @@ export default function AdminCustomerDetail() {
     status: activeRequests.length > 0 ? "Actif" : customer.rentalRequests.length > 0 ? "Déjà client" : "Nouveau",
     lastRentalAt: customer.rentalRequests[0]?.startDate ?? null,
   };
-  const sortedDocuments = [...(customer.documents ?? [])].sort(
-    (a, b) => new Date(b.uploadedAt ?? 0).getTime() - new Date(a.uploadedAt ?? 0).getTime(),
-  );
-  const latestDocuments = sortedDocuments.reduce<CustomerDocument[]>((acc, document) => {
-    const key = (document.type || "AUTRE").toUpperCase();
-    if (!acc.some((item) => (item.type || "AUTRE").toUpperCase() === key)) {
-      acc.push(document);
-    }
-    return acc;
-  }, []);
+  const latestDocuments = [...(customer.documents ?? [])]
+    .sort((a, b) => new Date(b.uploadedAt ?? 0).getTime() - new Date(a.uploadedAt ?? 0).getTime())
+    .slice(0, 2);
   const latestDocument = latestDocuments[0] ?? null;
 
   return (
@@ -157,7 +150,7 @@ export default function AdminCustomerDetail() {
         </Card>
         <Card>
           <CardContent className="p-5">
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Documents reçus</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Fichiers récents</p>
             <p className="mt-2 text-lg font-semibold">{latestDocuments.length}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {latestDocument ? `Dernier: ${getDocumentLabel(latestDocument.type)}` : "Aucun document téléversé"}
@@ -240,7 +233,7 @@ export default function AdminCustomerDetail() {
             <div className="rounded-2xl border bg-background p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Dernières pièces téléversées</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">2 derniers fichiers téléversés</p>
                   <p className="mt-2 text-sm font-medium">
                     {latestDocuments.length > 0
                       ? `${latestDocuments.length} fichier${latestDocuments.length > 1 ? "s" : ""} disponible${latestDocuments.length > 1 ? "s" : ""}`
