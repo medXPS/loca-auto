@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getStatusLabel } from "@/lib/utils";
+import { fileNameFromUrl, resolveUploadUrl } from "@/lib/uploads";
 import {
   BadgeCheck,
   CalendarDays,
@@ -34,11 +35,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-
-function fileNameFromUrl(fileUrl: string) {
-  const fileName = fileUrl.split("/").pop();
-  return fileName && fileName.trim() ? fileName : fileUrl;
-}
 
 function getDocumentLabel(type?: string | null) {
   if (type === "CIN") return "CIN";
@@ -368,7 +364,7 @@ export default function AdminRequestDetail() {
                             : "En attente"}
                       </Badge>
                       <Button asChild size="sm" variant="outline" className="rounded-full border-border/70 bg-white">
-                        <a href={document.fileUrl} download={fileNameFromUrl(document.fileUrl)}>
+                        <a href={resolveUploadUrl(document.fileUrl)} download={fileNameFromUrl(document.fileUrl)}>
                           Télécharger
                           <Download className="h-4 w-4" />
                         </a>

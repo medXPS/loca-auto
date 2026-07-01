@@ -1,9 +1,12 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import { and, desc, eq, sql } from "drizzle-orm";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { expireStaleAvailabilityLocks, markRequestPendingCallConfirmation } from "../lib/availability";
 import { logAudit } from "../lib/audit";
+import { buildPublicUploadUrl, uploadsDir } from "../lib/uploads";
 
 const router = Router();
 
@@ -23,6 +26,11 @@ async function getDocumentsForRentalRequest(rentalRequestId: number) {
     .from(schema.documentsTable)
     .where(eq(schema.documentsTable.rentalRequestId, rentalRequestId))
     .orderBy(desc(schema.documentsTable.uploadedAt));
+}
+
+function resolveStoredUploadPath(fileName: string) {
+  const safeFileName = path.basename(fileName);
+  return path.resolve(uploadsDir, safeFileName);
 }
 
 // POST /api/documents
@@ -206,10 +214,48 @@ router.patch("/:rentalRequestId/approve", authMiddleware, requireRole("ADMIN", "
 
 // POST /api/upload/presign - simple stub for direct URL upload
 export const uploadRouter = Router();
+
+// GET /api/upload/:fileName
+uploadRouter.get("/:fileName", authMiddleware, async (req, res) => {
+  try {
+    const filePath = resolveStoredUploadPath(String(req.params.fileName));
+    await fs.access(filePath);
+    res.sendFile(filePath);
+  } catch {
+    res.status(404).json({ error: "Fichier introuvable" });
+  }
+});
+
+// PUT /api/upload/:fileName
+uploadRouter.put(
+  "/:fileName",
+  authMiddleware,
+  express.raw({ type: "*/*", limit: "25mb" }),
+  async (req, res) => {
+    try {
+      const filePath = resolveStoredUploadPath(String(req.params.fileName));
+      const body = req.body;
+
+      if (!Buffer.isBuffer(body)) {
+        res.status(400).json({ error: "Fichier invalide" });
+        return;
+      }
+
+      await fs.mkdir(uploadsDir, { recursive: true });
+      await fs.writeFile(filePath, body);
+
+      res.status(201).json({ fileUrl: buildPublicUploadUrl(path.basename(filePath)) });
+    } catch (err) {
+      req.log.error(err);
+      res.status(500).json({ error: "Erreur serveur" });
+    }
+  },
+);
+
 uploadRouter.post("/presign", authMiddleware, (req, res) => {
   const { fileName } = req.body;
   const safeName = String(fileName ?? "upload").replace(/[^a-zA-Z0-9._-]/g, "_");
-  const fileUrl = `/uploads/${Date.now()}-${safeName}`;
+  const fileUrl = buildPublicUploadUrl(`${Date.now()}-${safeName}`);
   res.json({ uploadUrl: fileUrl, fileUrl });
 });
 

@@ -107,7 +107,9 @@ export function DocumentUploadField({
         const uploadResponse = await fetch(presignResult.uploadUrl, {
           method: "PUT",
           body: selectedFile,
-          headers: { "Content-Type": selectedFile.type },
+          ...(selectedFile.type
+            ? { headers: { "Content-Type": selectedFile.type } }
+            : {}),
         });
         if (!uploadResponse.ok) {
           throw new Error("upload_failed");

@@ -7,6 +7,7 @@ import { ArrowLeft, BadgeCheck, CalendarClock, CalendarDays, CreditCard, Downloa
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDateTime, formatPrice, getStatusLabel, isActiveRentalStatus } from "@/lib/utils";
+import { fileNameFromUrl, resolveUploadUrl } from "@/lib/uploads";
 
 type CustomerDocument = {
   id: number;
@@ -61,11 +62,6 @@ function getDocumentLabel(type?: string | null) {
   if (type === "PASSPORT") return "Passeport";
   if (type === "PERMIS_CONDUIRE") return "Permis";
   return type || "Document";
-}
-
-function getDocumentFileName(fileUrl: string) {
-  const fileName = fileUrl.split("/").pop();
-  return fileName && fileName.trim() ? fileName : fileUrl;
 }
 
 export default function AdminCustomerDetail() {
@@ -275,12 +271,12 @@ export default function AdminCustomerDetail() {
                       </div>
 
                       <div className="mt-3 truncate rounded-xl border border-dashed bg-background px-3 py-2 text-sm">
-                        {getDocumentFileName(document.fileUrl)}
+                        {fileNameFromUrl(document.fileUrl)}
                       </div>
 
                       <div className="mt-4 flex justify-end">
                         <Button asChild size="sm" variant="outline" className="rounded-full border-border/70 bg-white">
-                          <a href={document.fileUrl} download={getDocumentFileName(document.fileUrl)}>
+                          <a href={resolveUploadUrl(document.fileUrl)} download={fileNameFromUrl(document.fileUrl)}>
                             Télécharger
                             <Download className="h-4 w-4" />
                           </a>

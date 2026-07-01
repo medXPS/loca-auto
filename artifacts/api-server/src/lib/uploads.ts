@@ -39,7 +39,7 @@ export function buildStoredUploadFilename(
 }
 
 export function buildPublicUploadUrl(fileName: string) {
-  return `/uploads/${fileName}`;
+  return `/api/upload/${fileName}`;
 }
 
 ensureUploadsDir();
