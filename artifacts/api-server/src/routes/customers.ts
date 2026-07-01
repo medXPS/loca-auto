@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 
@@ -121,10 +121,25 @@ router.get("/", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) 
     const rows = await query.orderBy(desc(schema.customersTable.id));
     const total = rows.length;
     const paged = rows.slice((pageNum - 1) * limitNum, pageNum * limitNum);
+    const customerIds = paged.map(({ customer }: any) => customer.id);
+    const documents = customerIds.length > 0
+      ? await db
+          .select()
+          .from(schema.documentsTable)
+          .where(inArray(schema.documentsTable.customerId, customerIds))
+          .orderBy(desc(schema.documentsTable.uploadedAt))
+      : [];
+    const documentsByCustomerId = documents.reduce((acc, document) => {
+      const current = acc.get(document.customerId) ?? [];
+      current.push(document);
+      acc.set(document.customerId, current);
+      return acc;
+    }, new Map<number, typeof documents>());
 
     const customers = paged.map(({ customer, user }: any) => ({
       ...customer,
       user: user ? publicUser(user) : null,
+      documents: documentsByCustomerId.get(customer.id) ?? [],
     }));
 
     res.json({ customers, total, page: pageNum, limit: limitNum });

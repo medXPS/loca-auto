@@ -3,10 +3,10 @@ import { useRoute, Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, BadgeCheck, CreditCard, FileText, History, MapPin, Phone, User, CalendarClock } from "lucide-react";
+import { ArrowLeft, BadgeCheck, CalendarClock, CalendarDays, CreditCard, Download, FileText, History, MapPin, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
-import { formatPrice, isActiveRentalStatus } from "@/lib/utils";
+import { formatDateTime, formatPrice, getStatusLabel, isActiveRentalStatus } from "@/lib/utils";
 
 type CustomerDetailView = {
   id: number;
@@ -15,6 +15,14 @@ type CustomerDetailView = {
   drivingLicenseNumber?: string | null;
   address?: string | null;
   city?: string | null;
+  documents?: Array<{
+    id: number;
+    type: string;
+    fileUrl: string;
+    status?: string | null;
+    uploadedAt?: string | null;
+    rentalRequestId?: number | null;
+  }>;
   user?: {
     fullName: string;
     email: string;
@@ -46,13 +54,39 @@ type CustomerDetailView = {
   };
 };
 
+function getDocumentLabel(type?: string | null) {
+  if (type === "CIN") return "CIN";
+  if (type === "PASSPORT") return "Passeport";
+  if (type === "PERMIS_CONDUIRE") return "Permis";
+  return type || "Document";
+}
+
+function getDocumentFileName(fileUrl: string) {
+  const fileName = fileUrl.split("/").pop();
+  return fileName && fileName.trim() ? fileName : fileUrl;
+}
+
 export default function AdminCustomerDetail() {
   const [, params] = useRoute("/admin/clients/:id");
   const id = Number(params?.id);
-  const { data: rawCustomer, isLoading } = useGetCustomer(id, { query: { enabled: !!id, queryKey: getGetCustomerQueryKey(id) } });
+  const { data: rawCustomer, isLoading } = useGetCustomer(id, {
+    query: {
+      enabled: !!id,
+      queryKey: getGetCustomerQueryKey(id),
+      refetchInterval: 15000,
+      refetchIntervalInBackground: true,
+    },
+  });
   const customer = rawCustomer as CustomerDetailView | undefined;
 
-  if (isLoading) return <div className="p-6"><Skeleton className="h-[400px] w-full max-w-4xl mx-auto rounded-xl" /></div>;
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <Skeleton className="mx-auto h-[400px] w-full max-w-4xl rounded-xl" />
+      </div>
+    );
+  }
+
   if (!customer) return <div className="p-6 text-center">Client introuvable</div>;
 
   const activeRequests = customer.activeRentalRequests ?? customer.rentalRequests.filter((request) => isActiveRentalStatus(request.status));
@@ -63,13 +97,17 @@ export default function AdminCustomerDetail() {
     status: activeRequests.length > 0 ? "Actif" : customer.rentalRequests.length > 0 ? "Déjà client" : "Nouveau",
     lastRentalAt: customer.rentalRequests[0]?.startDate ?? null,
   };
+  const customerDocuments = [...(customer.documents ?? [])].sort(
+    (a, b) => new Date(b.uploadedAt ?? 0).getTime() - new Date(a.uploadedAt ?? 0).getTime(),
+  );
+  const latestDocument = customerDocuments[0] ?? null;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
+    <div className="mx-auto max-w-6xl space-y-6 pb-12">
       <div className="flex items-center gap-4">
         <Link href="/admin/clients">
           <Button variant="ghost" size="icon">
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
         <div className="space-y-1">
@@ -83,7 +121,7 @@ export default function AdminCustomerDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
         <Card className="border-primary/10 bg-primary/5">
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">CIN</p>
@@ -108,13 +146,22 @@ export default function AdminCustomerDetail() {
             <p className="mt-2 text-lg font-semibold">{summary.status}</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-5">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Documents reçus</p>
+            <p className="mt-2 text-lg font-semibold">{customerDocuments.length}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {latestDocument ? `Dernier: ${getDocumentLabel(latestDocument.type)}` : "Aucun document téléversé"}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <Card className="overflow-hidden">
           <CardHeader className="border-b bg-muted/20">
             <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5 text-primary" />
+              <User className="h-5 w-5 text-primary" />
               Profil client
             </CardTitle>
           </CardHeader>
@@ -165,7 +212,7 @@ export default function AdminCustomerDetail() {
         <Card className="overflow-hidden">
           <CardHeader className="border-b bg-muted/20">
             <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
+              <FileText className="h-5 w-5 text-primary" />
               Documents et identifiants
             </CardTitle>
           </CardHeader>
@@ -181,11 +228,71 @@ export default function AdminCustomerDetail() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-dashed bg-muted/20 p-4">
-              <p className="text-sm font-medium">Dernière activité</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {summary.lastRentalAt ? new Date(summary.lastRentalAt).toLocaleDateString("fr-MA") : "Aucune location enregistrée"}
-              </p>
+            <div className="rounded-2xl border bg-background p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Pièces téléversées</p>
+                  <p className="mt-2 text-sm font-medium">
+                    {customerDocuments.length > 0
+                      ? `${customerDocuments.length} fichier${customerDocuments.length > 1 ? "s" : ""} disponible${customerDocuments.length > 1 ? "s" : ""}`
+                      : "Aucun document téléversé"}
+                  </p>
+                </div>
+                {latestDocument && (
+                  <Badge variant="secondary" className="rounded-full">
+                    {getStatusLabel(latestDocument.status, "document")}
+                  </Badge>
+                )}
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {customerDocuments.length > 0 ? (
+                  customerDocuments.map((document) => (
+                    <div key={document.id} className="rounded-2xl border border-dashed bg-muted/20 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="font-semibold">{getDocumentLabel(document.type)}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {document.rentalRequestId ? `Demande #${document.rentalRequestId}` : "Profil client"}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="rounded-full">
+                          {getStatusLabel(document.status, "document")}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        {document.uploadedAt ? formatDateTime(document.uploadedAt) : "À l'instant"}
+                      </div>
+
+                      <div className="mt-3 truncate rounded-xl border border-dashed bg-background px-3 py-2 text-sm">
+                        {getDocumentFileName(document.fileUrl)}
+                      </div>
+
+                      <div className="mt-4 flex justify-end">
+                        <Button asChild size="sm" variant="outline" className="rounded-full border-border/70 bg-white">
+                          <a href={document.fileUrl} download={getDocumentFileName(document.fileUrl)}>
+                            Télécharger
+                            <Download className="h-4 w-4" />
+                          </a>
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground md:col-span-2">
+                    Aucun document n’a encore été téléversé pour ce client.
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-dashed bg-muted/20 p-4">
+                <p className="text-sm font-medium">Dernière activité</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {summary.lastRentalAt ? new Date(summary.lastRentalAt).toLocaleDateString("fr-MA") : "Aucune location enregistrée"}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -195,7 +302,7 @@ export default function AdminCustomerDetail() {
         <Card className="overflow-hidden">
           <CardHeader className="border-b bg-muted/20">
             <CardTitle className="flex items-center gap-2">
-              <CalendarClock className="w-5 h-5 text-primary" />
+              <CalendarClock className="h-5 w-5 text-primary" />
               Réservations en cours
             </CardTitle>
           </CardHeader>
@@ -213,9 +320,7 @@ export default function AdminCustomerDetail() {
                         {new Date(request.startDate).toLocaleDateString("fr-MA")} - {new Date(request.returnDate).toLocaleDateString("fr-MA")}
                       </p>
                     </div>
-                    <p className="text-sm font-medium">
-                      {formatPrice(request.finalPrice || request.estimatedTotalPrice)}
-                    </p>
+                    <p className="text-sm font-medium">{formatPrice(request.finalPrice || request.estimatedTotalPrice)}</p>
                   </div>
                 ))}
               </div>
@@ -228,15 +333,15 @@ export default function AdminCustomerDetail() {
         <Card className="overflow-hidden">
           <CardHeader className="border-b bg-muted/20">
             <CardTitle className="flex items-center gap-2">
-              <History className="w-5 h-5 text-primary" />
+              <History className="h-5 w-5 text-primary" />
               Historique des locations
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             {customer.rentalRequests.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="bg-muted/50 text-muted-foreground text-xs uppercase">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
                     <tr>
                       <th className="px-4 py-3 font-medium">ID</th>
                       <th className="px-4 py-3 font-medium">Dates</th>
@@ -263,9 +368,7 @@ export default function AdminCustomerDetail() {
                 </table>
               </div>
             ) : (
-              <div className="p-6 text-center text-muted-foreground">
-                Ce client n'a pas encore d'historique de location.
-              </div>
+              <div className="p-6 text-center text-muted-foreground">Ce client n'a pas encore d'historique de location.</div>
             )}
           </CardContent>
         </Card>
