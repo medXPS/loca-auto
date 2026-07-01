@@ -129,7 +129,6 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
   const vehicleName = `${car.brand ?? ""} ${car.model ?? ""}`.trim() || `Véhicule #${request.carId}`;
   const qrDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, width: 220 });
   const logoUrl = assetUrl(settings.logoUrl, baseUrl);
-  const vehicleImageUrl = assetUrl(car.mainImageUrl, baseUrl);
 
   return `<!doctype html>
 <html lang="fr">
@@ -145,71 +144,66 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
     body { line-height: 1.4; }
     .print-tools { width: 210mm; margin: 18px auto; display: flex; justify-content: flex-end; }
     .print-tools button { border: 0; border-radius: 10px; padding: 11px 18px; background: var(--navy); color: white; font: 700 14px Arial; cursor: pointer; }
-    .receipt-page { width: 210mm; min-height: 297mm; height: 297mm; margin: 0 auto 24px; padding: 8mm 9mm; box-sizing: border-box; overflow: hidden; background: white; display: flex; flex-direction: column; gap: 3.25mm; }
-    .receipt-header { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(224px, .9fr); gap: 6mm; align-items: stretch; }
+    .receipt-page { width: 210mm; min-height: 297mm; height: 297mm; margin: 0 auto 24px; padding: 8mm 9mm; box-sizing: border-box; overflow: hidden; background: white; display: flex; flex-direction: column; gap: 4mm; }
+    .receipt-header { display: grid; grid-template-columns: minmax(0, 1.58fr) minmax(200px, .82fr); gap: 5mm; align-items: start; }
     .brand { display: flex; align-items: center; gap: 13px; margin-bottom: 10px; }
     .brand-logo { width: 45px; height: 45px; object-fit: contain; }
     .brand-mark { width: 45px; height: 45px; color: var(--navy); }
     .brand-mark svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; }
     .brand-name { font-size: 22px; line-height: 1.05; font-weight: 800; letter-spacing: .02em; color: var(--navy); text-transform: uppercase; max-width: 250px; }
-    h1 { margin: 0 0 4px; color: var(--navy); font-size: 28px; line-height: 1.12; letter-spacing: .01em; }
+    h1 { margin: 0 0 4px; color: var(--navy); font-size: 27px; line-height: 1.12; letter-spacing: .01em; }
     .subtitle { margin: 0 0 5px; color: var(--blue); font-size: 14px; }
     .description { margin: 0; max-width: 470px; color: var(--ink); font-size: 11px; line-height: 1.35; }
     .contact-row { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); font-size: 10px; }
     .contact-row span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
     .contact-row svg { width: 15px; height: 15px; fill: none; stroke: var(--navy); stroke-width: 1.8; }
-    .header-side { position: relative; min-width: 0; }
-    .hero-panel { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; padding: 13px; border-radius: 24px; border: 1px solid rgba(215, 224, 236, .96); background: linear-gradient(160deg, #edf4ff 0%, #e3edf9 48%, #d8e7fb 100%); overflow: hidden; box-shadow: 0 18px 40px rgba(16, 47, 102, .08); }
-    .hero-panel::before { content: ""; position: absolute; inset: auto auto 18px -18px; width: 84px; height: 84px; border-radius: 22px; background: linear-gradient(135deg, rgba(31, 86, 180, .2), rgba(16, 47, 102, .05)); transform: rotate(18deg); }
-    .hero-panel::after { content: ""; position: absolute; top: -18px; right: -16px; width: 108px; height: 108px; border-radius: 30px; background: linear-gradient(135deg, rgba(16, 47, 102, .12), rgba(31, 86, 180, .02)); transform: rotate(18deg); }
-    .receipt-info { position: relative; z-index: 1; border: 1px solid rgba(215, 224, 236, .96); border-radius: 16px; padding: 12px 14px; background: rgba(255, 255, 255, .94); display: grid; grid-template-columns: 34px 1fr; gap: 10px; box-shadow: 0 10px 22px rgba(16, 47, 102, .06); }
+    .header-side { min-width: 0; }
+    .receipt-info { border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; background: white; display: grid; grid-template-columns: 32px 1fr; gap: 10px; }
     .receipt-info > svg { width: 30px; height: 30px; fill: none; stroke: var(--navy); stroke-width: 1.7; }
-    .receipt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 12px; }
-    .receipt-meta div:first-child { grid-column: 1 / -1; }
+    .receipt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+    .receipt-meta > div { min-width: 0; }
     small, .label { display: block; color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-    .receipt-meta strong { display: block; margin-top: 2px; color: var(--navy); font-size: 13px; }
-    .vehicle-visual { position: relative; z-index: 1; min-height: 74px; overflow: hidden; border-radius: 15px; background: linear-gradient(135deg, #edf3fb, #dbe7f6); box-shadow: 0 10px 22px rgba(16, 47, 102, .08); }
-    .vehicle-visual img { display: block; width: 100%; height: 100%; max-height: 88px; object-fit: cover; object-position: center; }
-    .card { border: 1px solid rgba(215, 224, 236, .96); border-radius: 20px; padding: 4.8mm 5.1mm; background: linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(250, 252, 255, .98)); page-break-inside: avoid; break-inside: avoid; box-shadow: 0 12px 28px rgba(16, 47, 102, .06); }
-    .section-title { display: flex; align-items: center; gap: 11px; margin: 0 0 11px; color: var(--navy); font-size: 13px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; }
-    .section-icon { width: 35px; height: 35px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; color: white; background: var(--navy); }
-    .section-icon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    .receipt-meta strong { display: block; margin-top: 2px; color: var(--navy); font-size: 12px; line-height: 1.2; }
+    .card { border: 1px solid var(--line); border-radius: 14px; padding: 4.5mm 4.8mm; background: white; page-break-inside: avoid; break-inside: avoid; }
+    .section-title { display: flex; align-items: center; gap: 9px; margin: 0 0 9px; color: var(--navy); font-size: 12px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; }
+    .section-icon { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; color: white; background: var(--navy); }
+    .section-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; }
     .party-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4.5mm; }
     .party-card { min-width: 0; }
-    .party-row { display: grid; grid-template-columns: 16px 76px minmax(0, 1fr); gap: 8px; align-items: center; min-height: 20px; }
-    .party-row + .party-row { margin-top: 4px; }
+    .party-row { display: grid; grid-template-columns: 16px 76px minmax(0, 1fr); gap: 8px; align-items: center; min-height: 18px; }
+    .party-row + .party-row { margin-top: 3px; }
     .party-row > span svg { width: 14px; height: 14px; fill: none; stroke: var(--navy); stroke-width: 1.8; }
     .party-row small { font-size: 7.5px; letter-spacing: 0; text-transform: none; font-weight: 500; }
     .party-row strong { min-width: 0; overflow-wrap: anywhere; font-size: 9.5px; }
     .details-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .detail-item { min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 10px; }
+    .detail-item { min-width: 0; display: flex; align-items: center; gap: 10px; padding: 7px 10px; }
     .detail-item:nth-child(3n+2), .detail-item:nth-child(3n+3) { border-left: 1px solid var(--line); }
     .detail-item:nth-child(n+4) { border-top: 1px solid var(--line); }
-    .detail-item .mini-icon { width: 26px; height: 26px; flex: 0 0 auto; display: grid; place-items: center; color: var(--navy); }
-    .detail-item svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-    .detail-item strong { display: block; margin-top: 2px; font-size: 10.5px; overflow-wrap: anywhere; }
+    .detail-item .mini-icon { width: 24px; height: 24px; flex: 0 0 auto; display: grid; place-items: center; color: var(--navy); }
+    .detail-item svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    .detail-item strong { display: block; margin-top: 2px; font-size: 10px; overflow-wrap: anywhere; }
     .payment-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }
     .payment-table td { height: 17px; padding: 1px 8px; border-bottom: 1px solid var(--line); }
     .payment-table td:first-child { color: var(--muted); }
     .payment-table td:last-child { width: 155px; text-align: right; color: var(--ink); }
     .payment-table .total td { height: 25px; border: 0; background: var(--navy); color: white; font-size: 10.5px; font-weight: 800; }
-    .payment-table .total td:first-child { border-radius: 8px 0 0 8px; }
-    .payment-table .total td:last-child { border-radius: 0 8px 8px 0; color: white; }
+    .payment-table .total td:first-child { border-radius: 7px 0 0 7px; }
+    .payment-table .total td:last-child { border-radius: 0 7px 7px 0; color: white; }
     .payment-table .meta td { border-bottom: 0; }
-    .verification-grid { display: grid; grid-template-columns: 88px minmax(0, .95fr) minmax(0, 1.4fr); gap: 14px; align-items: stretch; }
-    .qr { width: 82px; height: 82px; display: block; }
+    .verification-grid { display: grid; grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1.35fr); gap: 12px; align-items: start; }
+    .qr { width: 78px; height: 78px; display: block; }
     .verification-copy { padding: 4px 14px 4px 0; border-right: 1px solid var(--line); font-size: 9px; }
     .verification-copy a { display: block; margin-top: 9px; color: var(--blue); font-weight: 700; overflow-wrap: anywhere; }
     .signatures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
     .signature { min-width: 0; }
     .signature-line { height: 34px; margin-top: 4px; border-bottom: 1px solid var(--navy); }
     .signature.agency .signature-line::after { content: "Location Auto Maroc"; display: block; padding: 10px 5px 0; color: var(--navy); font: italic 14px Georgia, serif; transform: rotate(-3deg); }
-    .receipt-footer { margin-top: auto; min-height: 11mm; border-radius: 14px; padding: 10px 14px; color: white; background: linear-gradient(135deg, var(--navy), #0f2d63 55%, #163a72); display: grid; grid-template-columns: 1.4fr .75fr .75fr; gap: 10px; align-items: center; font-size: 8.5px; box-shadow: 0 10px 24px rgba(16, 47, 102, .16); }
-    .receipt-footer strong { display: block; font-size: 10px; }
+    .receipt-footer { margin-top: auto; padding-top: 7px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; font-size: 8.5px; color: var(--muted); }
+    .receipt-footer strong { display: block; font-size: 10px; color: var(--navy); }
     .receipt-footer div { line-height: 1.25; }
     .receipt-footer > span { display: flex; align-items: center; gap: 7px; }
     .footer-note { margin-top: 1px; }
-    .receipt-footer svg { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: white; stroke-width: 1.8; }
+    .receipt-footer svg { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: var(--navy); stroke-width: 1.8; }
     @media print {
       html, body { margin: 0; background: white; }
       .print-tools { display: none !important; }
@@ -244,15 +238,14 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
         </div>
       </div>
       <div class="header-side">
-        <div class="hero-panel">
-          <div class="receipt-info">
-            ${svgIcon("receipt")}
-            <div class="receipt-meta">
-              <div><small>N° reçu</small><strong>${escapeHtml(receiptNumber)}</strong></div>
-              <div><small>Date</small><strong>${escapeHtml(formatDate(paidAt))}</strong></div>
-            </div>
+        <div class="receipt-info">
+          ${svgIcon("receipt")}
+          <div class="receipt-meta">
+            <div><small>N° reçu</small><strong>${escapeHtml(receiptNumber)}</strong></div>
+            <div><small>Date</small><strong>${escapeHtml(formatDate(paidAt))}</strong></div>
+            <div><small>Véhicule</small><strong>${escapeHtml(vehicleName)}</strong></div>
+            <div><small>Client</small><strong>${escapeHtml(request.fullName)}</strong></div>
           </div>
-          ${vehicleImageUrl ? `<div class="vehicle-visual"><img src="${escapeHtml(vehicleImageUrl)}" alt="${escapeHtml(vehicleName)}" /></div>` : ""}
         </div>
       </div>
     </header>

@@ -273,10 +273,6 @@ async function buildReceiptPdfLegacy(args: {
   const pageWidth =
     doc.page.width - doc.page.margins.left - doc.page.margins.right;
   const pageRight = pageLeft + pageWidth;
-  const heroPanelX = pageRight - 236;
-  const heroPanelY = pageTop - 2;
-  const heroPanelW = 236;
-  const heroPanelH = 180;
   const receiptBoxX = pageRight - 220;
   const receiptBoxY = pageTop + 2;
   const receiptBoxW = 220;
@@ -473,14 +469,8 @@ async function buildReceiptPdfLegacy(args: {
     h: number,
     fill = colors.white,
   ) => {
-    doc.save();
     doc
-      .fillOpacity(0.04)
-      .roundedRect(x, y + 3, w, h, 18)
-      .fill("#000000");
-    doc.restore();
-    doc
-      .roundedRect(x, y, w, h, 18)
+      .roundedRect(x, y, w, h, 14)
       .lineWidth(1)
       .fillAndStroke(fill, colors.border);
   };
@@ -491,13 +481,13 @@ async function buildReceiptPdfLegacy(args: {
     title: string,
     icon: string,
   ) => {
-    doc.circle(x + 18, y + 18, 18).fill(colors.navyDeep);
-    drawGlyph(icon, x + 6, y + 6, 24, colors.white);
+    doc.circle(x + 15, y + 15, 15).fill(colors.navyDeep);
+    drawGlyph(icon, x + 5, y + 5, 20, colors.white);
     doc
       .fillColor(colors.navyDeep)
       .font("Helvetica-Bold")
-      .fontSize(12)
-      .text(title.toUpperCase(), x + 48, y + 11, {
+      .fontSize(11.5)
+      .text(title.toUpperCase(), x + 40, y + 10, {
         width: 250,
         characterSpacing: 0.6,
       });
@@ -529,12 +519,8 @@ async function buildReceiptPdfLegacy(args: {
   doc.rect(0, 0, doc.page.width, doc.page.height).fill(colors.white);
 
   doc.save();
-  doc
-    .roundedRect(heroPanelX, heroPanelY, heroPanelW, heroPanelH, 22)
-    .fillAndStroke(colors.blueSoft, colors.border);
-  doc
-    .roundedRect(heroPanelX + 16, heroPanelY + 14, 70, 6, 3)
-    .fill(colors.blue);
+  doc.rect(0, 0, doc.page.width, 10).fill(colors.navyDeep);
+  doc.rect(pageLeft, pageTop - 4, pageWidth, 2).fill(colors.blue);
   doc.restore();
 
   if (logoBuffer) {
