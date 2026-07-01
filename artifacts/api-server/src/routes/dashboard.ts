@@ -352,7 +352,7 @@ router.get(
           >`COALESCE(${schema.auditLogsTable.actorEmail}, ${schema.usersTable.email})`,
           userRole: sql<
             string | null
-          >`COALESCE(${schema.auditLogsTable.actorRole}, ${schema.usersTable.role})`,
+          >`COALESCE(${schema.auditLogsTable.actorRole}, ${schema.usersTable.role}::text)`,
           ipAddress: schema.auditLogsTable.ipAddress,
           userAgent: schema.auditLogsTable.userAgent,
           action: schema.auditLogsTable.action,
