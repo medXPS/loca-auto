@@ -1,9 +1,13 @@
 import { useRoute, useLocation } from "wouter";
 import {
+  customFetch,
+  getGetCustomerQueryKey,
   useGetRentalRequest,
   getGetRentalRequestQueryKey,
   getListAuditLogsQueryKey,
+  getListDocumentsQueryKey,
   useListAuditLogs,
+  useListDocuments,
 } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice, formatDateTime } from "@/lib/utils";
@@ -12,7 +16,13 @@ import { CountdownTimer } from "@/components/countdown-timer";
 import { RequestActions } from "@/components/request-actions";
 import { ReceiptDownloadButton } from "@/components/receipt-download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { getStatusLabel } from "@/lib/utils";
 import {
+  BadgeCheck,
+  CalendarDays,
+  Download,
   User,
   Phone,
   Mail,
@@ -22,6 +32,20 @@ import {
   CreditCard,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+
+function fileNameFromUrl(fileUrl: string) {
+  const fileName = fileUrl.split("/").pop();
+  return fileName && fileName.trim() ? fileName : fileUrl;
+}
+
+function getDocumentLabel(type?: string | null) {
+  if (type === "CIN") return "CIN";
+  if (type === "PASSPORT") return "Passeport";
+  if (type === "PERMIS_CONDUIRE") return "Permis";
+  return type || "Document";
+}
 
 export default function AdminRequestDetail() {
   const [location] = useLocation();
@@ -33,16 +57,45 @@ export default function AdminRequestDetail() {
   const { data: request, isLoading } = useGetRentalRequest(id, {
     query: { enabled: !!id, queryKey: getGetRentalRequestQueryKey(id) },
   });
+  const { data: documents, isLoading: isDocumentsLoading } = useListDocuments(id, {
+    query: {
+      enabled: !!id,
+      queryKey: getListDocumentsQueryKey(id),
+      refetchInterval: 15000,
+      refetchIntervalInBackground: true,
+    },
+  });
   const { data: auditData, isLoading: isAuditLoading } = useListAuditLogs({
     limit: 500,
   });
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const validateDocuments = useMutation({
+    mutationFn: async () => customFetch(`/api/documents/${id}/approve`, { method: "PATCH" }),
+    onSuccess: async () => {
+      toast({ title: "Documents validés avec succès" });
+      queryClient.invalidateQueries({ queryKey: getGetRentalRequestQueryKey(id) });
+      queryClient.invalidateQueries({ queryKey: getListDocumentsQueryKey(id) });
+      if (request?.customerId) {
+        queryClient.invalidateQueries({ queryKey: getGetCustomerQueryKey(request.customerId) });
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error?.message || "Impossible de valider les documents.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleSuccess = () => {
     queryClient.invalidateQueries({
       queryKey: getGetRentalRequestQueryKey(id),
     });
     queryClient.invalidateQueries({ queryKey: getListAuditLogsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getListDocumentsQueryKey(id) });
   };
 
   if (isLoading)
@@ -78,6 +131,11 @@ export default function AdminRequestDetail() {
       (a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
+  const requestDocuments = [...(documents ?? [])].sort(
+    (a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime(),
+  );
+  const allDocumentsApproved =
+    requestDocuments.length > 0 && requestDocuments.every((document) => document.status === "APPROVED");
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -239,6 +297,91 @@ export default function AdminRequestDetail() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2 overflow-hidden">
+          <CardHeader className="border-b bg-muted/20">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Documents soumis
+                </CardTitle>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Les fichiers les plus récents liés à cette réservation sont regroupés ici pour téléchargement et vérification.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => validateDocuments.mutate()}
+                disabled={requestDocuments.length === 0 || allDocumentsApproved || validateDocuments.isPending || isDocumentsLoading}
+                className="gap-2"
+              >
+                <BadgeCheck className="h-4 w-4" />
+                {allDocumentsApproved
+                  ? "Documents validés"
+                  : validateDocuments.isPending
+                    ? "Validation..."
+                    : "Valider les documents"}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            {isDocumentsLoading ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {Array(2)
+                  .fill(0)
+                  .map((_, index) => (
+                    <Skeleton key={index} className="h-36 w-full rounded-2xl" />
+                  ))}
+              </div>
+            ) : requestDocuments.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {requestDocuments.map((document) => (
+                  <div key={document.id} className="rounded-2xl border bg-background p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold">{getDocumentLabel(document.type)}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">Demande #{request.id}</p>
+                      </div>
+                      <Badge variant="outline" className="rounded-full">
+                        {getStatusLabel(document.status, "document")}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {formatDateTime(document.uploadedAt)}
+                    </div>
+
+                    <div className="mt-3 truncate rounded-xl border border-dashed bg-muted/20 px-3 py-2 text-sm text-slate-600">
+                      {fileNameFromUrl(document.fileUrl)}
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <Badge variant="secondary" className="rounded-full">
+                        {document.status === "APPROVED"
+                          ? "Validé"
+                          : document.status === "REJECTED"
+                            ? "Refusé"
+                            : "En attente"}
+                      </Badge>
+                      <Button asChild size="sm" variant="outline" className="rounded-full border-border/70 bg-white">
+                        <a href={document.fileUrl} download={fileNameFromUrl(document.fileUrl)}>
+                          Télécharger
+                          <Download className="h-4 w-4" />
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                Aucun document n'a encore été soumis pour cette réservation.
+              </div>
+            )}
           </CardContent>
         </Card>
 

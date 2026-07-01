@@ -8,6 +8,15 @@ import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDateTime, formatPrice, getStatusLabel, isActiveRentalStatus } from "@/lib/utils";
 
+type CustomerDocument = {
+  id: number;
+  type: string;
+  fileUrl: string;
+  status?: string | null;
+  uploadedAt?: string | null;
+  rentalRequestId?: number | null;
+};
+
 type CustomerDetailView = {
   id: number;
   cin?: string | null;
@@ -15,14 +24,7 @@ type CustomerDetailView = {
   drivingLicenseNumber?: string | null;
   address?: string | null;
   city?: string | null;
-  documents?: Array<{
-    id: number;
-    type: string;
-    fileUrl: string;
-    status?: string | null;
-    uploadedAt?: string | null;
-    rentalRequestId?: number | null;
-  }>;
+  documents?: CustomerDocument[];
   user?: {
     fullName: string;
     email: string;
@@ -97,10 +99,17 @@ export default function AdminCustomerDetail() {
     status: activeRequests.length > 0 ? "Actif" : customer.rentalRequests.length > 0 ? "Déjà client" : "Nouveau",
     lastRentalAt: customer.rentalRequests[0]?.startDate ?? null,
   };
-  const customerDocuments = [...(customer.documents ?? [])].sort(
+  const sortedDocuments = [...(customer.documents ?? [])].sort(
     (a, b) => new Date(b.uploadedAt ?? 0).getTime() - new Date(a.uploadedAt ?? 0).getTime(),
   );
-  const latestDocument = customerDocuments[0] ?? null;
+  const latestDocuments = sortedDocuments.reduce<CustomerDocument[]>((acc, document) => {
+    const key = (document.type || "AUTRE").toUpperCase();
+    if (!acc.some((item) => (item.type || "AUTRE").toUpperCase() === key)) {
+      acc.push(document);
+    }
+    return acc;
+  }, []);
+  const latestDocument = latestDocuments[0] ?? null;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 pb-12">
@@ -149,7 +158,7 @@ export default function AdminCustomerDetail() {
         <Card>
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Documents reçus</p>
-            <p className="mt-2 text-lg font-semibold">{customerDocuments.length}</p>
+            <p className="mt-2 text-lg font-semibold">{latestDocuments.length}</p>
             <p className="mt-1 text-xs text-muted-foreground">
               {latestDocument ? `Dernier: ${getDocumentLabel(latestDocument.type)}` : "Aucun document téléversé"}
             </p>
@@ -231,10 +240,10 @@ export default function AdminCustomerDetail() {
             <div className="rounded-2xl border bg-background p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Pièces téléversées</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Dernières pièces téléversées</p>
                   <p className="mt-2 text-sm font-medium">
-                    {customerDocuments.length > 0
-                      ? `${customerDocuments.length} fichier${customerDocuments.length > 1 ? "s" : ""} disponible${customerDocuments.length > 1 ? "s" : ""}`
+                    {latestDocuments.length > 0
+                      ? `${latestDocuments.length} fichier${latestDocuments.length > 1 ? "s" : ""} disponible${latestDocuments.length > 1 ? "s" : ""}`
                       : "Aucun document téléversé"}
                   </p>
                 </div>
@@ -246,14 +255,20 @@ export default function AdminCustomerDetail() {
               </div>
 
               <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {customerDocuments.length > 0 ? (
-                  customerDocuments.map((document) => (
+                {latestDocuments.length > 0 ? (
+                  latestDocuments.map((document) => (
                     <div key={document.id} className="rounded-2xl border border-dashed bg-muted/20 p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="font-semibold">{getDocumentLabel(document.type)}</p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {document.rentalRequestId ? `Demande #${document.rentalRequestId}` : "Profil client"}
+                            {document.rentalRequestId ? (
+                              <Link href={`/admin/demandes/${document.rentalRequestId}`} className="hover:text-primary hover:underline">
+                                Demande #{document.rentalRequestId}
+                              </Link>
+                            ) : (
+                              "Profil client"
+                            )}
                           </p>
                         </div>
                         <Badge variant="outline" className="rounded-full">

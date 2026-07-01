@@ -1,8 +1,9 @@
 import { Router } from "express";
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db, schema } from "../lib/db";
-import { authMiddleware } from "../lib/auth";
+import { authMiddleware, requireRole } from "../lib/auth";
 import { expireStaleAvailabilityLocks, markRequestPendingCallConfirmation } from "../lib/availability";
+import { logAudit } from "../lib/audit";
 
 const router = Router();
 
@@ -14,6 +15,14 @@ async function getCurrentCustomerId(userId: number) {
 async function getRentalRequestById(rentalRequestId: number) {
   const [request] = await db.select().from(schema.rentalRequestsTable).where(eq(schema.rentalRequestsTable.id, rentalRequestId)).limit(1);
   return request ?? null;
+}
+
+async function getDocumentsForRentalRequest(rentalRequestId: number) {
+  return db
+    .select()
+    .from(schema.documentsTable)
+    .where(eq(schema.documentsTable.rentalRequestId, rentalRequestId))
+    .orderBy(desc(schema.documentsTable.uploadedAt));
 }
 
 // POST /api/documents
@@ -145,9 +154,50 @@ router.get("/:rentalRequestId", authMiddleware, async (req, res) => {
       }
     }
 
-    const docs = await db.select().from(schema.documentsTable)
-      .where(eq(schema.documentsTable.rentalRequestId, rentalRequestId));
+    const docs = await getDocumentsForRentalRequest(rentalRequestId);
     res.json(docs);
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// PATCH /api/documents/:rentalRequestId/approve
+router.patch("/:rentalRequestId/approve", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, res) => {
+  try {
+    const rentalRequestId = parseInt(String(req.params.rentalRequestId), 10);
+    const request = await getRentalRequestById(rentalRequestId);
+    if (!request) {
+      res.status(404).json({ error: "Demande non trouvee" });
+      return;
+    }
+
+    const documents = await getDocumentsForRentalRequest(rentalRequestId);
+    if (documents.length === 0) {
+      res.status(404).json({ error: "Aucun document trouve" });
+      return;
+    }
+
+    const updatedDocuments = await Promise.all(
+      documents.map(async (document) => {
+        const [updated] = await db
+          .update(schema.documentsTable)
+          .set({ status: "APPROVED" })
+          .where(eq(schema.documentsTable.id, document.id))
+          .returning();
+        return updated ?? document;
+      }),
+    );
+
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: "APPROVE_DOCUMENTS",
+      entityType: "rental_request",
+      entityId: request.id,
+      details: `Validation de ${updatedDocuments.length} document${updatedDocuments.length > 1 ? "s" : ""}.`,
+    });
+
+    res.json({ documents: updatedDocuments });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Erreur serveur" });
