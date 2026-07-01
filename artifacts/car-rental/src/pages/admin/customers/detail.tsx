@@ -3,11 +3,12 @@ import { useRoute, Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, BadgeCheck, CalendarClock, CalendarDays, CreditCard, Download, FileText, History, MapPin, Phone, User } from "lucide-react";
+import { ArrowLeft, BadgeCheck, CalendarClock, CalendarDays, CreditCard, FileText, History, MapPin, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DocumentDownloadButton } from "@/components/document-download-button";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDateTime, formatPrice, getStatusLabel, isActiveRentalStatus } from "@/lib/utils";
-import { fileNameFromUrl, resolveUploadUrl } from "@/lib/uploads";
+import { fileNameFromUrl } from "@/lib/uploads";
 
 type CustomerDocument = {
   id: number;
@@ -275,12 +276,14 @@ export default function AdminCustomerDetail() {
                       </div>
 
                       <div className="mt-4 flex justify-end">
-                        <Button asChild size="sm" variant="outline" className="rounded-full border-border/70 bg-white">
-                          <a href={resolveUploadUrl(document.fileUrl)} download={fileNameFromUrl(document.fileUrl)}>
-                            Télécharger
-                            <Download className="h-4 w-4" />
-                          </a>
-                        </Button>
+                        <DocumentDownloadButton
+                          fileUrl={document.fileUrl}
+                          filename={fileNameFromUrl(document.fileUrl)}
+                          size="sm"
+                          className="rounded-full border-border/70 bg-white"
+                        >
+                          Télécharger
+                        </DocumentDownloadButton>
                       </div>
                     </div>
                   ))

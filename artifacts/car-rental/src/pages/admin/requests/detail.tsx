@@ -15,23 +15,13 @@ import { StatusBadge } from "@/components/status-badge";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { RequestActions } from "@/components/request-actions";
 import { ReceiptDownloadButton } from "@/components/receipt-download-button";
+import { DocumentDownloadButton } from "@/components/document-download-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getStatusLabel } from "@/lib/utils";
-import { fileNameFromUrl, resolveUploadUrl } from "@/lib/uploads";
-import {
-  BadgeCheck,
-  CalendarDays,
-  Download,
-  User,
-  Phone,
-  Mail,
-  Calendar,
-  FileText,
-  History,
-  CreditCard,
-} from "lucide-react";
+import { fileNameFromUrl } from "@/lib/uploads";
+import { BadgeCheck, CalendarDays, User, Phone, Mail, Calendar, FileText, History, CreditCard } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -363,12 +353,14 @@ export default function AdminRequestDetail() {
                             ? "Refusé"
                             : "En attente"}
                       </Badge>
-                      <Button asChild size="sm" variant="outline" className="rounded-full border-border/70 bg-white">
-                        <a href={resolveUploadUrl(document.fileUrl)} download={fileNameFromUrl(document.fileUrl)}>
-                          Télécharger
-                          <Download className="h-4 w-4" />
-                        </a>
-                      </Button>
+                      <DocumentDownloadButton
+                        fileUrl={document.fileUrl}
+                        filename={fileNameFromUrl(document.fileUrl)}
+                        size="sm"
+                        className="rounded-full border-border/70 bg-white"
+                      >
+                        Télécharger
+                      </DocumentDownloadButton>
                     </div>
                   </div>
                 ))}
