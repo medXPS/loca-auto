@@ -30,13 +30,13 @@ const faqs = [
 export default function Faq() {
   return (
     <div className="container mx-auto px-4 py-10">
-      <section className="overflow-hidden rounded-[2rem] marketing-dark-panel marketing-grid px-6 py-10 text-white md:px-8">
+      <section className="overflow-hidden rounded-[2rem] marketing-dark-panel marketing-grid px-5 py-8 text-white sm:px-6 md:px-8 md:py-10">
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] marketing-kicker marketing-pill">
             <HelpCircle className="h-3.5 w-3.5 text-primary" />
             Aide
           </div>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance md:text-5xl">
+          <h1 className="mt-6 text-3xl font-semibold tracking-tight text-balance sm:text-4xl md:text-5xl">
             Les réponses les plus utiles, sans jargon ni détour.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-8 text-white/72">
@@ -95,7 +95,7 @@ export default function Faq() {
                 <MessageCircle className="h-3.5 w-3.5 text-primary" />
                 Besoin d'aide ?
               </div>
-              <h3 className="mt-5 text-3xl font-semibold leading-tight text-balance">Contactez-nous si votre cas est plus spécifique.</h3>
+              <h3 className="mt-5 text-2xl font-semibold leading-tight text-balance sm:text-3xl">Contactez-nous si votre cas est plus spécifique.</h3>
               <p className="mt-4 text-sm leading-7 text-white/72">
                 Une question sur un véhicule, une date, une agence ou les documents ? Nous pouvons vous orienter plus précisément.
               </p>

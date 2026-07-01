@@ -106,7 +106,7 @@ function SectionHeading({
   return (
     <div className={cn(centered ? "mx-auto max-w-2xl text-center" : "max-w-2xl")}>
       <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#FF4B43]">{eyebrow}</p>
-      <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">{title}</h2>
+      <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl md:text-4xl">{title}</h2>
       <p className="mt-3 text-sm leading-7 text-slate-500 md:text-base">{description}</p>
     </div>
   );
@@ -176,10 +176,10 @@ function CatalogueCarRow({ car }: { car: any }) {
           </div>
         </div>
 
-          <div className="flex flex-col justify-between border-t border-slate-100 p-5 lg:border-l lg:border-t-0">
-            <div className="text-right">
+          <div className="flex flex-col justify-between gap-4 border-t border-slate-100 p-5 lg:border-l lg:border-t-0">
+            <div className="text-left sm:text-right">
               <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">À partir de</p>
-              <p className="mt-1 text-3xl font-semibold text-[#FF4B43]">{formatPrice(car.dailyPrice)}</p>
+              <p className="mt-1 text-2xl font-semibold text-[#FF4B43] sm:text-3xl">{formatPrice(car.dailyPrice)}</p>
               <p className="text-xs text-slate-400">/ jour</p>
               <div
                 className={`mt-3 inline-flex max-w-full rounded-full px-3 py-1 text-xs font-semibold ${
@@ -192,7 +192,7 @@ function CatalogueCarRow({ car }: { car: any }) {
               </div>
             </div>
 
-          <Button asChild className="rounded-full bg-[#FF4B43] text-white hover:bg-[#f03b33]">
+          <Button asChild className="w-full rounded-full bg-[#FF4B43] text-white hover:bg-[#f03b33]">
             <Link href={`/voitures/${car.id}?reserve=1`}>Réserver maintenant</Link>
           </Button>
         </div>
@@ -487,19 +487,19 @@ export default function Cars() {
       />
 
       <section className="container mx-auto px-4 py-10 lg:py-14" id="catalogue-list">
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <SectionHeading
             eyebrow="Catalogue"
             title="Tous nos véhicules disponibles"
             description="Affinez les résultats avec les bons filtres, sans saisie libre pour le modèle."
           />
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end md:w-auto">
             <Select value={sortBy} onValueChange={(value) => {
               setSortBy(value);
               applyFilters({ sortBy: value });
             }}>
-              <SelectTrigger className="min-w-[240px] rounded-full border-slate-200 bg-white">
+              <SelectTrigger className="w-full rounded-full border-slate-200 bg-white sm:min-w-[240px]">
                 <SelectValue placeholder="Trier" />
               </SelectTrigger>
               <SelectContent>
@@ -521,7 +521,7 @@ export default function Cars() {
 
             <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" className="rounded-full border-slate-200 bg-white xl:hidden">
+                <Button variant="outline" className="w-full rounded-full border-slate-200 bg-white xl:hidden sm:w-auto">
                   <Filter className="h-4 w-4" />
                   Filtres
                 </Button>

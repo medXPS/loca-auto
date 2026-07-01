@@ -184,7 +184,7 @@ export default function AdminCalendarPage() {
     <div className="space-y-6 text-foreground">
       <section
         className={cn(
-          "overflow-hidden rounded-[2rem] border px-6 py-7 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.22)]",
+          "overflow-hidden rounded-[2rem] border px-5 py-7 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.22)] sm:px-6",
           isAgentMode ? "border-border bg-card text-card-foreground" : "border-border bg-background",
         )}
       >
@@ -194,14 +194,14 @@ export default function AdminCalendarPage() {
               <CalendarRange className="h-3.5 w-3.5" />
               Calendrier opérationnel
             </div>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+            <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
               Vue calendrier des réservations
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
               Passez rapidement de la vue jour à la vue mois, filtrez par véhicule ou par agent, puis déplacez une réservation pour ajuster ses dates.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Button variant="outline" className="gap-2 rounded-full" onClick={() => refetch()}>
               <RefreshCw className="h-4 w-4" />
               Actualiser
@@ -218,7 +218,7 @@ export default function AdminCalendarPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_0.55fr]">
         <Card className={cn("border", isAgentMode ? "border-border bg-card text-card-foreground" : "bg-background")}>
-          <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border">
+          <CardHeader className="flex flex-col gap-4 border-b border-border sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="flex items-center gap-2 text-foreground">
               <Filter className="h-5 w-5 text-primary" />
               Filtres

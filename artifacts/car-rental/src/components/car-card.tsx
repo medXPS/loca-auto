@@ -115,7 +115,7 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
                         <img src={brandMeta.logoUrl} alt={car.brand} className="max-h-full max-w-full object-contain" />
                       </span>
                     )}
-                    <h3 className="text-2xl font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
+                    <h3 className="text-xl font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary sm:text-2xl">
                       {car.brand} {car.model}
                     </h3>
                   </Link>
@@ -150,23 +150,23 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
               </div>
             </div>
 
-            <div className="mt-5 flex items-center justify-between gap-4">
-              <div>
+            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="w-full sm:w-auto">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Prix par jour</p>
-                <p className="mt-1 text-3xl font-semibold text-primary">{formatPrice(car.dailyPrice)}</p>
+                <p className="mt-1 text-2xl font-semibold text-primary sm:text-3xl">{formatPrice(car.dailyPrice)}</p>
                 <p className="mt-1 text-sm text-muted-foreground">Par jour</p>
               </div>
 
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button variant="outline" size="sm" className="rounded-full border-border/70 bg-white">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+                <Button variant="outline" size="sm" className="w-full rounded-full border-border/70 bg-white sm:w-auto">
                   <BarChart3 className="h-4 w-4" />
                   Comparer
                 </Button>
-                <Button variant="outline" size="sm" className="rounded-full border-border/70 bg-white">
+                <Button variant="outline" size="sm" className="w-full rounded-full border-border/70 bg-white sm:w-auto">
                   <Heart className="h-4 w-4" />
                   Favori
                 </Button>
-                <Button asChild className="rounded-full bg-[#F04B45] px-5 text-primary-foreground">
+                <Button asChild className="w-full rounded-full bg-[#F04B45] px-5 text-primary-foreground sm:w-auto">
                   <Link href={reserveHref}>
                     Réserver
                     <ArrowRight className="h-4 w-4" />
@@ -228,17 +228,17 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
             {ratingSummary.average}/5
           </div>
         )}
-        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-4">
+        <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
             <p className="text-sm uppercase tracking-[0.2em] text-white">{car.category}</p>
-            <h3 className="mt-1 truncate text-2xl font-semibold tracking-tight text-white transition-colors group-hover:text-[#ffd3d0]">
+            <h3 className="mt-1 truncate text-xl font-semibold tracking-tight text-white transition-colors group-hover:text-[#ffd3d0] sm:text-2xl">
               {car.brand} {car.model}
             </h3>
             <p className="mt-1 text-xs text-white/85">{agency?.name || car.city || "Maroc"}</p>
           </div>
-          <div className="rounded-[1.15rem] border border-white/12 bg-white/92 px-4 py-3 text-right backdrop-blur-sm">
+          <div className="w-full rounded-[1.15rem] border border-white/12 bg-white/92 px-4 py-3 text-left backdrop-blur-sm sm:w-auto sm:text-right">
             <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">À partir de</p>
-            <p className="text-3xl font-semibold tracking-tight text-[#F04B45]">{formatPrice(car.dailyPrice)}</p>
+            <p className="text-2xl font-semibold tracking-tight text-[#F04B45] sm:text-3xl">{formatPrice(car.dailyPrice)}</p>
           </div>
         </div>
       </Link>

@@ -36,7 +36,7 @@ export default function BlogDetail() {
         <Skeleton className="mb-8 h-8 w-24" />
         <Skeleton className="mb-4 h-14 w-3/4" />
         <Skeleton className="mb-8 h-4 w-40" />
-        <Skeleton className="mb-8 h-[420px] w-full rounded-[2rem]" />
+        <Skeleton className="mb-8 h-[260px] w-full rounded-[2rem] sm:h-[420px]" />
         <div className="space-y-4">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-full" />
@@ -86,13 +86,13 @@ export default function BlogDetail() {
         Retour au blog
       </Link>
 
-      <header className="mb-10 overflow-hidden rounded-[2rem] marketing-dark-panel marketing-grid px-6 py-10 text-white md:px-10">
+      <header className="mb-10 overflow-hidden rounded-[2rem] marketing-dark-panel marketing-grid px-5 py-8 text-white sm:px-6 md:px-10 md:py-10">
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] marketing-kicker marketing-pill">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             Article
           </div>
-          <h1 className="mt-6 text-4xl font-semibold leading-tight tracking-tight text-balance md:text-5xl">{post.title}</h1>
+          <h1 className="mt-6 text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl md:text-5xl">{post.title}</h1>
           <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-white/76">
             <span className="inline-flex items-center gap-2">
               <CalendarDays className="h-4 w-4 text-primary" />

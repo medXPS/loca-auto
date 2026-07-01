@@ -612,7 +612,7 @@ export default function CarDetail() {
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`;
 
   return (
-    <div className="container mx-auto px-4 py-8 lg:py-10">
+    <div className="container mx-auto px-4 py-8 pb-32 lg:py-10 lg:pb-10">
       <Seo
         title={pageTitle}
         description={pageDescription}
@@ -690,7 +690,7 @@ export default function CarDetail() {
             <div className="flex items-center gap-4 p-5">
               <RatingStars value={ratingValue} />
               <div className="flex items-end gap-2">
-                <span className="text-3xl font-semibold tracking-tight">
+                <span className="text-2xl font-semibold tracking-tight sm:text-3xl">
                   {ratingValue.toFixed(1)}
                 </span>
                 <span className="pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
@@ -705,7 +705,7 @@ export default function CarDetail() {
             id="reservation"
             ref={reservationRef}
           >
-            <CardContent className="space-y-6 p-6 scroll-mt-28">
+            <CardContent className="space-y-6 p-5 scroll-mt-28 sm:p-6">
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
@@ -962,7 +962,7 @@ export default function CarDetail() {
                       {formatAvailabilityDate(availability.availableFrom)}
                     </p>
                   )}
-                  <h1 className="mt-4 text-3xl font-semibold tracking-tight">
+                  <h1 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
                     {car.brand} {car.model}
                   </h1>
                   <p className="mt-2 text-sm text-white/65">
@@ -975,7 +975,7 @@ export default function CarDetail() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">
                   Prix par jour
                 </p>
-                <p className="mt-1 text-4xl font-semibold tracking-tight text-[#F04B45]">
+                <p className="mt-1 text-3xl font-semibold tracking-tight text-[#F04B45] sm:text-4xl">
                   {formatPrice(car.dailyPrice)}
                 </p>
                 <p className="mt-1 text-sm text-white/62">
@@ -1060,7 +1060,7 @@ export default function CarDetail() {
               <Button
                 asChild
                 variant="outline"
-                className="rounded-full border-border/70 bg-white"
+                className="w-full rounded-full border-border/70 bg-white sm:w-auto"
               >
                 <a href={mapHref} target="_blank" rel="noopener noreferrer">
                   Ouvrir dans Google Maps
@@ -1073,7 +1073,7 @@ export default function CarDetail() {
               <iframe
                 title={`Carte de ${mapLocation}`}
                 src={mapEmbedUrl}
-                className="h-[420px] w-full"
+                className="h-[280px] w-full sm:h-[360px] xl:h-[420px]"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
               />
@@ -1082,7 +1082,7 @@ export default function CarDetail() {
         </Card>
 
         <Card className="h-fit overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]">
-          <CardContent className="space-y-4 p-6">
+          <CardContent className="space-y-4 p-5 sm:p-6">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Adresse
@@ -1101,7 +1101,7 @@ export default function CarDetail() {
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-white/96 px-3 py-3 shadow-[0_-12px_36px_-24px_rgba(16,23,34,0.24)] backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-xl grid-cols-2 gap-3">
+        <div className="mx-auto grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
           <Button
             asChild
             className="h-12 rounded-full bg-[#F04B45] text-white hover:bg-[#e63f39]"

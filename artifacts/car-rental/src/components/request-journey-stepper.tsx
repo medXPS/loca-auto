@@ -618,7 +618,61 @@ export function RequestJourneyStepper({ status, request, piecesContent, classNam
 
         <p className="text-sm text-slate-500">Cliquez sur une étape pour afficher son détail juste en dessous.</p>
 
-        <div className="overflow-x-auto pb-2">
+        <div className="grid gap-3 md:hidden">
+          {JOURNEY_STEPS.map((step, index) => {
+            const relation = getStepRelation(index, currentIndex);
+            const isSelected = step.id === selectedStep;
+            const StepIcon = step.icon;
+
+            return (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => setSelectedStep(step.id)}
+                className={cn(
+                  "flex items-start gap-3 rounded-2xl border p-4 text-left outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5",
+                  relation === "completed" && "border-emerald-200 bg-emerald-50/70",
+                  relation === "current" && "border-[#F04B45]/20 bg-[#F04B45]/8",
+                  relation === "future" && "border-slate-200 bg-slate-50",
+                  isSelected && "shadow-[0_18px_32px_-24px_rgba(15,23,42,0.24)]",
+                )}
+                aria-pressed={isSelected}
+                aria-label={`Afficher le detail de l'etape ${step.title}`}
+              >
+                <div
+                  className={cn(
+                    "mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold",
+                    relation === "completed" && "border-emerald-500 bg-emerald-500 text-white",
+                    relation === "current" && "border-[#F04B45] bg-[#F04B45] text-white",
+                    relation === "future" && "border-slate-200 bg-white text-slate-500",
+                  )}
+                >
+                  {relation === "completed" ? <CheckCircle2 className="h-4 w-4" /> : <StepIcon className="h-4 w-4" />}
+                </div>
+
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className={cn("text-sm font-semibold", isSelected || relation !== "future" ? "text-slate-900" : "text-slate-500")}>
+                      {step.title}
+                    </p>
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]",
+                        getStepStateTone(index, currentIndex),
+                        isSelected && "ring-2 ring-slate-200",
+                      )}
+                    >
+                      {index + 1}
+                    </span>
+                  </div>
+                  <p className="text-[11px] leading-5 text-slate-500">{step.description}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="hidden overflow-x-auto pb-2 md:block">
           <div className="relative min-w-[920px] px-2 pt-4">
             <div className="absolute left-8 right-8 top-[1.95rem] h-0.5 rounded-full bg-slate-200" />
             <div className="absolute left-8 right-8 top-[1.95rem] h-0.5 rounded-full" style={timelineConnectorStyle} />
@@ -636,7 +690,7 @@ export function RequestJourneyStepper({ status, request, piecesContent, classNam
                     onClick={() => setSelectedStep(step.id)}
                     className="group flex min-w-0 flex-col items-center text-center outline-none transition-transform duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5"
                     aria-pressed={isSelected}
-                    aria-label={`Afficher le détail de l’étape ${step.title}`}
+                    aria-label={`Afficher le detail de l'etape ${step.title}`}
                   >
                     <div
                       className={cn(

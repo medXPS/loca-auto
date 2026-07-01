@@ -189,7 +189,7 @@ export default function CustomerProfile() {
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-primary/10 bg-background/80 px-4 py-3 shadow-sm">
               <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Compte</div>
               <div className="mt-1 flex items-center gap-2 text-sm font-medium">
@@ -449,15 +449,15 @@ export default function CustomerProfile() {
             eligibleRatings.map((item) => (
               <div key={item.requestId} className="rounded-[1.5rem] border border-border/70 bg-background p-4 shadow-sm">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row">
                     {item.car?.mainImageUrl ? (
                       <img
                         src={item.car.mainImageUrl}
                         alt={`${item.car.brand} ${item.car.model}`}
-                        className="h-24 w-32 rounded-2xl object-cover"
+                        className="h-40 w-full rounded-2xl object-cover sm:h-24 sm:w-32"
                       />
                     ) : (
-                      <div className="flex h-24 w-32 items-center justify-center rounded-2xl border bg-muted/20 text-sm text-muted-foreground">
+                      <div className="flex h-40 w-full items-center justify-center rounded-2xl border bg-muted/20 text-sm text-muted-foreground sm:h-24 sm:w-32">
                         Sans image
                       </div>
                     )}
@@ -474,7 +474,7 @@ export default function CustomerProfile() {
                     </div>
                   </div>
 
-                  <div className="min-w-[320px] max-w-xl flex-1">
+                  <div className="w-full lg:min-w-[320px] lg:max-w-xl lg:flex-1">
                     <RatingEditor
                       rentalRequestId={item.requestId}
                       defaultScore={item.existingRating?.score}

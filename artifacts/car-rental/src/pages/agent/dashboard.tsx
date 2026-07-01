@@ -25,7 +25,7 @@ function StatCard({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">{title}</p>
-            <div className="mt-2 text-3xl font-semibold tracking-tight text-foreground">{value}</div>
+            <div className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{value}</div>
             <p className="mt-2 text-sm text-muted-foreground">{description}</p>
           </div>
           <div className="rounded-2xl bg-primary/10 p-3 text-primary">
@@ -67,14 +67,14 @@ export default function AgentDashboard() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-white/10 marketing-dark-panel px-6 py-8 md:px-8">
+      <section className="overflow-hidden rounded-[2rem] border border-white/10 marketing-dark-panel px-5 py-7 sm:px-6 md:px-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-white/75">
               <BadgeCheck className="h-3.5 w-3.5 text-primary" />
               Espace agent
             </div>
-            <h1 className="mt-5 text-4xl font-semibold tracking-tight text-white md:text-5xl">
+            <h1 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl">
               Pilotez les réservations sans friction.
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-8 text-white/75">
@@ -82,7 +82,7 @@ export default function AgentDashboard() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <Link href="/agent/calendrier">
               <Button className="gap-2 rounded-full bg-primary text-primary-foreground">
                 <CalendarDays className="h-4 w-4" />

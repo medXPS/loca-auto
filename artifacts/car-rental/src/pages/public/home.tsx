@@ -33,7 +33,7 @@ function SectionHeading({
   return (
     <div className="max-w-2xl">
       <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#ff4d43]">{eyebrow}</p>
-      <h2 className="mt-3 font-serif text-3xl leading-tight text-slate-950 md:text-5xl">{title}</h2>
+      <h2 className="mt-3 font-serif text-2xl leading-tight text-slate-950 sm:text-3xl md:text-5xl">{title}</h2>
       <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">{description}</p>
     </div>
   );
@@ -307,7 +307,7 @@ export default function Home() {
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.75fr)] lg:items-center">
             <div className="max-w-3xl py-4 lg:py-12">
               <p className="text-xs font-semibold uppercase tracking-[0.36em] text-[#ff6a61]">Votre voyage, notre passion</p>
-              <h1 className="mt-5 max-w-3xl text-5xl font-extrabold leading-[0.95] tracking-tight text-white md:text-6xl lg:text-7xl">
+              <h1 className="mt-5 max-w-3xl text-4xl font-extrabold leading-[0.95] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
                 Roulez librement,
                 <span className="block text-[#ff4d43]">vivez le Maroc.</span>
               </h1>
@@ -346,8 +346,8 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button asChild className="h-13 rounded-2xl bg-[#ff4d43] px-6 text-white shadow-[0_22px_35px_-20px_rgba(255,77,67,0.72)] hover:bg-[#f03d32]">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Button asChild className="h-13 w-full rounded-2xl bg-[#ff4d43] px-6 text-white shadow-[0_22px_35px_-20px_rgba(255,77,67,0.72)] hover:bg-[#f03d32] sm:w-auto">
                   <Link href="/voitures">
                     Voir les véhicules
                     <ArrowRight className="h-4 w-4" />
@@ -356,7 +356,7 @@ export default function Home() {
                 <Button
                   asChild
                   variant="outline"
-                  className="h-13 rounded-2xl border-white/14 bg-white/6 px-6 text-white hover:bg-white/10 hover:text-white"
+                  className="h-13 w-full rounded-2xl border-white/14 bg-white/6 px-6 text-white hover:bg-white/10 hover:text-white sm:w-auto"
                 >
                   <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="h-4 w-4" />
@@ -390,7 +390,7 @@ export default function Home() {
         <section className="relative z-10 -mt-16">
           <div className="container mx-auto px-4">
             <div className="rounded-[2rem] border border-white/80 bg-white px-5 py-6 shadow-[0_28px_70px_-40px_rgba(15,23,42,0.28)] md:px-6">
-              <div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#ff4d43]">Marques disponibles</p>
                   <p className="mt-2 text-sm text-slate-500">Un bandeau vivant avec les logos des plus grandes marques.</p>
@@ -399,22 +399,22 @@ export default function Home() {
 
               <div className="group mt-5 overflow-hidden">
                 <div
-                  className="flex w-max items-center gap-3 md:gap-4 group-hover:[animation-play-state:paused]"
+                  className="flex w-max items-center gap-2 sm:gap-3 md:gap-4 group-hover:[animation-play-state:paused]"
                   style={{ animation: "home-brand-marquee 24s linear infinite" }}
                 >
                   {animatedBrandCards.map((brand, index) => (
                     <div
                       key={`${brand.key}-${index}`}
-                      className="flex min-w-[220px] flex-none items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-white px-6 py-3.5 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.24)]"
+                      className="flex min-w-[170px] flex-none items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-white px-4 py-3 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.24)] sm:min-w-[220px] sm:px-6 sm:py-3.5"
                     >
-                      <div className="flex h-10 w-[4.5rem] items-center justify-center rounded-xl bg-slate-50">
+                      <div className="flex h-9 w-14 items-center justify-center rounded-xl bg-slate-50 sm:h-10 sm:w-[4.5rem]">
                         {brand.logoUrl ? (
                           <img src={brand.logoUrl} alt={brand.name} className="max-h-8 max-w-14 object-contain" />
                         ) : (
-                          <span className="text-sm font-bold text-slate-700">{brand.name.slice(0, 2).toUpperCase()}</span>
+                          <span className="text-xs font-bold text-slate-700 sm:text-sm">{brand.name.slice(0, 2).toUpperCase()}</span>
                         )}
                       </div>
-                      <span className="text-sm font-semibold text-slate-600">{brand.name}</span>
+                      <span className="text-sm font-semibold text-slate-600 sm:text-sm">{brand.name}</span>
                     </div>
                   ))}
                 </div>
