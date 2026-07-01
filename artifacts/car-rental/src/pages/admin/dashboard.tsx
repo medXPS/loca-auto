@@ -24,7 +24,30 @@ import {
   Legend,
 } from "recharts";
 
-const PIE_COLORS = ["#EF4444", "#DC2626", "#B91C1C", "#1F2937", "#111827", "#374151", "#000000"];
+const REQUEST_STATUS_COLORS: Record<string, string> = {
+  PENDING: "#F59E0B",
+  UNDER_REVIEW: "#14B8A6",
+  CALL_ATTEMPTED: "#F97316",
+  CALL_CONFIRMED: "#3B82F6",
+  WAITING_AGENCY_PAYMENT: "#8B5CF6",
+  WAITING_DOCUMENTS: "#EC4899",
+  RESERVED: "#06B6D4",
+  PAID: "#10B981",
+  ACTIVE_RENTAL: "#22C55E",
+  CAR_DELIVERED: "#6366F1",
+  CAR_RETURNED: "#0EA5E9",
+  RETURNED: "#64748B",
+  COMPLETED: "#84CC16",
+  REJECTED: "#EF4444",
+  CANCELLED: "#9CA3AF",
+  ABANDONED: "#DB2777",
+};
+
+const DEFAULT_STATUS_COLORS = ["#2563EB", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#14B8A6"];
+
+function getRequestStatusColor(status: string, index: number) {
+  return REQUEST_STATUS_COLORS[status] ?? DEFAULT_STATUS_COLORS[index % DEFAULT_STATUS_COLORS.length];
+}
 
 export default function AdminDashboard() {
   const { data: stats, isLoading: isStatsLoading } = useGetDashboardStats();
@@ -53,6 +76,7 @@ export default function AdminDashboard() {
   }));
 
   const formattedStatus = (statusData || []).map((s) => ({
+    status: s.status,
     name: s.label && s.label !== s.status ? s.label : getStatusLabel(s.status, "rental"),
     value: s.count,
   }));
@@ -196,8 +220,8 @@ export default function AdminDashboard() {
                     outerRadius={90}
                     label={false}
                   >
-                    {formattedStatus.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    {formattedStatus.map((entry, index) => (
+                      <Cell key={`cell-${entry.status}-${index}`} fill={getRequestStatusColor(entry.status, index)} />
                     ))}
                   </Pie>
                   <Tooltip
