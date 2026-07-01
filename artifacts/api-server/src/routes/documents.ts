@@ -6,7 +6,7 @@ import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { expireStaleAvailabilityLocks, markRequestPendingCallConfirmation } from "../lib/availability";
 import { logAudit } from "../lib/audit";
-import { buildPublicUploadUrl, uploadsDir } from "../lib/uploads";
+import { buildPublicUploadUrl, findStoredUploadPath, uploadsDir } from "../lib/uploads";
 
 const router = Router();
 
@@ -26,11 +26,6 @@ async function getDocumentsForRentalRequest(rentalRequestId: number) {
     .from(schema.documentsTable)
     .where(eq(schema.documentsTable.rentalRequestId, rentalRequestId))
     .orderBy(desc(schema.documentsTable.uploadedAt));
-}
-
-function resolveStoredUploadPath(fileName: string) {
-  const safeFileName = path.basename(fileName);
-  return path.resolve(uploadsDir, safeFileName);
 }
 
 // POST /api/documents
@@ -217,13 +212,17 @@ export const uploadRouter = Router();
 
 // GET /api/upload/:fileName
 uploadRouter.get("/:fileName", authMiddleware, async (req, res) => {
-  try {
-    const filePath = resolveStoredUploadPath(String(req.params.fileName));
-    await fs.access(filePath);
-    res.sendFile(filePath);
-  } catch {
+  const filePath = findStoredUploadPath(String(req.params.fileName));
+  if (!filePath) {
     res.status(404).json({ error: "Fichier introuvable" });
+    return;
   }
+
+  res.sendFile(filePath, (err) => {
+    if (err && !res.headersSent) {
+      res.status(404).json({ error: "Fichier introuvable" });
+    }
+  });
 });
 
 // PUT /api/upload/:fileName
@@ -233,7 +232,7 @@ uploadRouter.put(
   express.raw({ type: "*/*", limit: "25mb" }),
   async (req, res) => {
     try {
-      const filePath = resolveStoredUploadPath(String(req.params.fileName));
+      const filePath = path.resolve(uploadsDir, path.basename(String(req.params.fileName)));
       const body = req.body;
 
       if (!Buffer.isBuffer(body)) {

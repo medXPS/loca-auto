@@ -32,6 +32,7 @@ import {
 import {
   buildPublicUploadUrl,
   buildStoredUploadFilename,
+  findStoredUploadPath,
   uploadsDir,
 } from "../lib/uploads";
 
@@ -105,7 +106,7 @@ function parseMediaUpload(req: Request, res: Response, next: NextFunction) {
 
 function resolveStoredUploadPath(url: string) {
   if (!url.startsWith("/uploads/") && !url.startsWith("/api/upload/")) return null;
-  return path.join(uploadsDir, path.basename(url));
+  return findStoredUploadPath(path.basename(url));
 }
 
 async function removeStoredUpload(url: string) {
