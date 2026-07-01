@@ -285,9 +285,12 @@ async function buildReceiptPdfLegacy(args: {
   const contactLineY = pageTop + 154;
   const cardsTop = pageTop + 184;
   const locationTop = cardsTop + 120;
-  const paymentTop = locationTop + 122;
-  const verificationTop = paymentTop + 182;
-  const footerTop = verificationTop + 124;
+  const locationCardHeight = 132;
+  const paymentCardHeight = 170;
+  const verificationCardHeight = 112;
+  const paymentTop = locationTop + locationCardHeight + 12;
+  const verificationTop = paymentTop + paymentCardHeight + 12;
+  const footerTop = verificationTop + verificationCardHeight + 12;
 
   const drawGlyph = (
     kind: string,
@@ -755,7 +758,6 @@ async function buildReceiptPdfLegacy(args: {
     halfWidth - 32,
   );
 
-  const locationCardHeight = 110;
   drawCard(pageLeft, locationTop, pageWidth, locationCardHeight, colors.white);
   drawSectionHeader(
     pageLeft + 18,
@@ -768,7 +770,7 @@ async function buildReceiptPdfLegacy(args: {
   const gridY = locationTop + 52;
   const gridWidth = pageWidth - 36;
   const columnWidth = gridWidth / 3;
-  const rowHeight = 32;
+  const rowHeight = 40;
 
   doc
     .moveTo(gridX + columnWidth, gridY)
@@ -819,7 +821,7 @@ async function buildReceiptPdfLegacy(args: {
     doc
       .fillColor(colors.muted)
       .font("Helvetica-Bold")
-      .fontSize(8)
+      .fontSize(7.6)
       .text(cell.label.toUpperCase(), cellX + 32, cellY + 7, {
         width: columnWidth - 44,
         characterSpacing: 0.7,
@@ -827,13 +829,12 @@ async function buildReceiptPdfLegacy(args: {
     doc
       .fillColor(colors.text)
       .font("Helvetica-Bold")
-      .fontSize(11)
+      .fontSize(10.2)
       .text(cell.value, cellX + 32, cellY + 19, {
         width: columnWidth - 44,
       });
   });
 
-  const paymentCardHeight = 170;
   drawCard(pageLeft, paymentTop, pageWidth, paymentCardHeight, colors.white);
   drawSectionHeader(
     pageLeft + 18,
@@ -940,7 +941,6 @@ async function buildReceiptPdfLegacy(args: {
       },
     );
 
-  const verificationCardHeight = 112;
   drawCard(
     pageLeft,
     verificationTop,
