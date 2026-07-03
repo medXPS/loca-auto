@@ -5,8 +5,8 @@
  * Location Auto Maroc API
  * OpenAPI spec version: 0.1.0
  */
-import type { CarImage } from './carImage';
 import type { CarAvailabilitySummary } from './carAvailabilitySummary';
+import type { CarImage } from './carImage';
 
 export interface CarDetail {
   id: number;

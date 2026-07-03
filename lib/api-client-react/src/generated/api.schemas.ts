@@ -123,6 +123,23 @@ export interface Car {
   createdAt?: string;
 }
 
+export type CarImageMediaType = typeof CarImageMediaType[keyof typeof CarImageMediaType];
+
+
+export const CarImageMediaType = {
+  IMAGE: 'IMAGE',
+  VIDEO: 'VIDEO',
+  IMAGE_360: 'IMAGE_360',
+} as const;
+
+export type CarImageSourceType = typeof CarImageSourceType[keyof typeof CarImageSourceType];
+
+
+export const CarImageSourceType = {
+  URL: 'URL',
+  UPLOAD: 'UPLOAD',
+} as const;
+
 export interface CarImage {
   id: number;
   carId: number;
@@ -131,8 +148,8 @@ export interface CarImage {
   altText?: string | null;
   isMain?: boolean;
   sortOrder?: number;
-  mediaType?: "IMAGE" | "VIDEO" | "IMAGE_360";
-  sourceType?: "URL" | "UPLOAD";
+  mediaType?: CarImageMediaType;
+  sourceType?: CarImageSourceType;
 }
 
 export interface CarDetail {
@@ -243,13 +260,30 @@ export interface CarUpdate {
   mainImageUrl?: string;
 }
 
+export type CarImageInputMediaType = typeof CarImageInputMediaType[keyof typeof CarImageInputMediaType];
+
+
+export const CarImageInputMediaType = {
+  IMAGE: 'IMAGE',
+  VIDEO: 'VIDEO',
+  IMAGE_360: 'IMAGE_360',
+} as const;
+
+export type CarImageInputSourceType = typeof CarImageInputSourceType[keyof typeof CarImageInputSourceType];
+
+
+export const CarImageInputSourceType = {
+  URL: 'URL',
+  UPLOAD: 'UPLOAD',
+} as const;
+
 export interface CarImageInput {
   url: string;
   altText?: string;
   isMain?: boolean;
   sortOrder?: number;
-  mediaType?: "IMAGE" | "VIDEO" | "IMAGE_360";
-  sourceType?: "URL" | "UPLOAD";
+  mediaType?: CarImageInputMediaType;
+  sourceType?: CarImageInputSourceType;
 }
 
 export interface AvailabilityBlock {
@@ -286,10 +320,6 @@ export interface RentalRequest {
   startDate: string;
   returnDate: string;
   /** @nullable */
-  startAt?: string | null;
-  /** @nullable */
-  returnAt?: string | null;
-  /** @nullable */
   pickupLocation?: string | null;
   /** @nullable */
   returnLocation?: string | null;
@@ -305,12 +335,6 @@ export interface RentalRequest {
   documentDeadline?: string | null;
   /** @nullable */
   paymentDeadline?: string | null;
-  /** @nullable */
-  paymentDeadlineExtendedAt?: string | null;
-  /** @nullable */
-  paymentDeadlineExtendedBy?: number | null;
-  /** @nullable */
-  paymentDeadlineExtensionHours?: number | null;
   /** @nullable */
   callConfirmedAt?: string | null;
   /** @nullable */
@@ -338,10 +362,6 @@ export interface RentalRequestInput {
   drivingLicenseNumber?: string;
   startDate: string;
   returnDate: string;
-  startAt?: string;
-  returnAt?: string;
-  startHour?: string;
-  returnHour?: string;
   pickupLocation?: string;
   returnLocation?: string;
   estimatedTotalPrice: number;
@@ -356,10 +376,6 @@ export interface RentalRequestUpdate {
   drivingLicenseNumber?: string;
   startDate?: string;
   returnDate?: string;
-  startAt?: string;
-  returnAt?: string;
-  startHour?: string;
-  returnHour?: string;
   pickupLocation?: string;
   returnLocation?: string;
   finalPrice?: number;
@@ -632,6 +648,13 @@ export interface CompanySettings {
   primaryColor?: string | null;
   /** @nullable */
   secondaryColor?: string | null;
+  taxRatePercent?: number;
+  discountTier1MinDays?: number;
+  discountTier1Percent?: number;
+  discountTier2MinDays?: number;
+  discountTier2Percent?: number;
+  discountTier3MinDays?: number;
+  discountTier3Percent?: number;
   paymentDeadlineHours?: number;
   updatedAt?: string;
 }
@@ -649,6 +672,13 @@ export interface CompanySettingsUpdate {
   instagram?: string;
   primaryColor?: string;
   secondaryColor?: string;
+  taxRatePercent?: number;
+  discountTier1MinDays?: number;
+  discountTier1Percent?: number;
+  discountTier2MinDays?: number;
+  discountTier2Percent?: number;
+  discountTier3MinDays?: number;
+  discountTier3Percent?: number;
   paymentDeadlineHours?: number;
 }
 
@@ -673,70 +703,65 @@ export interface UploadResponse {
 }
 
 export type ListCarsParams = {
-  search?: string;
-  brand?: string;
-  category?: string;
-  city?: string;
-  transmission?: string;
-  fuelType?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  seats?: number;
-  available?: boolean;
-  startDate?: string;
-  returnDate?: string;
-  startHour?: string;
-  returnHour?: string;
-  startAt?: string;
-  returnAt?: string;
-  sortBy?: string;
-  page?: number;
-  limit?: number;
+search?: string;
+brand?: string;
+category?: string;
+city?: string;
+transmission?: string;
+fuelType?: string;
+minPrice?: number;
+maxPrice?: number;
+seats?: number;
+available?: boolean;
+sortBy?: string;
+page?: number;
+limit?: number;
 };
 
 export type ListRentalRequestsParams = {
-  status?: string;
-  customerId?: number;
-  carId?: number;
-  page?: number;
-  limit?: number;
+status?: string;
+customerId?: number;
+carId?: number;
+page?: number;
+limit?: number;
 };
 
 export type ListCustomersParams = {
-  search?: string;
-  page?: number;
-  limit?: number;
+search?: string;
+page?: number;
+limit?: number;
 };
 
 export type ListExpensesParams = {
-  carId?: number;
-  type?: string;
-  from?: string;
-  to?: string;
-  page?: number;
-  limit?: number;
+carId?: number;
+type?: string;
+from?: string;
+to?: string;
+page?: number;
+limit?: number;
 };
 
 export type ListBlogPostsParams = {
-  page?: number;
-  limit?: number;
+page?: number;
+limit?: number;
 };
 
 export type GetDashboardStatsParams = {
-  from?: string;
-  to?: string;
-  period?: string;
+from?: string;
+to?: string;
+period?: string;
 };
 
 export type GetRevenueChartParams = {
-  months?: number;
+months?: number;
 };
 
 export type GetRecentRequestsParams = {
-  limit?: number;
+limit?: number;
 };
 
 export type ListAuditLogsParams = {
-  page?: number;
-  limit?: number;
+page?: number;
+limit?: number;
 };
+

@@ -5,2025 +5,2209 @@
  * Location Auto Maroc API
  * OpenAPI spec version: 0.1.0
  */
-import * as zod from "zod";
+import * as zod from 'zod';
+
 
 /**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
-  status: zod.string(),
-});
+  "status": zod.string()
+})
+
 
 /**
  * @summary Register a new customer account
  */
 export const RegisterBody = zod.object({
-  fullName: zod.string(),
-  email: zod.string(),
-  password: zod.string(),
-  phone: zod.string(),
-});
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "password": zod.string(),
+  "phone": zod.string()
+})
+
 
 /**
  * @summary Resend verification code
  */
 export const ResendVerificationBody = zod.object({
-  email: zod.string(),
-});
+  "email": zod.string()
+})
 
 export const ResendVerificationResponse = zod.object({
-  message: zod.string(),
-});
+  "message": zod.string()
+})
+
 
 /**
  * @summary Verify email address
  */
 export const VerifyEmailBody = zod.object({
-  email: zod.string(),
-  code: zod.string(),
-});
+  "email": zod.string(),
+  "code": zod.string()
+})
 
 export const VerifyEmailResponse = zod.object({
-  user: zod.object({
-    id: zod.number(),
-    fullName: zod.string(),
-    email: zod.string(),
-    phone: zod.string(),
-    role: zod.string(),
-    status: zod.string(),
-    emailVerifiedAt: zod.string().nullish(),
-    createdAt: zod.string().optional(),
-  }),
-  token: zod.string(),
-});
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+}),
+  "token": zod.string()
+})
+
 
 /**
  * @summary Login
  */
 export const LoginBody = zod.object({
-  email: zod.string(),
-  password: zod.string(),
-});
+  "email": zod.string(),
+  "password": zod.string()
+})
 
 export const LoginResponse = zod.object({
-  user: zod.object({
-    id: zod.number(),
-    fullName: zod.string(),
-    email: zod.string(),
-    phone: zod.string(),
-    role: zod.string(),
-    status: zod.string(),
-    emailVerifiedAt: zod.string().nullish(),
-    createdAt: zod.string().optional(),
-  }),
-  token: zod.string(),
-});
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+}),
+  "token": zod.string()
+})
+
 
 /**
  * @summary Logout
  */
 export const LogoutResponse = zod.object({
-  message: zod.string(),
-});
+  "message": zod.string()
+})
+
 
 /**
  * @summary Get current user
  */
 export const GetMeResponse = zod.object({
-  id: zod.number(),
-  fullName: zod.string(),
-  email: zod.string(),
-  phone: zod.string(),
-  role: zod.string(),
-  status: zod.string(),
-  emailVerifiedAt: zod.string().nullish(),
-  createdAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+})
+
 
 /**
  * @summary Update current user profile
  */
 export const UpdateMeBody = zod.object({
-  fullName: zod.string().optional(),
-  phone: zod.string().optional(),
-});
+  "fullName": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "mfaEnabled": zod.boolean().optional()
+})
 
 export const UpdateMeResponse = zod.object({
-  id: zod.number(),
-  fullName: zod.string(),
-  email: zod.string(),
-  phone: zod.string(),
-  role: zod.string(),
-  status: zod.string(),
-  emailVerifiedAt: zod.string().nullish(),
-  createdAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+})
+
 
 /**
  * @summary List cars (public, with filters)
  */
 export const ListCarsQueryParams = zod.object({
-  search: zod.coerce.string().optional(),
-  brand: zod.coerce.string().optional(),
-  category: zod.coerce.string().optional(),
-  city: zod.coerce.string().optional(),
-  transmission: zod.coerce.string().optional(),
-  fuelType: zod.coerce.string().optional(),
-  minPrice: zod.coerce.number().optional(),
-  maxPrice: zod.coerce.number().optional(),
-  seats: zod.coerce.number().optional(),
-  available: zod.coerce.boolean().optional(),
-  sortBy: zod.coerce.string().optional(),
-  page: zod.coerce.number().optional(),
-  limit: zod.coerce.number().optional(),
-});
+  "search": zod.coerce.string().optional(),
+  "brand": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional(),
+  "city": zod.coerce.string().optional(),
+  "transmission": zod.coerce.string().optional(),
+  "fuelType": zod.coerce.string().optional(),
+  "minPrice": zod.coerce.number().optional(),
+  "maxPrice": zod.coerce.number().optional(),
+  "seats": zod.coerce.number().optional(),
+  "available": zod.coerce.boolean().optional(),
+  "sortBy": zod.coerce.string().optional(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
 
 export const ListCarsResponse = zod.object({
-  cars: zod.array(
-    zod.object({
-      id: zod.number(),
-      brand: zod.string(),
-      model: zod.string(),
-      year: zod.number(),
-      category: zod.string(),
-      fuelType: zod.string(),
-      transmission: zod.string(),
-      seats: zod.number(),
-      doors: zod.number(),
-      airConditioning: zod.boolean().optional(),
-      dailyPrice: zod.number(),
-      weeklyPrice: zod.number().nullish(),
-      monthlyPrice: zod.number().nullish(),
-      depositAmount: zod.number().nullish(),
-      mileageLimit: zod.number().nullish(),
-      city: zod.string().optional(),
-      internalReference: zod.string().nullish(),
-      licensePlate: zod.string().nullish(),
-      description: zod.string().nullish(),
-      seoTitle: zod.string().nullish(),
-      seoDescription: zod.string().nullish(),
-      seoSlug: zod.string().nullish(),
-      insuranceIncluded: zod.boolean().optional(),
-      requiredDocuments: zod.string().nullish(),
-      status: zod.string(),
-      mainImageUrl: zod.string().nullish(),
-      createdAt: zod.string().optional(),
-    }),
-  ),
-  total: zod.number(),
-  page: zod.number(),
-  limit: zod.number(),
-});
+  "cars": zod.array(zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "limit": zod.number()
+})
+
 
 /**
  * @summary Create a car (admin/agent)
  */
 export const CreateCarBody = zod.object({
-  brand: zod.string(),
-  model: zod.string(),
-  year: zod.number(),
-  category: zod.string(),
-  fuelType: zod.string(),
-  transmission: zod.string(),
-  seats: zod.number(),
-  doors: zod.number(),
-  airConditioning: zod.boolean().optional(),
-  dailyPrice: zod.number(),
-  weeklyPrice: zod.number().optional(),
-  monthlyPrice: zod.number().optional(),
-  depositAmount: zod.number().optional(),
-  mileageLimit: zod.number().optional(),
-  city: zod.string(),
-  internalReference: zod.string().optional(),
-  licensePlate: zod.string().optional(),
-  description: zod.string().optional(),
-  seoTitle: zod.string().optional(),
-  seoDescription: zod.string().optional(),
-  seoSlug: zod.string().optional(),
-  insuranceIncluded: zod.boolean().optional(),
-  requiredDocuments: zod.string().optional(),
-  status: zod.string().optional(),
-  mainImageUrl: zod.string().optional(),
-});
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().optional(),
+  "monthlyPrice": zod.number().optional(),
+  "depositAmount": zod.number().optional(),
+  "mileageLimit": zod.number().optional(),
+  "city": zod.string(),
+  "internalReference": zod.string().optional(),
+  "licensePlate": zod.string().optional(),
+  "description": zod.string().optional(),
+  "seoTitle": zod.string().optional(),
+  "seoDescription": zod.string().optional(),
+  "seoSlug": zod.string().optional(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().optional(),
+  "status": zod.string().optional(),
+  "mainImageUrl": zod.string().optional()
+})
+
 
 /**
  * @summary Get car details (public)
  */
 export const GetCarParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const GetCarResponse = zod.object({
-  id: zod.number(),
-  brand: zod.string(),
-  model: zod.string(),
-  year: zod.number(),
-  category: zod.string(),
-  fuelType: zod.string(),
-  transmission: zod.string(),
-  seats: zod.number(),
-  doors: zod.number(),
-  airConditioning: zod.boolean().optional(),
-  dailyPrice: zod.number(),
-  weeklyPrice: zod.number().nullish(),
-  monthlyPrice: zod.number().nullish(),
-  depositAmount: zod.number().nullish(),
-  mileageLimit: zod.number().nullish(),
-  city: zod.string().optional(),
-  internalReference: zod.string().nullish(),
-  licensePlate: zod.string().nullish(),
-  description: zod.string().nullish(),
-  seoTitle: zod.string().nullish(),
-  seoDescription: zod.string().nullish(),
-  seoSlug: zod.string().nullish(),
-  insuranceIncluded: zod.boolean().optional(),
-  requiredDocuments: zod.string().nullish(),
-  status: zod.string(),
-  mainImageUrl: zod.string().nullish(),
-  images: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        carId: zod.number(),
-        url: zod.string(),
-        altText: zod.string().nullish(),
-        isMain: zod.boolean().optional(),
-        sortOrder: zod.number().optional(),
-        mediaType: zod
-          .enum(["IMAGE", "VIDEO", "IMAGE_360"])
-          .optional(),
-        sourceType: zod.enum(["URL", "UPLOAD"]).optional(),
-      }),
-    )
-    .optional(),
-  createdAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "images": zod.array(zod.object({
+  "id": zod.number(),
+  "carId": zod.number(),
+  "url": zod.string(),
+  "altText": zod.string().nullish(),
+  "isMain": zod.boolean().optional(),
+  "sortOrder": zod.number().optional(),
+  "mediaType": zod.enum(['IMAGE', 'VIDEO', 'IMAGE_360']).optional(),
+  "sourceType": zod.enum(['URL', 'UPLOAD']).optional()
+})).optional(),
+  "createdAt": zod.string().optional()
+})
+
 
 /**
  * @summary Update a car (admin/agent)
  */
 export const UpdateCarParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const UpdateCarBody = zod.object({
-  brand: zod.string().optional(),
-  model: zod.string().optional(),
-  year: zod.number().optional(),
-  category: zod.string().optional(),
-  fuelType: zod.string().optional(),
-  transmission: zod.string().optional(),
-  seats: zod.number().optional(),
-  doors: zod.number().optional(),
-  airConditioning: zod.boolean().optional(),
-  dailyPrice: zod.number().optional(),
-  weeklyPrice: zod.number().optional(),
-  monthlyPrice: zod.number().optional(),
-  depositAmount: zod.number().optional(),
-  mileageLimit: zod.number().optional(),
-  city: zod.string().optional(),
-  internalReference: zod.string().optional(),
-  licensePlate: zod.string().optional(),
-  description: zod.string().optional(),
-  seoTitle: zod.string().optional(),
-  seoDescription: zod.string().optional(),
-  seoSlug: zod.string().optional(),
-  insuranceIncluded: zod.boolean().optional(),
-  requiredDocuments: zod.string().optional(),
-  status: zod.string().optional(),
-  mainImageUrl: zod.string().optional(),
-});
+  "brand": zod.string().optional(),
+  "model": zod.string().optional(),
+  "year": zod.number().optional(),
+  "category": zod.string().optional(),
+  "fuelType": zod.string().optional(),
+  "transmission": zod.string().optional(),
+  "seats": zod.number().optional(),
+  "doors": zod.number().optional(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number().optional(),
+  "weeklyPrice": zod.number().optional(),
+  "monthlyPrice": zod.number().optional(),
+  "depositAmount": zod.number().optional(),
+  "mileageLimit": zod.number().optional(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().optional(),
+  "licensePlate": zod.string().optional(),
+  "description": zod.string().optional(),
+  "seoTitle": zod.string().optional(),
+  "seoDescription": zod.string().optional(),
+  "seoSlug": zod.string().optional(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().optional(),
+  "status": zod.string().optional(),
+  "mainImageUrl": zod.string().optional()
+})
 
 export const UpdateCarResponse = zod.object({
-  id: zod.number(),
-  brand: zod.string(),
-  model: zod.string(),
-  year: zod.number(),
-  category: zod.string(),
-  fuelType: zod.string(),
-  transmission: zod.string(),
-  seats: zod.number(),
-  doors: zod.number(),
-  airConditioning: zod.boolean().optional(),
-  dailyPrice: zod.number(),
-  weeklyPrice: zod.number().nullish(),
-  monthlyPrice: zod.number().nullish(),
-  depositAmount: zod.number().nullish(),
-  mileageLimit: zod.number().nullish(),
-  city: zod.string().optional(),
-  internalReference: zod.string().nullish(),
-  licensePlate: zod.string().nullish(),
-  description: zod.string().nullish(),
-  seoTitle: zod.string().nullish(),
-  seoDescription: zod.string().nullish(),
-  seoSlug: zod.string().nullish(),
-  insuranceIncluded: zod.boolean().optional(),
-  requiredDocuments: zod.string().nullish(),
-  status: zod.string(),
-  mainImageUrl: zod.string().nullish(),
-  createdAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})
+
 
 /**
  * @summary Delete a car (admin)
  */
 export const DeleteCarParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
+
 
 /**
  * @summary Upload car image URL
  */
 export const UploadCarImageParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const UploadCarImageBody = zod.object({
-  url: zod.string(),
-  altText: zod.string().optional(),
-  isMain: zod.boolean().optional(),
-  sortOrder: zod.number().optional(),
-  mediaType: zod.enum(["IMAGE", "VIDEO", "IMAGE_360"]).optional(),
-  sourceType: zod.enum(["URL", "UPLOAD"]).optional(),
-});
+  "url": zod.string(),
+  "altText": zod.string().optional(),
+  "isMain": zod.boolean().optional(),
+  "sortOrder": zod.number().optional(),
+  "mediaType": zod.enum(['IMAGE', 'VIDEO', 'IMAGE_360']).optional(),
+  "sourceType": zod.enum(['URL', 'UPLOAD']).optional()
+})
+
 
 /**
  * @summary Get car availability blocks
  */
 export const GetCarAvailabilityParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const GetCarAvailabilityResponseItem = zod.object({
-  id: zod.number(),
-  carId: zod.number(),
-  rentalRequestId: zod.number().nullish(),
-  startDate: zod.string(),
-  endDate: zod.string(),
-  type: zod.string(),
-  status: zod.string(),
-  expiresAt: zod.string().nullish(),
-});
-export const GetCarAvailabilityResponse = zod.array(
-  GetCarAvailabilityResponseItem,
-);
+  "id": zod.number(),
+  "carId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "startDate": zod.string(),
+  "endDate": zod.string(),
+  "startAt": zod.string().nullish(),
+  "endAt": zod.string().nullish(),
+  "type": zod.string(),
+  "status": zod.string(),
+  "visualState": zod.string().nullish(),
+  "expiresAt": zod.string().nullish()
+})
+export const GetCarAvailabilityResponse = zod.array(GetCarAvailabilityResponseItem)
+
 
 /**
  * @summary List rental requests
  */
 export const ListRentalRequestsQueryParams = zod.object({
-  status: zod.coerce.string().optional(),
-  customerId: zod.coerce.number().optional(),
-  carId: zod.coerce.number().optional(),
-  page: zod.coerce.number().optional(),
-  limit: zod.coerce.number().optional(),
-});
+  "status": zod.coerce.string().optional(),
+  "customerId": zod.coerce.number().optional(),
+  "carId": zod.coerce.number().optional(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
 
 export const ListRentalRequestsResponse = zod.object({
-  requests: zod.array(
-    zod.object({
-      id: zod.number(),
-      customerId: zod.number().nullish(),
-      carId: zod.number(),
-      fullName: zod.string(),
-      phone: zod.string(),
-      email: zod.string(),
-      cinOrPassport: zod.string().nullish(),
-      drivingLicenseNumber: zod.string().nullish(),
-      startDate: zod.string(),
-      returnDate: zod.string(),
-      pickupLocation: zod.string().nullish(),
-      returnLocation: zod.string().nullish(),
-      estimatedTotalPrice: zod.number(),
-      finalPrice: zod.number().nullish(),
-      notes: zod.string().nullish(),
-      status: zod.string(),
-      paymentStatus: zod.string(),
-      paymentMethod: zod.string().optional(),
-      paymentDeadline: zod.string().nullish(),
-      callConfirmedAt: zod.string().nullish(),
-      paidAtAgencyAt: zod.string().nullish(),
-      abandonedAt: zod.string().nullish(),
-      car: zod
-        .object({
-          id: zod.number(),
-          brand: zod.string(),
-          model: zod.string(),
-          year: zod.number(),
-          category: zod.string(),
-          fuelType: zod.string(),
-          transmission: zod.string(),
-          seats: zod.number(),
-          doors: zod.number(),
-          airConditioning: zod.boolean().optional(),
-          dailyPrice: zod.number(),
-          weeklyPrice: zod.number().nullish(),
-          monthlyPrice: zod.number().nullish(),
-          depositAmount: zod.number().nullish(),
-          mileageLimit: zod.number().nullish(),
-          city: zod.string().optional(),
-          internalReference: zod.string().nullish(),
-          licensePlate: zod.string().nullish(),
-          description: zod.string().nullish(),
-          seoTitle: zod.string().nullish(),
-          seoDescription: zod.string().nullish(),
-          seoSlug: zod.string().nullish(),
-          insuranceIncluded: zod.boolean().optional(),
-          requiredDocuments: zod.string().nullish(),
-          status: zod.string(),
-          mainImageUrl: zod.string().nullish(),
-          createdAt: zod.string().optional(),
-        })
-        .optional(),
-      createdAt: zod.string(),
-      updatedAt: zod.string().optional(),
-    }),
-  ),
-  total: zod.number(),
-  page: zod.number(),
-  limit: zod.number(),
-});
+  "requests": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "limit": zod.number()
+})
+
 
 /**
  * @summary Submit a rental request
  */
 export const CreateRentalRequestBody = zod.object({
-  carId: zod.number(),
-  fullName: zod.string(),
-  phone: zod.string(),
-  email: zod.string(),
-  cinOrPassport: zod.string().optional(),
-  drivingLicenseNumber: zod.string().optional(),
-  startDate: zod.string(),
-  returnDate: zod.string(),
-  pickupLocation: zod.string().optional(),
-  returnLocation: zod.string().optional(),
-  estimatedTotalPrice: zod.number(),
-  notes: zod.string().optional(),
-});
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().optional(),
+  "drivingLicenseNumber": zod.string().optional(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().optional(),
+  "returnLocation": zod.string().optional(),
+  "estimatedTotalPrice": zod.number(),
+  "notes": zod.string().optional()
+})
+
 
 /**
  * @summary Get rental request details
  */
 export const GetRentalRequestParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const GetRentalRequestResponse = zod.object({
-  id: zod.number(),
-  customerId: zod.number().nullish(),
-  carId: zod.number(),
-  fullName: zod.string(),
-  phone: zod.string(),
-  email: zod.string(),
-  cinOrPassport: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  startDate: zod.string(),
-  returnDate: zod.string(),
-  pickupLocation: zod.string().nullish(),
-  returnLocation: zod.string().nullish(),
-  estimatedTotalPrice: zod.number(),
-  finalPrice: zod.number().nullish(),
-  notes: zod.string().nullish(),
-  status: zod.string(),
-  paymentStatus: zod.string(),
-  paymentMethod: zod.string().optional(),
-  paymentDeadline: zod.string().nullish(),
-  callConfirmedAt: zod.string().nullish(),
-  paidAtAgencyAt: zod.string().nullish(),
-  abandonedAt: zod.string().nullish(),
-  car: zod
-    .object({
-      id: zod.number(),
-      brand: zod.string(),
-      model: zod.string(),
-      year: zod.number(),
-      category: zod.string(),
-      fuelType: zod.string(),
-      transmission: zod.string(),
-      seats: zod.number(),
-      doors: zod.number(),
-      airConditioning: zod.boolean().optional(),
-      dailyPrice: zod.number(),
-      weeklyPrice: zod.number().nullish(),
-      monthlyPrice: zod.number().nullish(),
-      depositAmount: zod.number().nullish(),
-      mileageLimit: zod.number().nullish(),
-      city: zod.string().optional(),
-      internalReference: zod.string().nullish(),
-      licensePlate: zod.string().nullish(),
-      description: zod.string().nullish(),
-      seoTitle: zod.string().nullish(),
-      seoDescription: zod.string().nullish(),
-      seoSlug: zod.string().nullish(),
-      insuranceIncluded: zod.boolean().optional(),
-      requiredDocuments: zod.string().nullish(),
-      status: zod.string(),
-      mainImageUrl: zod.string().nullish(),
-      createdAt: zod.string().optional(),
-    })
-    .optional(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
 
 /**
  * @summary Update rental request (admin/agent)
  */
 export const UpdateRentalRequestParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const UpdateRentalRequestBody = zod.object({
-  fullName: zod.string().optional(),
-  phone: zod.string().optional(),
-  email: zod.string().optional(),
-  cinOrPassport: zod.string().optional(),
-  drivingLicenseNumber: zod.string().optional(),
-  startDate: zod.string().optional(),
-  returnDate: zod.string().optional(),
-  pickupLocation: zod.string().optional(),
-  returnLocation: zod.string().optional(),
-  finalPrice: zod.number().optional(),
-  notes: zod.string().optional(),
-});
+  "fullName": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "email": zod.string().optional(),
+  "cinOrPassport": zod.string().optional(),
+  "drivingLicenseNumber": zod.string().optional(),
+  "startDate": zod.string().optional(),
+  "returnDate": zod.string().optional(),
+  "pickupLocation": zod.string().optional(),
+  "returnLocation": zod.string().optional(),
+  "finalPrice": zod.number().optional(),
+  "notes": zod.string().optional()
+})
 
 export const UpdateRentalRequestResponse = zod.object({
-  id: zod.number(),
-  customerId: zod.number().nullish(),
-  carId: zod.number(),
-  fullName: zod.string(),
-  phone: zod.string(),
-  email: zod.string(),
-  cinOrPassport: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  startDate: zod.string(),
-  returnDate: zod.string(),
-  pickupLocation: zod.string().nullish(),
-  returnLocation: zod.string().nullish(),
-  estimatedTotalPrice: zod.number(),
-  finalPrice: zod.number().nullish(),
-  notes: zod.string().nullish(),
-  status: zod.string(),
-  paymentStatus: zod.string(),
-  paymentMethod: zod.string().optional(),
-  paymentDeadline: zod.string().nullish(),
-  callConfirmedAt: zod.string().nullish(),
-  paidAtAgencyAt: zod.string().nullish(),
-  abandonedAt: zod.string().nullish(),
-  car: zod
-    .object({
-      id: zod.number(),
-      brand: zod.string(),
-      model: zod.string(),
-      year: zod.number(),
-      category: zod.string(),
-      fuelType: zod.string(),
-      transmission: zod.string(),
-      seats: zod.number(),
-      doors: zod.number(),
-      airConditioning: zod.boolean().optional(),
-      dailyPrice: zod.number(),
-      weeklyPrice: zod.number().nullish(),
-      monthlyPrice: zod.number().nullish(),
-      depositAmount: zod.number().nullish(),
-      mileageLimit: zod.number().nullish(),
-      city: zod.string().optional(),
-      internalReference: zod.string().nullish(),
-      licensePlate: zod.string().nullish(),
-      description: zod.string().nullish(),
-      seoTitle: zod.string().nullish(),
-      seoDescription: zod.string().nullish(),
-      seoSlug: zod.string().nullish(),
-      insuranceIncluded: zod.boolean().optional(),
-      requiredDocuments: zod.string().nullish(),
-      status: zod.string(),
-      mainImageUrl: zod.string().nullish(),
-      createdAt: zod.string().optional(),
-    })
-    .optional(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
 
 /**
  * @summary Update rental request status (admin/agent)
  */
 export const UpdateRentalRequestStatusParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const UpdateRentalRequestStatusBody = zod.object({
-  status: zod.string(),
-  notes: zod.string().optional(),
-});
+  "status": zod.string(),
+  "notes": zod.string().optional()
+})
 
 export const UpdateRentalRequestStatusResponse = zod.object({
-  id: zod.number(),
-  customerId: zod.number().nullish(),
-  carId: zod.number(),
-  fullName: zod.string(),
-  phone: zod.string(),
-  email: zod.string(),
-  cinOrPassport: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  startDate: zod.string(),
-  returnDate: zod.string(),
-  pickupLocation: zod.string().nullish(),
-  returnLocation: zod.string().nullish(),
-  estimatedTotalPrice: zod.number(),
-  finalPrice: zod.number().nullish(),
-  notes: zod.string().nullish(),
-  status: zod.string(),
-  paymentStatus: zod.string(),
-  paymentMethod: zod.string().optional(),
-  paymentDeadline: zod.string().nullish(),
-  callConfirmedAt: zod.string().nullish(),
-  paidAtAgencyAt: zod.string().nullish(),
-  abandonedAt: zod.string().nullish(),
-  car: zod
-    .object({
-      id: zod.number(),
-      brand: zod.string(),
-      model: zod.string(),
-      year: zod.number(),
-      category: zod.string(),
-      fuelType: zod.string(),
-      transmission: zod.string(),
-      seats: zod.number(),
-      doors: zod.number(),
-      airConditioning: zod.boolean().optional(),
-      dailyPrice: zod.number(),
-      weeklyPrice: zod.number().nullish(),
-      monthlyPrice: zod.number().nullish(),
-      depositAmount: zod.number().nullish(),
-      mileageLimit: zod.number().nullish(),
-      city: zod.string().optional(),
-      internalReference: zod.string().nullish(),
-      licensePlate: zod.string().nullish(),
-      description: zod.string().nullish(),
-      seoTitle: zod.string().nullish(),
-      seoDescription: zod.string().nullish(),
-      seoSlug: zod.string().nullish(),
-      insuranceIncluded: zod.boolean().optional(),
-      requiredDocuments: zod.string().nullish(),
-      status: zod.string(),
-      mainImageUrl: zod.string().nullish(),
-      createdAt: zod.string().optional(),
-    })
-    .optional(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
 
 /**
  * @summary Mark as call confirmed - starts 24h payment deadline
  */
 export const ConfirmCallParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const ConfirmCallBody = zod.object({
-  notes: zod.string().optional(),
-  finalPrice: zod.number().optional(),
-});
+  "notes": zod.string().optional(),
+  "finalPrice": zod.number().optional()
+})
 
 export const ConfirmCallResponse = zod.object({
-  id: zod.number(),
-  customerId: zod.number().nullish(),
-  carId: zod.number(),
-  fullName: zod.string(),
-  phone: zod.string(),
-  email: zod.string(),
-  cinOrPassport: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  startDate: zod.string(),
-  returnDate: zod.string(),
-  pickupLocation: zod.string().nullish(),
-  returnLocation: zod.string().nullish(),
-  estimatedTotalPrice: zod.number(),
-  finalPrice: zod.number().nullish(),
-  notes: zod.string().nullish(),
-  status: zod.string(),
-  paymentStatus: zod.string(),
-  paymentMethod: zod.string().optional(),
-  paymentDeadline: zod.string().nullish(),
-  callConfirmedAt: zod.string().nullish(),
-  paidAtAgencyAt: zod.string().nullish(),
-  abandonedAt: zod.string().nullish(),
-  car: zod
-    .object({
-      id: zod.number(),
-      brand: zod.string(),
-      model: zod.string(),
-      year: zod.number(),
-      category: zod.string(),
-      fuelType: zod.string(),
-      transmission: zod.string(),
-      seats: zod.number(),
-      doors: zod.number(),
-      airConditioning: zod.boolean().optional(),
-      dailyPrice: zod.number(),
-      weeklyPrice: zod.number().nullish(),
-      monthlyPrice: zod.number().nullish(),
-      depositAmount: zod.number().nullish(),
-      mileageLimit: zod.number().nullish(),
-      city: zod.string().optional(),
-      internalReference: zod.string().nullish(),
-      licensePlate: zod.string().nullish(),
-      description: zod.string().nullish(),
-      seoTitle: zod.string().nullish(),
-      seoDescription: zod.string().nullish(),
-      seoSlug: zod.string().nullish(),
-      insuranceIncluded: zod.boolean().optional(),
-      requiredDocuments: zod.string().nullish(),
-      status: zod.string(),
-      mainImageUrl: zod.string().nullish(),
-      createdAt: zod.string().optional(),
-    })
-    .optional(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
 
 /**
  * @summary Confirm payment at agency
  */
 export const ConfirmPaymentParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const ConfirmPaymentBody = zod.object({
-  amount: zod.number().optional(),
-  notes: zod.string().optional(),
-});
+  "amount": zod.number().optional(),
+  "notes": zod.string().optional()
+})
 
 export const ConfirmPaymentResponse = zod.object({
-  id: zod.number(),
-  customerId: zod.number().nullish(),
-  carId: zod.number(),
-  fullName: zod.string(),
-  phone: zod.string(),
-  email: zod.string(),
-  cinOrPassport: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  startDate: zod.string(),
-  returnDate: zod.string(),
-  pickupLocation: zod.string().nullish(),
-  returnLocation: zod.string().nullish(),
-  estimatedTotalPrice: zod.number(),
-  finalPrice: zod.number().nullish(),
-  notes: zod.string().nullish(),
-  status: zod.string(),
-  paymentStatus: zod.string(),
-  paymentMethod: zod.string().optional(),
-  paymentDeadline: zod.string().nullish(),
-  callConfirmedAt: zod.string().nullish(),
-  paidAtAgencyAt: zod.string().nullish(),
-  abandonedAt: zod.string().nullish(),
-  car: zod
-    .object({
-      id: zod.number(),
-      brand: zod.string(),
-      model: zod.string(),
-      year: zod.number(),
-      category: zod.string(),
-      fuelType: zod.string(),
-      transmission: zod.string(),
-      seats: zod.number(),
-      doors: zod.number(),
-      airConditioning: zod.boolean().optional(),
-      dailyPrice: zod.number(),
-      weeklyPrice: zod.number().nullish(),
-      monthlyPrice: zod.number().nullish(),
-      depositAmount: zod.number().nullish(),
-      mileageLimit: zod.number().nullish(),
-      city: zod.string().optional(),
-      internalReference: zod.string().nullish(),
-      licensePlate: zod.string().nullish(),
-      description: zod.string().nullish(),
-      seoTitle: zod.string().nullish(),
-      seoDescription: zod.string().nullish(),
-      seoSlug: zod.string().nullish(),
-      insuranceIncluded: zod.boolean().optional(),
-      requiredDocuments: zod.string().nullish(),
-      status: zod.string(),
-      mainImageUrl: zod.string().nullish(),
-      createdAt: zod.string().optional(),
-    })
-    .optional(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
 
 /**
  * @summary Cancel a rental request
  */
 export const CancelRentalRequestParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const CancelRentalRequestResponse = zod.object({
-  id: zod.number(),
-  customerId: zod.number().nullish(),
-  carId: zod.number(),
-  fullName: zod.string(),
-  phone: zod.string(),
-  email: zod.string(),
-  cinOrPassport: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  startDate: zod.string(),
-  returnDate: zod.string(),
-  pickupLocation: zod.string().nullish(),
-  returnLocation: zod.string().nullish(),
-  estimatedTotalPrice: zod.number(),
-  finalPrice: zod.number().nullish(),
-  notes: zod.string().nullish(),
-  status: zod.string(),
-  paymentStatus: zod.string(),
-  paymentMethod: zod.string().optional(),
-  paymentDeadline: zod.string().nullish(),
-  callConfirmedAt: zod.string().nullish(),
-  paidAtAgencyAt: zod.string().nullish(),
-  abandonedAt: zod.string().nullish(),
-  car: zod
-    .object({
-      id: zod.number(),
-      brand: zod.string(),
-      model: zod.string(),
-      year: zod.number(),
-      category: zod.string(),
-      fuelType: zod.string(),
-      transmission: zod.string(),
-      seats: zod.number(),
-      doors: zod.number(),
-      airConditioning: zod.boolean().optional(),
-      dailyPrice: zod.number(),
-      weeklyPrice: zod.number().nullish(),
-      monthlyPrice: zod.number().nullish(),
-      depositAmount: zod.number().nullish(),
-      mileageLimit: zod.number().nullish(),
-      city: zod.string().optional(),
-      internalReference: zod.string().nullish(),
-      licensePlate: zod.string().nullish(),
-      description: zod.string().nullish(),
-      seoTitle: zod.string().nullish(),
-      seoDescription: zod.string().nullish(),
-      seoSlug: zod.string().nullish(),
-      insuranceIncluded: zod.boolean().optional(),
-      requiredDocuments: zod.string().nullish(),
-      status: zod.string(),
-      mainImageUrl: zod.string().nullish(),
-      createdAt: zod.string().optional(),
-    })
-    .optional(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
 
 /**
  * @summary Process expired payment deadlines
  */
 export const CheckExpiredRequestsResponse = zod.object({
-  message: zod.string(),
-});
+  "message": zod.string()
+})
+
 
 /**
  * @summary List customers (admin/agent)
  */
 export const ListCustomersQueryParams = zod.object({
-  search: zod.coerce.string().optional(),
-  page: zod.coerce.number().optional(),
-  limit: zod.coerce.number().optional(),
-});
+  "search": zod.coerce.string().optional(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
 
 export const ListCustomersResponse = zod.object({
-  customers: zod.array(
-    zod.object({
-      id: zod.number(),
-      userId: zod.number(),
-      cin: zod.string().nullish(),
-      passportNumber: zod.string().nullish(),
-      drivingLicenseNumber: zod.string().nullish(),
-      address: zod.string().nullish(),
-      city: zod.string().nullish(),
-      user: zod.object({
-        id: zod.number(),
-        fullName: zod.string(),
-        email: zod.string(),
-        phone: zod.string(),
-        role: zod.string(),
-        status: zod.string(),
-        emailVerifiedAt: zod.string().nullish(),
-        createdAt: zod.string().optional(),
-      }),
-      documents: zod
-        .array(
-          zod.object({
-            id: zod.number(),
-            customerId: zod.number(),
-            rentalRequestId: zod.number().nullish(),
-            type: zod.string(),
-            fileUrl: zod.string(),
-            status: zod.string().optional(),
-            uploadedAt: zod.string(),
-          }),
-        )
-        .optional(),
-      rentalRequests: zod
-        .array(
-          zod.object({
-            id: zod.number(),
-            customerId: zod.number().nullish(),
-            carId: zod.number(),
-            fullName: zod.string(),
-            phone: zod.string(),
-            email: zod.string(),
-            cinOrPassport: zod.string().nullish(),
-            drivingLicenseNumber: zod.string().nullish(),
-            startDate: zod.string(),
-            returnDate: zod.string(),
-            pickupLocation: zod.string().nullish(),
-            returnLocation: zod.string().nullish(),
-            estimatedTotalPrice: zod.number(),
-            finalPrice: zod.number().nullish(),
-            notes: zod.string().nullish(),
-            status: zod.string(),
-            paymentStatus: zod.string(),
-            paymentMethod: zod.string().optional(),
-            paymentDeadline: zod.string().nullish(),
-            callConfirmedAt: zod.string().nullish(),
-            paidAtAgencyAt: zod.string().nullish(),
-            abandonedAt: zod.string().nullish(),
-            car: zod
-              .object({
-                id: zod.number(),
-                brand: zod.string(),
-                model: zod.string(),
-                year: zod.number(),
-                category: zod.string(),
-                fuelType: zod.string(),
-                transmission: zod.string(),
-                seats: zod.number(),
-                doors: zod.number(),
-                airConditioning: zod.boolean().optional(),
-                dailyPrice: zod.number(),
-                weeklyPrice: zod.number().nullish(),
-                monthlyPrice: zod.number().nullish(),
-                depositAmount: zod.number().nullish(),
-                mileageLimit: zod.number().nullish(),
-                city: zod.string().optional(),
-                internalReference: zod.string().nullish(),
-                licensePlate: zod.string().nullish(),
-                description: zod.string().nullish(),
-                seoTitle: zod.string().nullish(),
-                seoDescription: zod.string().nullish(),
-                seoSlug: zod.string().nullish(),
-                insuranceIncluded: zod.boolean().optional(),
-                requiredDocuments: zod.string().nullish(),
-                status: zod.string(),
-                mainImageUrl: zod.string().nullish(),
-                createdAt: zod.string().optional(),
-              })
-              .optional(),
-            createdAt: zod.string(),
-            updatedAt: zod.string().optional(),
-          }),
-        )
-        .optional(),
-    }),
-  ),
-  total: zod.number(),
-  page: zod.number(),
-  limit: zod.number(),
-});
+  "customers": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "cin": zod.string().nullish(),
+  "passportNumber": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+}),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})).optional(),
+  "rentalRequests": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})).optional()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "limit": zod.number()
+})
+
 
 /**
  * @summary Get customer details
  */
 export const GetCustomerParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const GetCustomerResponse = zod.object({
-  id: zod.number(),
-  userId: zod.number(),
-  cin: zod.string().nullish(),
-  passportNumber: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  address: zod.string().nullish(),
-  city: zod.string().nullish(),
-  user: zod.object({
-    id: zod.number(),
-    fullName: zod.string(),
-    email: zod.string(),
-    phone: zod.string(),
-    role: zod.string(),
-    status: zod.string(),
-    emailVerifiedAt: zod.string().nullish(),
-    createdAt: zod.string().optional(),
-  }),
-  documents: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        customerId: zod.number(),
-        rentalRequestId: zod.number().nullish(),
-        type: zod.string(),
-        fileUrl: zod.string(),
-        status: zod.string().optional(),
-        uploadedAt: zod.string(),
-      }),
-    )
-    .optional(),
-  rentalRequests: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        customerId: zod.number().nullish(),
-        carId: zod.number(),
-        fullName: zod.string(),
-        phone: zod.string(),
-        email: zod.string(),
-        cinOrPassport: zod.string().nullish(),
-        drivingLicenseNumber: zod.string().nullish(),
-        startDate: zod.string(),
-        returnDate: zod.string(),
-        pickupLocation: zod.string().nullish(),
-        returnLocation: zod.string().nullish(),
-        estimatedTotalPrice: zod.number(),
-        finalPrice: zod.number().nullish(),
-        notes: zod.string().nullish(),
-        status: zod.string(),
-        paymentStatus: zod.string(),
-        paymentMethod: zod.string().optional(),
-        paymentDeadline: zod.string().nullish(),
-        callConfirmedAt: zod.string().nullish(),
-        paidAtAgencyAt: zod.string().nullish(),
-        abandonedAt: zod.string().nullish(),
-        car: zod
-          .object({
-            id: zod.number(),
-            brand: zod.string(),
-            model: zod.string(),
-            year: zod.number(),
-            category: zod.string(),
-            fuelType: zod.string(),
-            transmission: zod.string(),
-            seats: zod.number(),
-            doors: zod.number(),
-            airConditioning: zod.boolean().optional(),
-            dailyPrice: zod.number(),
-            weeklyPrice: zod.number().nullish(),
-            monthlyPrice: zod.number().nullish(),
-            depositAmount: zod.number().nullish(),
-            mileageLimit: zod.number().nullish(),
-            city: zod.string().optional(),
-            internalReference: zod.string().nullish(),
-            licensePlate: zod.string().nullish(),
-            description: zod.string().nullish(),
-            seoTitle: zod.string().nullish(),
-            seoDescription: zod.string().nullish(),
-            seoSlug: zod.string().nullish(),
-            insuranceIncluded: zod.boolean().optional(),
-            requiredDocuments: zod.string().nullish(),
-            status: zod.string(),
-            mainImageUrl: zod.string().nullish(),
-            createdAt: zod.string().optional(),
-          })
-          .optional(),
-        createdAt: zod.string(),
-        updatedAt: zod.string().optional(),
-      }),
-    )
-    .optional(),
-});
+  "id": zod.number(),
+  "userId": zod.number(),
+  "cin": zod.string().nullish(),
+  "passportNumber": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+}),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})).optional(),
+  "rentalRequests": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})).optional()
+})
+
 
 /**
  * @summary Update customer profile
  */
 export const UpdateCustomerParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const UpdateCustomerBody = zod.object({
-  fullName: zod.string().optional(),
-  phone: zod.string().optional(),
-  cin: zod.string().optional(),
-  passportNumber: zod.string().optional(),
-  drivingLicenseNumber: zod.string().optional(),
-  address: zod.string().optional(),
-  city: zod.string().optional(),
-});
+  "fullName": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "cin": zod.string().optional(),
+  "passportNumber": zod.string().optional(),
+  "drivingLicenseNumber": zod.string().optional(),
+  "address": zod.string().optional(),
+  "city": zod.string().optional()
+})
 
 export const UpdateCustomerResponse = zod.object({
-  id: zod.number(),
-  userId: zod.number(),
-  cin: zod.string().nullish(),
-  passportNumber: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  address: zod.string().nullish(),
-  city: zod.string().nullish(),
-  user: zod.object({
-    id: zod.number(),
-    fullName: zod.string(),
-    email: zod.string(),
-    phone: zod.string(),
-    role: zod.string(),
-    status: zod.string(),
-    emailVerifiedAt: zod.string().nullish(),
-    createdAt: zod.string().optional(),
-  }),
-  documents: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        customerId: zod.number(),
-        rentalRequestId: zod.number().nullish(),
-        type: zod.string(),
-        fileUrl: zod.string(),
-        status: zod.string().optional(),
-        uploadedAt: zod.string(),
-      }),
-    )
-    .optional(),
-  rentalRequests: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        customerId: zod.number().nullish(),
-        carId: zod.number(),
-        fullName: zod.string(),
-        phone: zod.string(),
-        email: zod.string(),
-        cinOrPassport: zod.string().nullish(),
-        drivingLicenseNumber: zod.string().nullish(),
-        startDate: zod.string(),
-        returnDate: zod.string(),
-        pickupLocation: zod.string().nullish(),
-        returnLocation: zod.string().nullish(),
-        estimatedTotalPrice: zod.number(),
-        finalPrice: zod.number().nullish(),
-        notes: zod.string().nullish(),
-        status: zod.string(),
-        paymentStatus: zod.string(),
-        paymentMethod: zod.string().optional(),
-        paymentDeadline: zod.string().nullish(),
-        callConfirmedAt: zod.string().nullish(),
-        paidAtAgencyAt: zod.string().nullish(),
-        abandonedAt: zod.string().nullish(),
-        car: zod
-          .object({
-            id: zod.number(),
-            brand: zod.string(),
-            model: zod.string(),
-            year: zod.number(),
-            category: zod.string(),
-            fuelType: zod.string(),
-            transmission: zod.string(),
-            seats: zod.number(),
-            doors: zod.number(),
-            airConditioning: zod.boolean().optional(),
-            dailyPrice: zod.number(),
-            weeklyPrice: zod.number().nullish(),
-            monthlyPrice: zod.number().nullish(),
-            depositAmount: zod.number().nullish(),
-            mileageLimit: zod.number().nullish(),
-            city: zod.string().optional(),
-            internalReference: zod.string().nullish(),
-            licensePlate: zod.string().nullish(),
-            description: zod.string().nullish(),
-            seoTitle: zod.string().nullish(),
-            seoDescription: zod.string().nullish(),
-            seoSlug: zod.string().nullish(),
-            insuranceIncluded: zod.boolean().optional(),
-            requiredDocuments: zod.string().nullish(),
-            status: zod.string(),
-            mainImageUrl: zod.string().nullish(),
-            createdAt: zod.string().optional(),
-          })
-          .optional(),
-        createdAt: zod.string(),
-        updatedAt: zod.string().optional(),
-      }),
-    )
-    .optional(),
-});
+  "id": zod.number(),
+  "userId": zod.number(),
+  "cin": zod.string().nullish(),
+  "passportNumber": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+}),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})).optional(),
+  "rentalRequests": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})).optional()
+})
+
 
 /**
  * @summary Get current customer's own profile
  */
 export const GetMyCustomerProfileResponse = zod.object({
-  id: zod.number(),
-  userId: zod.number(),
-  cin: zod.string().nullish(),
-  passportNumber: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  address: zod.string().nullish(),
-  city: zod.string().nullish(),
-  user: zod.object({
-    id: zod.number(),
-    fullName: zod.string(),
-    email: zod.string(),
-    phone: zod.string(),
-    role: zod.string(),
-    status: zod.string(),
-    emailVerifiedAt: zod.string().nullish(),
-    createdAt: zod.string().optional(),
-  }),
-  documents: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        customerId: zod.number(),
-        rentalRequestId: zod.number().nullish(),
-        type: zod.string(),
-        fileUrl: zod.string(),
-        status: zod.string().optional(),
-        uploadedAt: zod.string(),
-      }),
-    )
-    .optional(),
-  rentalRequests: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        customerId: zod.number().nullish(),
-        carId: zod.number(),
-        fullName: zod.string(),
-        phone: zod.string(),
-        email: zod.string(),
-        cinOrPassport: zod.string().nullish(),
-        drivingLicenseNumber: zod.string().nullish(),
-        startDate: zod.string(),
-        returnDate: zod.string(),
-        pickupLocation: zod.string().nullish(),
-        returnLocation: zod.string().nullish(),
-        estimatedTotalPrice: zod.number(),
-        finalPrice: zod.number().nullish(),
-        notes: zod.string().nullish(),
-        status: zod.string(),
-        paymentStatus: zod.string(),
-        paymentMethod: zod.string().optional(),
-        paymentDeadline: zod.string().nullish(),
-        callConfirmedAt: zod.string().nullish(),
-        paidAtAgencyAt: zod.string().nullish(),
-        abandonedAt: zod.string().nullish(),
-        car: zod
-          .object({
-            id: zod.number(),
-            brand: zod.string(),
-            model: zod.string(),
-            year: zod.number(),
-            category: zod.string(),
-            fuelType: zod.string(),
-            transmission: zod.string(),
-            seats: zod.number(),
-            doors: zod.number(),
-            airConditioning: zod.boolean().optional(),
-            dailyPrice: zod.number(),
-            weeklyPrice: zod.number().nullish(),
-            monthlyPrice: zod.number().nullish(),
-            depositAmount: zod.number().nullish(),
-            mileageLimit: zod.number().nullish(),
-            city: zod.string().optional(),
-            internalReference: zod.string().nullish(),
-            licensePlate: zod.string().nullish(),
-            description: zod.string().nullish(),
-            seoTitle: zod.string().nullish(),
-            seoDescription: zod.string().nullish(),
-            seoSlug: zod.string().nullish(),
-            insuranceIncluded: zod.boolean().optional(),
-            requiredDocuments: zod.string().nullish(),
-            status: zod.string(),
-            mainImageUrl: zod.string().nullish(),
-            createdAt: zod.string().optional(),
-          })
-          .optional(),
-        createdAt: zod.string(),
-        updatedAt: zod.string().optional(),
-      }),
-    )
-    .optional(),
-});
+  "id": zod.number(),
+  "userId": zod.number(),
+  "cin": zod.string().nullish(),
+  "passportNumber": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+}),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})).optional(),
+  "rentalRequests": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})).optional()
+})
+
 
 /**
  * @summary Update current customer's profile
  */
 export const UpdateMyCustomerProfileBody = zod.object({
-  fullName: zod.string().optional(),
-  phone: zod.string().optional(),
-  cin: zod.string().optional(),
-  passportNumber: zod.string().optional(),
-  drivingLicenseNumber: zod.string().optional(),
-  address: zod.string().optional(),
-  city: zod.string().optional(),
-});
+  "fullName": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "cin": zod.string().optional(),
+  "passportNumber": zod.string().optional(),
+  "drivingLicenseNumber": zod.string().optional(),
+  "address": zod.string().optional(),
+  "city": zod.string().optional()
+})
 
 export const UpdateMyCustomerProfileResponse = zod.object({
-  id: zod.number(),
-  userId: zod.number(),
-  cin: zod.string().nullish(),
-  passportNumber: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  address: zod.string().nullish(),
-  city: zod.string().nullish(),
-  user: zod.object({
-    id: zod.number(),
-    fullName: zod.string(),
-    email: zod.string(),
-    phone: zod.string(),
-    role: zod.string(),
-    status: zod.string(),
-    emailVerifiedAt: zod.string().nullish(),
-    createdAt: zod.string().optional(),
-  }),
-  documents: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        customerId: zod.number(),
-        rentalRequestId: zod.number().nullish(),
-        type: zod.string(),
-        fileUrl: zod.string(),
-        status: zod.string().optional(),
-        uploadedAt: zod.string(),
-      }),
-    )
-    .optional(),
-  rentalRequests: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        customerId: zod.number().nullish(),
-        carId: zod.number(),
-        fullName: zod.string(),
-        phone: zod.string(),
-        email: zod.string(),
-        cinOrPassport: zod.string().nullish(),
-        drivingLicenseNumber: zod.string().nullish(),
-        startDate: zod.string(),
-        returnDate: zod.string(),
-        pickupLocation: zod.string().nullish(),
-        returnLocation: zod.string().nullish(),
-        estimatedTotalPrice: zod.number(),
-        finalPrice: zod.number().nullish(),
-        notes: zod.string().nullish(),
-        status: zod.string(),
-        paymentStatus: zod.string(),
-        paymentMethod: zod.string().optional(),
-        paymentDeadline: zod.string().nullish(),
-        callConfirmedAt: zod.string().nullish(),
-        paidAtAgencyAt: zod.string().nullish(),
-        abandonedAt: zod.string().nullish(),
-        car: zod
-          .object({
-            id: zod.number(),
-            brand: zod.string(),
-            model: zod.string(),
-            year: zod.number(),
-            category: zod.string(),
-            fuelType: zod.string(),
-            transmission: zod.string(),
-            seats: zod.number(),
-            doors: zod.number(),
-            airConditioning: zod.boolean().optional(),
-            dailyPrice: zod.number(),
-            weeklyPrice: zod.number().nullish(),
-            monthlyPrice: zod.number().nullish(),
-            depositAmount: zod.number().nullish(),
-            mileageLimit: zod.number().nullish(),
-            city: zod.string().optional(),
-            internalReference: zod.string().nullish(),
-            licensePlate: zod.string().nullish(),
-            description: zod.string().nullish(),
-            seoTitle: zod.string().nullish(),
-            seoDescription: zod.string().nullish(),
-            seoSlug: zod.string().nullish(),
-            insuranceIncluded: zod.boolean().optional(),
-            requiredDocuments: zod.string().nullish(),
-            status: zod.string(),
-            mainImageUrl: zod.string().nullish(),
-            createdAt: zod.string().optional(),
-          })
-          .optional(),
-        createdAt: zod.string(),
-        updatedAt: zod.string().optional(),
-      }),
-    )
-    .optional(),
-});
+  "id": zod.number(),
+  "userId": zod.number(),
+  "cin": zod.string().nullish(),
+  "passportNumber": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+}),
+  "documents": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})).optional(),
+  "rentalRequests": zod.array(zod.object({
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})).optional()
+})
+
 
 /**
  * @summary List agents (admin)
  */
 export const ListAgentsResponseItem = zod.object({
-  id: zod.number(),
-  userId: zod.number(),
-  status: zod.string(),
-  user: zod.object({
-    id: zod.number(),
-    fullName: zod.string(),
-    email: zod.string(),
-    phone: zod.string(),
-    role: zod.string(),
-    status: zod.string(),
-    emailVerifiedAt: zod.string().nullish(),
-    createdAt: zod.string().optional(),
-  }),
-  createdAt: zod.string().optional(),
-});
-export const ListAgentsResponse = zod.array(ListAgentsResponseItem);
+  "id": zod.number(),
+  "userId": zod.number(),
+  "status": zod.string(),
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+}),
+  "createdAt": zod.string().optional()
+})
+export const ListAgentsResponse = zod.array(ListAgentsResponseItem)
+
 
 /**
  * @summary Create agent (admin)
  */
 export const CreateAgentBody = zod.object({
-  fullName: zod.string(),
-  email: zod.string(),
-  password: zod.string(),
-  phone: zod.string(),
-});
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "password": zod.string(),
+  "phone": zod.string()
+})
+
 
 /**
  * @summary Get agent details
  */
 export const GetAgentParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const GetAgentResponse = zod.object({
-  id: zod.number(),
-  userId: zod.number(),
-  status: zod.string(),
-  user: zod.object({
-    id: zod.number(),
-    fullName: zod.string(),
-    email: zod.string(),
-    phone: zod.string(),
-    role: zod.string(),
-    status: zod.string(),
-    emailVerifiedAt: zod.string().nullish(),
-    createdAt: zod.string().optional(),
-  }),
-  createdAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "userId": zod.number(),
+  "status": zod.string(),
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+}),
+  "createdAt": zod.string().optional()
+})
+
 
 /**
  * @summary Update agent (admin)
  */
 export const UpdateAgentParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const UpdateAgentBody = zod.object({
-  fullName: zod.string().optional(),
-  phone: zod.string().optional(),
-  status: zod.string().optional(),
-});
+  "fullName": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "status": zod.string().optional()
+})
 
 export const UpdateAgentResponse = zod.object({
-  id: zod.number(),
-  userId: zod.number(),
-  status: zod.string(),
-  user: zod.object({
-    id: zod.number(),
-    fullName: zod.string(),
-    email: zod.string(),
-    phone: zod.string(),
-    role: zod.string(),
-    status: zod.string(),
-    emailVerifiedAt: zod.string().nullish(),
-    createdAt: zod.string().optional(),
-  }),
-  createdAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "userId": zod.number(),
+  "status": zod.string(),
+  "user": zod.object({
+  "id": zod.number(),
+  "fullName": zod.string(),
+  "email": zod.string(),
+  "phone": zod.string(),
+  "role": zod.string(),
+  "status": zod.string(),
+  "emailVerifiedAt": zod.string().nullish(),
+  "mfaEnabled": zod.boolean(),
+  "createdAt": zod.string().optional()
+}),
+  "createdAt": zod.string().optional()
+})
+
 
 /**
  * @summary Delete agent (admin)
  */
 export const DeleteAgentParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
+
 
 /**
  * @summary List expenses
  */
 export const ListExpensesQueryParams = zod.object({
-  carId: zod.coerce.number().optional(),
-  type: zod.coerce.string().optional(),
-  from: zod.coerce.string().optional(),
-  to: zod.coerce.string().optional(),
-  page: zod.coerce.number().optional(),
-  limit: zod.coerce.number().optional(),
-});
+  "carId": zod.coerce.number().optional(),
+  "type": zod.coerce.string().optional(),
+  "from": zod.coerce.string().optional(),
+  "to": zod.coerce.string().optional(),
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
 
 export const ListExpensesResponse = zod.object({
-  expenses: zod.array(
-    zod.object({
-      id: zod.number(),
-      carId: zod.number(),
-      type: zod.string(),
-      amount: zod.number(),
-      date: zod.string(),
-      description: zod.string().nullish(),
-      invoiceFileUrl: zod.string().nullish(),
-      createdAt: zod.string().optional(),
-    }),
-  ),
-  total: zod.number(),
-  totalAmount: zod.number().optional(),
-});
+  "expenses": zod.array(zod.object({
+  "id": zod.number(),
+  "carId": zod.number(),
+  "type": zod.string(),
+  "amount": zod.number(),
+  "date": zod.string(),
+  "description": zod.string().nullish(),
+  "invoiceFileUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+})),
+  "total": zod.number(),
+  "totalAmount": zod.number().optional()
+})
+
 
 /**
  * @summary Add car expense
  */
 export const CreateExpenseBody = zod.object({
-  carId: zod.number(),
-  type: zod.string(),
-  amount: zod.number(),
-  date: zod.string(),
-  description: zod.string().optional(),
-  invoiceFileUrl: zod.string().optional(),
-});
+  "carId": zod.number(),
+  "type": zod.string(),
+  "amount": zod.number(),
+  "date": zod.string(),
+  "description": zod.string().optional(),
+  "invoiceFileUrl": zod.string().optional()
+})
+
 
 /**
  * @summary Delete expense (admin)
  */
 export const DeleteExpenseParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
+
 
 /**
  * @summary List blog posts (public)
  */
 export const ListBlogPostsQueryParams = zod.object({
-  page: zod.coerce.number().optional(),
-  limit: zod.coerce.number().optional(),
-});
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
 
 export const ListBlogPostsResponse = zod.object({
-  posts: zod.array(
-    zod.object({
-      id: zod.number(),
-      title: zod.string(),
-      slug: zod.string(),
-      excerpt: zod.string().nullish(),
-      content: zod.string().nullish(),
-      coverImage: zod.string().nullish(),
-      seoTitle: zod.string().nullish(),
-      seoDescription: zod.string().nullish(),
-      status: zod.string(),
-      createdAt: zod.string(),
-      updatedAt: zod.string().optional(),
-    }),
-  ),
-  total: zod.number(),
-  page: zod.number(),
-  limit: zod.number(),
-});
+  "posts": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string(),
+  "excerpt": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "coverImage": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "limit": zod.number()
+})
+
 
 /**
  * @summary Create blog post (admin)
  */
 export const CreateBlogPostBody = zod.object({
-  title: zod.string(),
-  slug: zod.string(),
-  excerpt: zod.string().optional(),
-  content: zod.string(),
-  coverImage: zod.string().optional(),
-  seoTitle: zod.string().optional(),
-  seoDescription: zod.string().optional(),
-  status: zod.string().optional(),
-});
+  "title": zod.string(),
+  "slug": zod.string(),
+  "excerpt": zod.string().optional(),
+  "content": zod.string(),
+  "coverImage": zod.string().optional(),
+  "seoTitle": zod.string().optional(),
+  "seoDescription": zod.string().optional(),
+  "status": zod.string().optional()
+})
+
 
 /**
  * @summary Get blog post by slug (public)
  */
 export const GetBlogPostParams = zod.object({
-  slug: zod.coerce.string(),
-});
+  "slug": zod.coerce.string()
+})
 
 export const GetBlogPostResponse = zod.object({
-  id: zod.number(),
-  title: zod.string(),
-  slug: zod.string(),
-  excerpt: zod.string().nullish(),
-  content: zod.string().nullish(),
-  coverImage: zod.string().nullish(),
-  seoTitle: zod.string().nullish(),
-  seoDescription: zod.string().nullish(),
-  status: zod.string(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string(),
+  "excerpt": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "coverImage": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
 
 /**
  * @summary Update blog post (admin)
  */
 export const UpdateBlogPostParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const UpdateBlogPostBody = zod.object({
-  title: zod.string().optional(),
-  slug: zod.string().optional(),
-  excerpt: zod.string().optional(),
-  content: zod.string().optional(),
-  coverImage: zod.string().optional(),
-  seoTitle: zod.string().optional(),
-  seoDescription: zod.string().optional(),
-  status: zod.string().optional(),
-});
+  "title": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "excerpt": zod.string().optional(),
+  "content": zod.string().optional(),
+  "coverImage": zod.string().optional(),
+  "seoTitle": zod.string().optional(),
+  "seoDescription": zod.string().optional(),
+  "status": zod.string().optional()
+})
 
 export const UpdateBlogPostResponse = zod.object({
-  id: zod.number(),
-  title: zod.string(),
-  slug: zod.string(),
-  excerpt: zod.string().nullish(),
-  content: zod.string().nullish(),
-  coverImage: zod.string().nullish(),
-  seoTitle: zod.string().nullish(),
-  seoDescription: zod.string().nullish(),
-  status: zod.string(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "title": zod.string(),
+  "slug": zod.string(),
+  "excerpt": zod.string().nullish(),
+  "content": zod.string().nullish(),
+  "coverImage": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "status": zod.string(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+
 
 /**
  * @summary Delete blog post (admin)
  */
 export const DeleteBlogPostParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
+
 
 /**
  * @summary Get current user notifications
  */
 export const ListNotificationsResponseItem = zod.object({
-  id: zod.number(),
-  userId: zod.number(),
-  title: zod.string(),
-  message: zod.string(),
-  read: zod.boolean(),
-  createdAt: zod.string(),
-});
-export const ListNotificationsResponse = zod.array(
-  ListNotificationsResponseItem,
-);
+  "id": zod.number(),
+  "userId": zod.number(),
+  "title": zod.string(),
+  "message": zod.string(),
+  "read": zod.boolean(),
+  "createdAt": zod.string()
+})
+export const ListNotificationsResponse = zod.array(ListNotificationsResponseItem)
+
 
 /**
  * @summary Mark notification as read
  */
 export const MarkNotificationReadParams = zod.object({
-  id: zod.coerce.number(),
-});
+  "id": zod.coerce.number()
+})
 
 export const MarkNotificationReadResponse = zod.object({
-  id: zod.number(),
-  userId: zod.number(),
-  title: zod.string(),
-  message: zod.string(),
-  read: zod.boolean(),
-  createdAt: zod.string(),
-});
+  "id": zod.number(),
+  "userId": zod.number(),
+  "title": zod.string(),
+  "message": zod.string(),
+  "read": zod.boolean(),
+  "createdAt": zod.string()
+})
+
 
 /**
  * @summary Mark all notifications as read
  */
 export const MarkAllNotificationsReadResponse = zod.object({
-  message: zod.string(),
-});
+  "message": zod.string()
+})
+
 
 /**
  * @summary Get admin BI dashboard summary
  */
 export const GetDashboardStatsQueryParams = zod.object({
-  from: zod.coerce.string().optional(),
-  to: zod.coerce.string().optional(),
-  period: zod.coerce.string().optional(),
-});
+  "from": zod.coerce.string().optional(),
+  "to": zod.coerce.string().optional(),
+  "period": zod.coerce.string().optional()
+})
 
 export const GetDashboardStatsResponse = zod.object({
-  totalRevenue: zod.number(),
-  expectedRevenue: zod.number(),
-  pendingRevenue: zod.number(),
-  totalExpenses: zod.number(),
-  netProfit: zod.number(),
-  totalRequests: zod.number(),
-  pendingRequests: zod.number(),
-  callConfirmedRequests: zod.number(),
-  abandonedRequests: zod.number(),
-  activeRentals: zod.number(),
-  availableCars: zod.number(),
-  temporarilyHeldCars: zod.number().optional(),
-  reservedCars: zod.number(),
-  rentedCars: zod.number().optional(),
-  maintenanceCars: zod.number().optional(),
-  totalCustomers: zod.number(),
-  totalAgents: zod.number(),
-});
+  "totalRevenue": zod.number(),
+  "expectedRevenue": zod.number(),
+  "pendingRevenue": zod.number(),
+  "totalExpenses": zod.number(),
+  "netProfit": zod.number(),
+  "totalRequests": zod.number(),
+  "pendingRequests": zod.number(),
+  "callConfirmedRequests": zod.number(),
+  "abandonedRequests": zod.number(),
+  "activeRentals": zod.number(),
+  "availableCars": zod.number(),
+  "temporarilyHeldCars": zod.number().optional(),
+  "reservedCars": zod.number(),
+  "rentedCars": zod.number().optional(),
+  "maintenanceCars": zod.number().optional(),
+  "totalCustomers": zod.number(),
+  "totalAgents": zod.number()
+})
+
 
 /**
  * @summary Monthly revenue/expenses/profit chart data
  */
 export const GetRevenueChartQueryParams = zod.object({
-  months: zod.coerce.number().optional(),
-});
+  "months": zod.coerce.number().optional()
+})
 
 export const GetRevenueChartResponseItem = zod.object({
-  month: zod.string(),
-  revenue: zod.number(),
-  expenses: zod.number(),
-  profit: zod.number(),
-});
-export const GetRevenueChartResponse = zod.array(GetRevenueChartResponseItem);
+  "month": zod.string(),
+  "revenue": zod.number(),
+  "expenses": zod.number(),
+  "profit": zod.number()
+})
+export const GetRevenueChartResponse = zod.array(GetRevenueChartResponseItem)
+
 
 /**
  * @summary Per-car revenue, expenses, profit
  */
 export const GetCarPerformanceResponseItem = zod.object({
-  carId: zod.number(),
-  brand: zod.string(),
-  model: zod.string(),
-  mainImageUrl: zod.string().nullish(),
-  revenue: zod.number(),
-  expenses: zod.number(),
-  profit: zod.number(),
-  rentals: zod.number(),
-});
-export const GetCarPerformanceResponse = zod.array(
-  GetCarPerformanceResponseItem,
-);
+  "carId": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "mainImageUrl": zod.string().nullish(),
+  "revenue": zod.number(),
+  "expenses": zod.number(),
+  "profit": zod.number(),
+  "rentals": zod.number()
+})
+export const GetCarPerformanceResponse = zod.array(GetCarPerformanceResponseItem)
+
 
 /**
  * @summary Request counts grouped by status
  */
 export const GetRequestsByStatusResponseItem = zod.object({
-  status: zod.string(),
-  label: zod.string().optional(),
-  count: zod.number(),
-});
-export const GetRequestsByStatusResponse = zod.array(
-  GetRequestsByStatusResponseItem,
-);
+  "status": zod.string(),
+  "label": zod.string().optional(),
+  "count": zod.number()
+})
+export const GetRequestsByStatusResponse = zod.array(GetRequestsByStatusResponseItem)
+
 
 /**
  * @summary Latest rental requests for dashboard feed
  */
 export const GetRecentRequestsQueryParams = zod.object({
-  limit: zod.coerce.number().optional(),
-});
+  "limit": zod.coerce.number().optional()
+})
 
 export const GetRecentRequestsResponseItem = zod.object({
-  id: zod.number(),
-  customerId: zod.number().nullish(),
-  carId: zod.number(),
-  fullName: zod.string(),
-  phone: zod.string(),
-  email: zod.string(),
-  cinOrPassport: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  startDate: zod.string(),
-  returnDate: zod.string(),
-  pickupLocation: zod.string().nullish(),
-  returnLocation: zod.string().nullish(),
-  estimatedTotalPrice: zod.number(),
-  finalPrice: zod.number().nullish(),
-  notes: zod.string().nullish(),
-  status: zod.string(),
-  paymentStatus: zod.string(),
-  paymentMethod: zod.string().optional(),
-  paymentDeadline: zod.string().nullish(),
-  callConfirmedAt: zod.string().nullish(),
-  paidAtAgencyAt: zod.string().nullish(),
-  abandonedAt: zod.string().nullish(),
-  car: zod
-    .object({
-      id: zod.number(),
-      brand: zod.string(),
-      model: zod.string(),
-      year: zod.number(),
-      category: zod.string(),
-      fuelType: zod.string(),
-      transmission: zod.string(),
-      seats: zod.number(),
-      doors: zod.number(),
-      airConditioning: zod.boolean().optional(),
-      dailyPrice: zod.number(),
-      weeklyPrice: zod.number().nullish(),
-      monthlyPrice: zod.number().nullish(),
-      depositAmount: zod.number().nullish(),
-      mileageLimit: zod.number().nullish(),
-      city: zod.string().optional(),
-      internalReference: zod.string().nullish(),
-      licensePlate: zod.string().nullish(),
-      description: zod.string().nullish(),
-      seoTitle: zod.string().nullish(),
-      seoDescription: zod.string().nullish(),
-      seoSlug: zod.string().nullish(),
-      insuranceIncluded: zod.boolean().optional(),
-      requiredDocuments: zod.string().nullish(),
-      status: zod.string(),
-      mainImageUrl: zod.string().nullish(),
-      createdAt: zod.string().optional(),
-    })
-    .optional(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
-export const GetRecentRequestsResponse = zod.array(
-  GetRecentRequestsResponseItem,
-);
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+export const GetRecentRequestsResponse = zod.array(GetRecentRequestsResponseItem)
+
 
 /**
  * @summary Requests close to 24h payment deadline expiration
  */
 export const GetExpiringRequestsResponseItem = zod.object({
-  id: zod.number(),
-  customerId: zod.number().nullish(),
-  carId: zod.number(),
-  fullName: zod.string(),
-  phone: zod.string(),
-  email: zod.string(),
-  cinOrPassport: zod.string().nullish(),
-  drivingLicenseNumber: zod.string().nullish(),
-  startDate: zod.string(),
-  returnDate: zod.string(),
-  pickupLocation: zod.string().nullish(),
-  returnLocation: zod.string().nullish(),
-  estimatedTotalPrice: zod.number(),
-  finalPrice: zod.number().nullish(),
-  notes: zod.string().nullish(),
-  status: zod.string(),
-  paymentStatus: zod.string(),
-  paymentMethod: zod.string().optional(),
-  paymentDeadline: zod.string().nullish(),
-  callConfirmedAt: zod.string().nullish(),
-  paidAtAgencyAt: zod.string().nullish(),
-  abandonedAt: zod.string().nullish(),
-  car: zod
-    .object({
-      id: zod.number(),
-      brand: zod.string(),
-      model: zod.string(),
-      year: zod.number(),
-      category: zod.string(),
-      fuelType: zod.string(),
-      transmission: zod.string(),
-      seats: zod.number(),
-      doors: zod.number(),
-      airConditioning: zod.boolean().optional(),
-      dailyPrice: zod.number(),
-      weeklyPrice: zod.number().nullish(),
-      monthlyPrice: zod.number().nullish(),
-      depositAmount: zod.number().nullish(),
-      mileageLimit: zod.number().nullish(),
-      city: zod.string().optional(),
-      internalReference: zod.string().nullish(),
-      licensePlate: zod.string().nullish(),
-      description: zod.string().nullish(),
-      seoTitle: zod.string().nullish(),
-      seoDescription: zod.string().nullish(),
-      seoSlug: zod.string().nullish(),
-      insuranceIncluded: zod.boolean().optional(),
-      requiredDocuments: zod.string().nullish(),
-      status: zod.string(),
-      mainImageUrl: zod.string().nullish(),
-      createdAt: zod.string().optional(),
-    })
-    .optional(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
-export const GetExpiringRequestsResponse = zod.array(
-  GetExpiringRequestsResponseItem,
-);
+  "id": zod.number(),
+  "customerId": zod.number().nullish(),
+  "carId": zod.number(),
+  "fullName": zod.string(),
+  "phone": zod.string(),
+  "email": zod.string(),
+  "cinOrPassport": zod.string().nullish(),
+  "drivingLicenseNumber": zod.string().nullish(),
+  "startDate": zod.string(),
+  "returnDate": zod.string(),
+  "pickupLocation": zod.string().nullish(),
+  "returnLocation": zod.string().nullish(),
+  "estimatedTotalPrice": zod.number(),
+  "finalPrice": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "status": zod.string(),
+  "paymentStatus": zod.string(),
+  "paymentMethod": zod.string().optional(),
+  "documentDeadline": zod.string().nullish(),
+  "paymentDeadline": zod.string().nullish(),
+  "callConfirmedAt": zod.string().nullish(),
+  "paidAtAgencyAt": zod.string().nullish(),
+  "abandonedAt": zod.string().nullish(),
+  "car": zod.object({
+  "id": zod.number(),
+  "brand": zod.string(),
+  "model": zod.string(),
+  "year": zod.number(),
+  "category": zod.string(),
+  "fuelType": zod.string(),
+  "transmission": zod.string(),
+  "seats": zod.number(),
+  "doors": zod.number(),
+  "airConditioning": zod.boolean().optional(),
+  "dailyPrice": zod.number(),
+  "weeklyPrice": zod.number().nullish(),
+  "monthlyPrice": zod.number().nullish(),
+  "depositAmount": zod.number().nullish(),
+  "mileageLimit": zod.number().nullish(),
+  "city": zod.string().optional(),
+  "internalReference": zod.string().nullish(),
+  "licensePlate": zod.string().nullish(),
+  "description": zod.string().nullish(),
+  "seoTitle": zod.string().nullish(),
+  "seoDescription": zod.string().nullish(),
+  "seoSlug": zod.string().nullish(),
+  "insuranceIncluded": zod.boolean().optional(),
+  "requiredDocuments": zod.string().nullish(),
+  "status": zod.string(),
+  "rawStatus": zod.string().optional(),
+  "availability": zod.object({
+  "hasActiveBlock": zod.boolean(),
+  "isAvailableNow": zod.boolean(),
+  "availableFrom": zod.string().nullish(),
+  "blockedUntil": zod.string().nullish(),
+  "blockStartDate": zod.string().nullish(),
+  "blockType": zod.string().nullish(),
+  "visualState": zod.string().nullish()
+}).optional(),
+  "mainImageUrl": zod.string().nullish(),
+  "createdAt": zod.string().optional()
+}).optional(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string().optional()
+})
+export const GetExpiringRequestsResponse = zod.array(GetExpiringRequestsResponseItem)
+
 
 /**
  * @summary List audit log entries (admin)
  */
 export const ListAuditLogsQueryParams = zod.object({
-  page: zod.coerce.number().optional(),
-  limit: zod.coerce.number().optional(),
-});
+  "page": zod.coerce.number().optional(),
+  "limit": zod.coerce.number().optional()
+})
 
 export const ListAuditLogsResponse = zod.object({
-  logs: zod.array(
-    zod.object({
-      id: zod.number(),
-      userId: zod.number().nullish(),
-      userFullName: zod.string().nullish(),
-      userEmail: zod.string().nullish(),
-      userRole: zod.string().nullish(),
-      ipAddress: zod.string().nullish(),
-      userAgent: zod.string().nullish(),
-      action: zod.string(),
-      entityType: zod.string(),
-      entityId: zod.number().nullish(),
-      details: zod.string().nullish(),
-      createdAt: zod.string(),
-    }),
-  ),
-  total: zod.number(),
-});
+  "logs": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.number().nullish(),
+  "userFullName": zod.string().nullish(),
+  "userEmail": zod.string().nullish(),
+  "userRole": zod.string().nullish(),
+  "ipAddress": zod.string().nullish(),
+  "userAgent": zod.string().nullish(),
+  "action": zod.string(),
+  "entityType": zod.string(),
+  "entityId": zod.number().nullish(),
+  "details": zod.string().nullish(),
+  "createdAt": zod.string()
+})),
+  "total": zod.number()
+})
+
 
 /**
  * @summary Get company/site settings
  */
 export const GetCompanySettingsResponse = zod.object({
-  id: zod.number(),
-  brandName: zod.string().nullish(),
-  slogan: zod.string().nullish(),
-  logoUrl: zod.string().nullish(),
-  phone: zod.string().nullish(),
-  whatsapp: zod.string().nullish(),
-  email: zod.string().nullish(),
-  address: zod.string().nullish(),
-  city: zod.string().nullish(),
-  facebook: zod.string().nullish(),
-  instagram: zod.string().nullish(),
-  primaryColor: zod.string().nullish(),
-  secondaryColor: zod.string().nullish(),
-  paymentDeadlineHours: zod.number().optional(),
-  updatedAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "brandName": zod.string().nullish(),
+  "slogan": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "whatsapp": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "facebook": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "primaryColor": zod.string().nullish(),
+  "secondaryColor": zod.string().nullish(),
+  "taxRatePercent": zod.number().optional(),
+  "discountTier1MinDays": zod.number().optional(),
+  "discountTier1Percent": zod.number().optional(),
+  "discountTier2MinDays": zod.number().optional(),
+  "discountTier2Percent": zod.number().optional(),
+  "discountTier3MinDays": zod.number().optional(),
+  "discountTier3Percent": zod.number().optional(),
+  "paymentDeadlineHours": zod.number().optional(),
+  "updatedAt": zod.string().optional()
+})
+
 
 /**
  * @summary Update company settings (admin)
  */
 export const UpdateCompanySettingsBody = zod.object({
-  brandName: zod.string().optional(),
-  slogan: zod.string().optional(),
-  logoUrl: zod.string().optional(),
-  phone: zod.string().optional(),
-  whatsapp: zod.string().optional(),
-  email: zod.string().optional(),
-  address: zod.string().optional(),
-  city: zod.string().optional(),
-  facebook: zod.string().optional(),
-  instagram: zod.string().optional(),
-  primaryColor: zod.string().optional(),
-  secondaryColor: zod.string().optional(),
-  paymentDeadlineHours: zod.number().optional(),
-});
+  "brandName": zod.string().optional(),
+  "slogan": zod.string().optional(),
+  "logoUrl": zod.string().optional(),
+  "phone": zod.string().optional(),
+  "whatsapp": zod.string().optional(),
+  "email": zod.string().optional(),
+  "address": zod.string().optional(),
+  "city": zod.string().optional(),
+  "facebook": zod.string().optional(),
+  "instagram": zod.string().optional(),
+  "primaryColor": zod.string().optional(),
+  "secondaryColor": zod.string().optional(),
+  "taxRatePercent": zod.number().optional(),
+  "discountTier1MinDays": zod.number().optional(),
+  "discountTier1Percent": zod.number().optional(),
+  "discountTier2MinDays": zod.number().optional(),
+  "discountTier2Percent": zod.number().optional(),
+  "discountTier3MinDays": zod.number().optional(),
+  "discountTier3Percent": zod.number().optional(),
+  "paymentDeadlineHours": zod.number().optional()
+})
 
 export const UpdateCompanySettingsResponse = zod.object({
-  id: zod.number(),
-  brandName: zod.string().nullish(),
-  slogan: zod.string().nullish(),
-  logoUrl: zod.string().nullish(),
-  phone: zod.string().nullish(),
-  whatsapp: zod.string().nullish(),
-  email: zod.string().nullish(),
-  address: zod.string().nullish(),
-  city: zod.string().nullish(),
-  facebook: zod.string().nullish(),
-  instagram: zod.string().nullish(),
-  primaryColor: zod.string().nullish(),
-  secondaryColor: zod.string().nullish(),
-  paymentDeadlineHours: zod.number().optional(),
-  updatedAt: zod.string().optional(),
-});
+  "id": zod.number(),
+  "brandName": zod.string().nullish(),
+  "slogan": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "phone": zod.string().nullish(),
+  "whatsapp": zod.string().nullish(),
+  "email": zod.string().nullish(),
+  "address": zod.string().nullish(),
+  "city": zod.string().nullish(),
+  "facebook": zod.string().nullish(),
+  "instagram": zod.string().nullish(),
+  "primaryColor": zod.string().nullish(),
+  "secondaryColor": zod.string().nullish(),
+  "taxRatePercent": zod.number().optional(),
+  "discountTier1MinDays": zod.number().optional(),
+  "discountTier1Percent": zod.number().optional(),
+  "discountTier2MinDays": zod.number().optional(),
+  "discountTier2Percent": zod.number().optional(),
+  "discountTier3MinDays": zod.number().optional(),
+  "discountTier3Percent": zod.number().optional(),
+  "paymentDeadlineHours": zod.number().optional(),
+  "updatedAt": zod.string().optional()
+})
+
 
 /**
  * @summary Upload a document (customer)
  */
 export const UploadDocumentBody = zod.object({
-  rentalRequestId: zod.number().optional(),
-  type: zod.string(),
-  fileUrl: zod.string(),
-});
+  "rentalRequestId": zod.number().optional(),
+  "type": zod.string(),
+  "fileUrl": zod.string()
+})
+
 
 /**
  * @summary List documents for a rental request
  */
 export const ListDocumentsParams = zod.object({
-  rentalRequestId: zod.coerce.number(),
-});
+  "rentalRequestId": zod.coerce.number()
+})
 
 export const ListDocumentsResponseItem = zod.object({
-  id: zod.number(),
-  customerId: zod.number(),
-  rentalRequestId: zod.number().nullish(),
-  type: zod.string(),
-  fileUrl: zod.string(),
-  status: zod.string().optional(),
-  uploadedAt: zod.string(),
-});
-export const ListDocumentsResponse = zod.array(ListDocumentsResponseItem);
+  "id": zod.number(),
+  "customerId": zod.number(),
+  "rentalRequestId": zod.number().nullish(),
+  "type": zod.string(),
+  "fileUrl": zod.string(),
+  "status": zod.string().optional(),
+  "uploadedAt": zod.string()
+})
+export const ListDocumentsResponse = zod.array(ListDocumentsResponseItem)
+
 
 /**
  * @summary Get presigned upload URL or direct upload endpoint
  */
 export const GetUploadUrlBody = zod.object({
-  fileType: zod.string(),
-  fileName: zod.string(),
-  context: zod.string().optional(),
-});
+  "fileType": zod.string(),
+  "fileName": zod.string(),
+  "context": zod.string().optional()
+})
 
 export const GetUploadUrlResponse = zod.object({
-  uploadUrl: zod.string(),
-  fileUrl: zod.string(),
-  fields: zod.object({}).passthrough().optional(),
-});
+  "uploadUrl": zod.string(),
+  "fileUrl": zod.string(),
+  "fields": zod.object({
+
+}).passthrough().optional()
+})
+
+

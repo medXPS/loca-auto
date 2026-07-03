@@ -1478,6 +1478,7 @@ components:
         status: { type: string }
         paymentStatus: { type: string }
         paymentMethod: { type: string }
+        documentDeadline: { type: ["string", "null"] }
         paymentDeadline: { type: ["string", "null"] }
         callConfirmedAt: { type: ["string", "null"] }
         paidAtAgencyAt: { type: ["string", "null"] }
@@ -1849,6 +1850,13 @@ components:
         instagram: { type: ["string", "null"] }
         primaryColor: { type: ["string", "null"] }
         secondaryColor: { type: ["string", "null"] }
+        taxRatePercent: { type: integer }
+        discountTier1MinDays: { type: integer }
+        discountTier1Percent: { type: integer }
+        discountTier2MinDays: { type: integer }
+        discountTier2Percent: { type: integer }
+        discountTier3MinDays: { type: integer }
+        discountTier3Percent: { type: integer }
         paymentDeadlineHours: { type: integer }
         updatedAt: { type: string }
 
@@ -1867,6 +1875,13 @@ components:
         instagram: { type: string }
         primaryColor: { type: string }
         secondaryColor: { type: string }
+        taxRatePercent: { type: integer }
+        discountTier1MinDays: { type: integer }
+        discountTier1Percent: { type: integer }
+        discountTier2MinDays: { type: integer }
+        discountTier2Percent: { type: integer }
+        discountTier3MinDays: { type: integer }
+        discountTier3Percent: { type: integer }
         paymentDeadlineHours: { type: integer }
 
     # ── Documents ─────────────────────────────────────────────────────────────

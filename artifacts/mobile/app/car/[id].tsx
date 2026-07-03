@@ -19,6 +19,8 @@ import { useColors } from "@/hooks/useColors";
 import { useAuth } from "@/contexts/AuthContext";
 import { AvailabilityRangePicker } from "@/components/AvailabilityRangePicker";
 import {
+  calculateRentalPricing,
+  useGetCompanySettings,
   useGetCar,
   useGetMe,
   useGetCarAvailability,
@@ -54,10 +56,14 @@ const TRANSMISSION_LABELS: Record<string, string> = {
   AUTOMATIC: "Automatique",
 };
 
-function formatPrice(p: unknown): string {
+function formatAmount(p: unknown): string {
   const n = Number(p);
   if (isNaN(n)) return "—";
-  return new Intl.NumberFormat("fr-MA").format(n) + " MAD/j";
+  return new Intl.NumberFormat("fr-MA").format(n) + " MAD";
+}
+
+function formatPrice(p: unknown): string {
+  return `${formatAmount(p)}/j`;
 }
 
 export default function CarDetailScreen() {
@@ -72,6 +78,7 @@ export default function CarDetailScreen() {
   const { data: availabilityBlocks = [] } = useGetCarAvailability(Number(id), {
     query: { queryKey: ["/api/cars", Number(id), "availability"], enabled: !!id },
   });
+  const { data: companySettings } = useGetCompanySettings();
 
   const [imgIndex, setImgIndex] = useState(0);
   const [startDate, setStartDate] = useState("");
@@ -94,7 +101,12 @@ export default function CarDetailScreen() {
   const safeImgIndex = Math.min(imgIndex, Math.max(visibleImages.length - 1, 0));
 
   const days = startDate && returnDate ? calculateRentalDays(startDate, returnDate) : 0;
-  const total = days > 0 ? days * Number(car?.dailyPrice ?? 0) : 0;
+  const pricingBreakdown = calculateRentalPricing({
+    dailyPrice: car?.dailyPrice,
+    rentalDays: days,
+    settings: companySettings,
+  });
+  const total = pricingBreakdown.totalPrice;
 
   async function handleBook() {
     if (!startDate || !returnDate) {
@@ -135,7 +147,7 @@ export default function CarDetailScreen() {
         returnDate,
         pickupLocation: pickupLocation.trim(),
         notes: notes.trim() || undefined,
-        estimatedTotalPrice: total,
+        estimatedTotalPrice: pricingBreakdown.totalPrice,
       });
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(

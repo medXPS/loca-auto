@@ -228,10 +228,13 @@ export default function CustomerRequestDetail() {
 
   if (!request) return <div className="p-6 text-center">Demande introuvable</div>;
 
+  const documentDeadline = (
+    request as typeof request & { documentDeadline?: string | null }
+  ).documentDeadline;
   const showPaymentCountdown =
     request.paymentDeadline &&
     (request.status === "CALL_CONFIRMED" || request.status === "EXTENDED_PAYMENT_DEADLINE" || request.status === "WAITING_AGENCY_PAYMENT");
-  const showDocumentCountdown = request.documentDeadline && request.status === "DOCUMENT_SUBMISSION_WINDOW";
+  const showDocumentCountdown = documentDeadline && request.status === "DOCUMENT_SUBMISSION_WINDOW";
 
   const canCancel = request.status === "PENDING" || request.status === "DOCUMENT_SUBMISSION_WINDOW" || request.status === "CALL_ATTEMPTED";
 
@@ -380,9 +383,9 @@ export default function CustomerRequestDetail() {
         <main className="min-w-0 space-y-6">
           <RequestJourneyStepper status={request.status} request={request} piecesContent={piecesContent} />
 
-          {showDocumentCountdown && request.documentDeadline && (
+          {showDocumentCountdown && documentDeadline && (
             <CountdownTimer
-              deadline={request.documentDeadline}
+              deadline={documentDeadline}
               onExpire={handleSuccess}
               label="Délai pour envoyer vos documents"
               description="Envoyez votre CIN ou passeport et votre permis avant la fin du compte à rebours pour garder le véhicule bloqué."

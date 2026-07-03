@@ -5,12 +5,14 @@
  * Location Auto Maroc API
  * OpenAPI spec version: 0.1.0
  */
+import type { CarImageInputMediaType } from './carImageInputMediaType';
+import type { CarImageInputSourceType } from './carImageInputSourceType';
 
 export interface CarImageInput {
   url: string;
   altText?: string;
   isMain?: boolean;
   sortOrder?: number;
-  mediaType?: "IMAGE" | "VIDEO" | "IMAGE_360";
-  sourceType?: "URL" | "UPLOAD";
+  mediaType?: CarImageInputMediaType;
+  sourceType?: CarImageInputSourceType;
 }

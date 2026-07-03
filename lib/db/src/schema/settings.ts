@@ -16,6 +16,13 @@ export const companySettingsTable = pgTable("company_settings", {
   instagram: text("instagram"),
   primaryColor: text("primary_color").default("#B45309"),
   secondaryColor: text("secondary_color").default("#0F172A"),
+  taxRatePercent: integer("tax_rate_percent").notNull().default(0),
+  discountTier1MinDays: integer("discount_tier_1_min_days").notNull().default(7),
+  discountTier1Percent: integer("discount_tier_1_percent").notNull().default(10),
+  discountTier2MinDays: integer("discount_tier_2_min_days").notNull().default(30),
+  discountTier2Percent: integer("discount_tier_2_percent").notNull().default(30),
+  discountTier3MinDays: integer("discount_tier_3_min_days").notNull().default(60),
+  discountTier3Percent: integer("discount_tier_3_percent").notNull().default(40),
   paymentDeadlineHours: integer("payment_deadline_hours").notNull().default(24),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

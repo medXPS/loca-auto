@@ -32,6 +32,13 @@ export interface CompanySettings {
   primaryColor?: string | null;
   /** @nullable */
   secondaryColor?: string | null;
+  taxRatePercent?: number;
+  discountTier1MinDays?: number;
+  discountTier1Percent?: number;
+  discountTier2MinDays?: number;
+  discountTier2Percent?: number;
+  discountTier3MinDays?: number;
+  discountTier3Percent?: number;
   paymentDeadlineHours?: number;
   updatedAt?: string;
 }

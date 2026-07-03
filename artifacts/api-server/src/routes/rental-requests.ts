@@ -6,6 +6,12 @@ import { logAudit } from "../lib/audit";
 import { createNotification } from "../lib/notify";
 import { sendReceiptEmail } from "../lib/mailer";
 import { buildReceiptHtml, buildReceiptPdf } from "../lib/receipt-pdf";
+import {
+  calculateIncludedTaxBreakdown,
+  calculateRentalDays,
+  calculateRentalPricing,
+  getCompanyPricingConfig,
+} from "../lib/pricing";
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 import {
@@ -121,14 +127,12 @@ function formatPaymentMethod(method?: string | null) {
   }
 }
 
-function calculateBreakdown(totalPaid: number, insuranceIncluded: boolean) {
-  const taxes = Math.round(totalPaid * 0.1 * 100) / 100;
-  const assurance = insuranceIncluded
-    ? 0
-    : Math.round(totalPaid * 0.05 * 100) / 100;
+function calculateBreakdown(totalPaid: number, taxRatePercent: number) {
+  const taxBreakdown = calculateIncludedTaxBreakdown(totalPaid, taxRatePercent);
+  const taxes = taxBreakdown.taxAmount;
+  const assurance = 0;
   const repairs = 0;
-  const subtotal =
-    Math.round((totalPaid - taxes - assurance - repairs) * 100) / 100;
+  const subtotal = taxBreakdown.subtotalBeforeTax;
 
   return {
     subtotal,
@@ -213,9 +217,10 @@ async function buildReceiptPdfLegacy(args: {
   const paidAmount = Number(
     request.finalPrice || request.estimatedTotalPrice || 0,
   );
+  const pricingConfig = getCompanyPricingConfig(settings);
   const breakdown = calculateBreakdown(
     paidAmount,
-    Boolean(requestCar.insuranceIncluded),
+    pricingConfig.taxRatePercent,
   );
   const days = Math.max(
     1,
@@ -831,7 +836,10 @@ async function buildReceiptPdfLegacy(args: {
       formatMoney(Number(requestCar.dailyPrice || paidAmount || 0)),
     ],
     ["Sous-total", formatMoney(breakdown.subtotal)],
-    ["Taxes", formatMoney(breakdown.taxes)],
+    [
+      `Taxes${pricingConfig.taxRatePercent > 0 ? ` (${pricingConfig.taxRatePercent}%)` : ""}`,
+      formatMoney(breakdown.taxes),
+    ],
     ["Assurance", formatMoney(breakdown.assurance)],
     ["Réparations éventuelles", formatMoney(breakdown.repairs)],
   ];
@@ -1284,7 +1292,6 @@ router.post("/", authMiddleware, async (req, res) => {
       drivingLicenseNumber,
       pickupLocation,
       returnLocation,
-      estimatedTotalPrice,
       notes,
     } = req.body;
     const { startDate, returnDate, startAt, returnAt } = resolveRentalTimes(
@@ -1304,10 +1311,25 @@ router.post("/", authMiddleware, async (req, res) => {
       return;
     }
 
+    const normalizedCarId = Number(carId);
+    if (!Number.isFinite(normalizedCarId)) {
+      res.status(400).json({ error: "Vehicule invalide." });
+      return;
+    }
+
+    const [[car], [companySettings]] = await Promise.all([
+      db.select().from(schema.carsTable).where(eq(schema.carsTable.id, normalizedCarId)).limit(1),
+      db.select().from(schema.companySettingsTable).limit(1),
+    ]);
+    if (!car) {
+      res.status(404).json({ error: "Vehicule introuvable." });
+      return;
+    }
+
     const availabilityEndAt = addReturnBuffer(returnAt);
     if (
       await hasActiveAvailabilityOverlap(
-        Number(carId),
+        normalizedCarId,
         startDate,
         returnDate,
         undefined,
@@ -1324,6 +1346,13 @@ router.post("/", authMiddleware, async (req, res) => {
       return;
     }
 
+    const rentalDays = calculateRentalDays(startDate, returnDate);
+    const pricing = calculateRentalPricing({
+      dailyPrice: Number(car.dailyPrice),
+      rentalDays,
+      settings: companySettings,
+    });
+
     let customerId = null;
     if (req.user!.role === "CUSTOMER") {
       const [customer] = await db
@@ -1338,7 +1367,7 @@ router.post("/", authMiddleware, async (req, res) => {
       .insert(schema.rentalRequestsTable)
       .values({
         customerId,
-        carId,
+        carId: normalizedCarId,
         fullName,
         phone,
         email,
@@ -1350,7 +1379,7 @@ router.post("/", authMiddleware, async (req, res) => {
         returnAt,
         pickupLocation,
         returnLocation,
-        estimatedTotalPrice: String(estimatedTotalPrice),
+        estimatedTotalPrice: String(pricing.totalPrice),
         notes,
         status: "DOCUMENT_SUBMISSION_WINDOW",
       })

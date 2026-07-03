@@ -1,5 +1,6 @@
 import puppeteer from "puppeteer";
 import QRCode from "qrcode";
+import { calculateIncludedTaxBreakdown, getCompanyPricingConfig } from "./pricing";
 
 type ReceiptRequest = {
   id: number;
@@ -122,9 +123,11 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
   const companyPhone = settings.phone || "+212600000000";
   const paidAt = request.paidAtAgencyAt ? new Date(request.paidAtAgencyAt) : new Date();
   const total = Number(request.finalPrice || request.estimatedTotalPrice || 0);
-  const taxes = Math.round(total * 0.1 * 100) / 100;
-  const insurance = car.insuranceIncluded ? 0 : Math.round(total * 0.05 * 100) / 100;
-  const subtotal = Math.round((total - taxes - insurance) * 100) / 100;
+  const pricingConfig = getCompanyPricingConfig(settings);
+  const taxBreakdown = calculateIncludedTaxBreakdown(total, pricingConfig.taxRatePercent);
+  const taxes = taxBreakdown.taxAmount;
+  const insurance = 0;
+  const subtotal = taxBreakdown.subtotalBeforeTax;
   const days = Math.max(1, Math.floor((toLocalMidnight(request.returnDate).getTime() - toLocalMidnight(request.startDate).getTime()) / 86_400_000) + 1);
   const vehicleName = `${car.brand ?? ""} ${car.model ?? ""}`.trim() || `Véhicule #${request.carId}`;
   const qrDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, width: 220 });
@@ -283,7 +286,7 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
         <tbody>
           <tr><td>Prix journalier</td><td>${escapeHtml(formatMoney(Number(car.dailyPrice || total)))}</td></tr>
           <tr><td>Sous-total</td><td>${escapeHtml(formatMoney(subtotal))}</td></tr>
-          <tr><td>Taxes</td><td>${escapeHtml(formatMoney(taxes))}</td></tr>
+          <tr><td>Taxes${pricingConfig.taxRatePercent > 0 ? ` (${pricingConfig.taxRatePercent}%)` : ""}</td><td>${escapeHtml(formatMoney(taxes))}</td></tr>
           <tr><td>Assurance</td><td>${escapeHtml(formatMoney(insurance))}</td></tr>
           <tr><td>Réparations éventuelles</td><td>${escapeHtml(formatMoney(0))}</td></tr>
           <tr class="total"><td>Montant total payé</td><td>${escapeHtml(formatMoney(total))}</td></tr>

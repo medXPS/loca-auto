@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Link, useLocation, useRoute } from "wouter";
 import {
+  calculateRentalPricing,
   getGetCarAvailabilityQueryKey,
   getGetCarQueryKey,
   getGetMyCustomerProfileQueryKey,
@@ -15,6 +16,7 @@ import {
   useCreateRentalRequest,
   useGetCar,
   useGetCarAvailability,
+  useGetCompanySettings,
 } from "@workspace/api-client-react";
 import {
   addMinutes,
@@ -314,6 +316,7 @@ export default function CarDetail() {
   const { data: availabilityBlocks = [] } = useGetCarAvailability(id, {
     query: { enabled: isValidId, queryKey: getGetCarAvailabilityQueryKey(id) },
   });
+  const { data: companySettings } = useGetCompanySettings();
   const createRequest = useCreateRentalRequest();
 
   const [fullName, setFullName] = useState(reservationIdentity?.fullName || "");
@@ -398,18 +401,16 @@ export default function CarDetail() {
     return calculateRentalDays(startDate, returnDate);
   }, [returnDate, startDate]);
 
-  const estimatedTotalPrice = useMemo(() => {
-    if (!car || rentalDays <= 0) return 0;
-
-    if (rentalDays >= 7 && car.weeklyPrice) {
-      return (
-        Math.floor(rentalDays / 7) * car.weeklyPrice +
-        (rentalDays % 7) * car.dailyPrice
-      );
-    }
-
-    return rentalDays * car.dailyPrice;
-  }, [car, rentalDays]);
+  const pricingBreakdown = useMemo(
+    () =>
+      calculateRentalPricing({
+        dailyPrice: car?.dailyPrice,
+        rentalDays,
+        settings: companySettings,
+      }),
+    [car?.dailyPrice, companySettings, rentalDays],
+  );
+  const estimatedTotalPrice = pricingBreakdown.totalPrice;
 
   const transmissionLabel =
     car?.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
@@ -890,6 +891,36 @@ export default function CarDetail() {
                         : "À choisir"}
                     </span>
                   </div>
+                  {rentalDays > 0 && (
+                    <>
+                      <div className="mt-2 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Sous-total</span>
+                        <span className="font-semibold text-foreground">
+                          {formatPrice(pricingBreakdown.baseSubtotal)}
+                        </span>
+                      </div>
+                      {pricingBreakdown.discountAmount > 0 && (
+                        <div className="mt-2 flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Remise {pricingBreakdown.discountPercent}%
+                          </span>
+                          <span className="font-semibold text-[#17b26a]">
+                            - {formatPrice(pricingBreakdown.discountAmount)}
+                          </span>
+                        </div>
+                      )}
+                      {pricingBreakdown.taxAmount > 0 && (
+                        <div className="mt-2 flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Taxes {pricingBreakdown.taxRatePercent}%
+                          </span>
+                          <span className="font-semibold text-foreground">
+                            + {formatPrice(pricingBreakdown.taxAmount)}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
                   <div className="mt-3 flex items-center justify-between border-t border-border/70 pt-3 text-lg font-semibold">
                     <span>Total estime</span>
                     <span className="text-primary">
@@ -898,6 +929,10 @@ export default function CarDetail() {
                         : formatPrice(car.dailyPrice)}
                     </span>
                   </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Les remises configurees par l&apos;admin sont appliquees avant
+                    les taxes.
+                  </p>
                 </div>
 
                 <Button

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { eq } from "drizzle-orm";
+import { normalizeCompanyPricingInput } from "../lib/pricing";
 
 const router = Router();
 const minimumPaymentDeadlineHours = 24;
@@ -50,6 +51,7 @@ router.patch("/company", authMiddleware, requireRole("ADMIN"), async (req, res) 
     }
     const payload = {
       ...req.body,
+      ...normalizeCompanyPricingInput(req.body),
       ...(req.body.paymentDeadlineHours !== undefined && {
         paymentDeadlineHours: normalizePaymentDeadlineHours(req.body.paymentDeadlineHours),
       }),

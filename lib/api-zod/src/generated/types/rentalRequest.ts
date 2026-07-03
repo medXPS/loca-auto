@@ -34,6 +34,8 @@ export interface RentalRequest {
   paymentStatus: string;
   paymentMethod?: string;
   /** @nullable */
+  documentDeadline?: string | null;
+  /** @nullable */
   paymentDeadline?: string | null;
   /** @nullable */
   callConfirmedAt?: string | null;
