@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { NotificationsPopover } from "@/components/layout/notifications-popover";
 import {
   LayoutDashboard,
   Car,
@@ -166,12 +167,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="flex items-center gap-4 ml-auto">
-            <Button asChild variant={isAgentMode ? "outline" : "ghost"} size="icon" className="relative">
-              <Link href={`${basePath}/notifications`} aria-label="Notifications">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full"></span>
-              </Link>
-            </Button>
+            <NotificationsPopover basePath={basePath as "/admin" | "/agent"} isDark={isAgentMode} />
             <div className="flex items-center gap-2">
               <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm", isAgentMode ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")}>
                 {user?.fullName?.charAt(0).toUpperCase() || "U"}
