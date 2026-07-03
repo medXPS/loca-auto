@@ -3,6 +3,10 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole, hashPassword } from "../lib/auth";
 import { logAudit } from "../lib/audit";
+import {
+  isDatabaseUnavailableError,
+  isUniqueViolationError,
+} from "../lib/db-errors";
 
 const router = Router();
 
@@ -50,23 +54,49 @@ router.get("/", authMiddleware, requireRole("ADMIN"), async (req, res) => {
 router.post("/", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     const { fullName, email, password, phone } = req.body;
+    if (!fullName || !email || !password || !phone) {
+      res.status(400).json({ error: "Tous les champs sont requis" });
+      return;
+    }
+
+    const [existingUser] = await db
+      .select({ id: schema.usersTable.id })
+      .from(schema.usersTable)
+      .where(eq(schema.usersTable.email, email))
+      .limit(1);
+    if (existingUser) {
+      res.status(409).json({ error: "Un compte avec cet email existe deja" });
+      return;
+    }
+
     const passwordHash = await hashPassword(password);
-    const [user] = await db
-      .insert(schema.usersTable)
-      .values({
-        fullName,
-        email,
-        phone,
-        passwordHash,
-        role: "AGENT",
-        status: "ACTIVE",
-        emailVerifiedAt: new Date(),
-      })
-      .returning();
-    const [agent] = await db
-      .insert(schema.agentsTable)
-      .values({ userId: user.id, createdBy: req.user!.userId })
-      .returning();
+    const { user, agent } = await db.transaction(async (tx) => {
+      const [createdUser] = await tx
+        .insert(schema.usersTable)
+        .values({
+          fullName,
+          email,
+          phone,
+          passwordHash,
+          role: "AGENT",
+          status: "ACTIVE",
+          emailVerifiedAt: new Date(),
+        })
+        .returning();
+      if (!createdUser) {
+        throw new Error("Impossible de creer l'utilisateur agent");
+      }
+
+      const [createdAgent] = await tx
+        .insert(schema.agentsTable)
+        .values({ userId: createdUser.id, createdBy: req.user!.userId })
+        .returning();
+      if (!createdAgent) {
+        throw new Error("Impossible de creer l'agent");
+      }
+
+      return { user: createdUser, agent: createdAgent };
+    });
     await logAudit(req, {
       userId: req.user!.userId,
       action: "CREATE_AGENT",
@@ -75,6 +105,17 @@ router.post("/", authMiddleware, requireRole("ADMIN"), async (req, res) => {
     });
     res.status(201).json(formatAgent(agent, user));
   } catch (err) {
+    if (isUniqueViolationError(err)) {
+      res.status(409).json({ error: "Un compte avec cet email existe deja" });
+      return;
+    }
+
+    if (isDatabaseUnavailableError(err)) {
+      req.log.warn(err, "Database unavailable while creating agent");
+      res.status(503).json({ error: "Service temporairement indisponible" });
+      return;
+    }
+
     req.log.error(err);
     res.status(500).json({ error: "Erreur serveur" });
   }

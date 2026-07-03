@@ -11,7 +11,10 @@ import {
   verifyToken,
 } from "../lib/auth";
 import { logAudit } from "../lib/audit";
-import { isDatabaseUnavailableError } from "../lib/db-errors";
+import {
+  isDatabaseUnavailableError,
+  isUniqueViolationError,
+} from "../lib/db-errors";
 import { sendMfaCode, sendVerificationCode } from "../lib/mailer";
 
 const router = Router();
@@ -97,6 +100,11 @@ router.post("/register", async (req, res) => {
       email: user.email,
     });
   } catch (err) {
+    if (isUniqueViolationError(err)) {
+      res.status(409).json({ error: "Un compte avec cet email existe deja" });
+      return;
+    }
+
     if (isDatabaseUnavailableError(err)) {
       req.log.warn(err, "Database unavailable during register");
       res.status(503).json({

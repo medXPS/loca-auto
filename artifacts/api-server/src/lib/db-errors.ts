@@ -10,6 +10,10 @@ const TRANSIENT_DATABASE_ERROR_CODES = new Set([
   "57P03", // cannot_connect_now / recovery mode
 ]);
 
+const UNIQUE_VIOLATION_ERROR_CODES = new Set([
+  "23505", // unique_violation
+]);
+
 const TRANSIENT_DATABASE_MESSAGES = [
   "database system is in recovery mode",
   "database system is starting up",
@@ -45,5 +49,13 @@ export function isDatabaseUnavailableError(error: unknown) {
     return TRANSIENT_DATABASE_MESSAGES.some((pattern) =>
       message.includes(pattern),
     );
+  });
+}
+
+export function isUniqueViolationError(error: unknown) {
+  return collectErrorChain(error).some((candidate) => {
+    const code =
+      typeof candidate.code === "string" ? candidate.code.trim() : "";
+    return UNIQUE_VIOLATION_ERROR_CODES.has(code);
   });
 }
