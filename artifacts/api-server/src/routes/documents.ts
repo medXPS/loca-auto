@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { db, schema } from "../lib/db";
@@ -191,6 +191,22 @@ router.patch("/:rentalRequestId/approve", authMiddleware, requireRole("ADMIN", "
         return updated ?? document;
       }),
     );
+
+    if (request.customerId) {
+      const approvedTypes = [...new Set(updatedDocuments.map((document) => document.type))];
+      if (approvedTypes.length > 0) {
+        await db
+          .update(schema.documentsTable)
+          .set({ status: "APPROVED" })
+          .where(
+            and(
+              eq(schema.documentsTable.customerId, request.customerId),
+              inArray(schema.documentsTable.type, approvedTypes),
+              sql`${schema.documentsTable.rentalRequestId} IS NULL`,
+            ),
+          );
+      }
+    }
 
     await logAudit(req, {
       userId: req.user!.userId,

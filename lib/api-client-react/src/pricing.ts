@@ -25,11 +25,26 @@ export type DiscountTier = {
   percent: number;
 };
 
+export type AppliedDiscountBlock = {
+  minDays: number;
+  percent: number;
+  blocksCount: number;
+  daysCovered: number;
+  baseSubtotal: number;
+  discountAmount: number;
+  discountedSubtotal: number;
+};
+
 function roundCurrency(value: number) {
   return Math.round(value * 100) / 100;
 }
 
-function normalizeInteger(value: unknown, fallback: number, min = 0, max = Number.MAX_SAFE_INTEGER) {
+function normalizeInteger(
+  value: unknown,
+  fallback: number,
+  min = 0,
+  max = Number.MAX_SAFE_INTEGER,
+) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(max, Math.max(min, Math.round(parsed)));
@@ -39,8 +54,10 @@ function normalizePercent(value: unknown, fallback: number) {
   return normalizeInteger(value, fallback, 0, 100);
 }
 
-function resolveDiscountTier(rentalDays: number, config: CompanyPricingConfig): DiscountTier | null {
-  const tiers: DiscountTier[] = [
+function buildDiscountTiers(config: CompanyPricingConfig): DiscountTier[] {
+  const tierMap = new Map<number, number>();
+
+  for (const tier of [
     {
       minDays: config.discountTier1MinDays,
       percent: config.discountTier1Percent,
@@ -53,14 +70,61 @@ function resolveDiscountTier(rentalDays: number, config: CompanyPricingConfig): 
       minDays: config.discountTier3MinDays,
       percent: config.discountTier3Percent,
     },
-  ]
-    .filter((tier) => tier.minDays > 0 && tier.percent > 0)
-    .sort((left, right) => right.minDays - left.minDays);
+  ]) {
+    if (tier.minDays <= 0 || tier.percent <= 0) continue;
 
-  return tiers.find((tier) => rentalDays >= tier.minDays) ?? null;
+    const existingPercent = tierMap.get(tier.minDays) ?? 0;
+    if (tier.percent > existingPercent) {
+      tierMap.set(tier.minDays, tier.percent);
+    }
+  }
+
+  return [...tierMap.entries()]
+    .map(([minDays, percent]) => ({ minDays, percent }))
+    .sort((left, right) => right.minDays - left.minDays);
 }
 
-export function getCompanyPricingConfig(settings?: CompanySettings | null): CompanyPricingConfig {
+function buildDiscountBlocks(args: {
+  dailyPrice: number;
+  rentalDays: number;
+  pricingConfig: CompanyPricingConfig;
+}) {
+  const discountBlocks: AppliedDiscountBlock[] = [];
+  let remainingDays = args.rentalDays;
+
+  for (const tier of buildDiscountTiers(args.pricingConfig)) {
+    const blocksCount = Math.floor(remainingDays / tier.minDays);
+    if (blocksCount <= 0) continue;
+
+    const daysCovered = blocksCount * tier.minDays;
+    const baseSubtotal = roundCurrency(args.dailyPrice * daysCovered);
+    const discountAmount = roundCurrency(
+      (baseSubtotal * tier.percent) / 100,
+    );
+
+    discountBlocks.push({
+      minDays: tier.minDays,
+      percent: tier.percent,
+      blocksCount,
+      daysCovered,
+      baseSubtotal,
+      discountAmount,
+      discountedSubtotal: roundCurrency(baseSubtotal - discountAmount),
+    });
+
+    remainingDays -= daysCovered;
+  }
+
+  return {
+    discountBlocks,
+    remainingDays,
+    fullPriceSubtotal: roundCurrency(args.dailyPrice * remainingDays),
+  };
+}
+
+export function getCompanyPricingConfig(
+  settings?: CompanySettings | null,
+): CompanyPricingConfig {
   return {
     taxRatePercent: normalizePercent(
       settings?.taxRatePercent,
@@ -117,13 +181,22 @@ export function calculateRentalPricing(args: {
       taxAmount: 0,
       totalPrice: 0,
       appliedTier: null as DiscountTier | null,
+      discountBlocks: [] as AppliedDiscountBlock[],
+      fullPriceDays: Math.max(0, rentalDays),
+      fullPriceSubtotal: 0,
     };
   }
 
-  const appliedTier = resolveDiscountTier(rentalDays, pricingConfig);
+  const { discountBlocks, remainingDays, fullPriceSubtotal } =
+    buildDiscountBlocks({
+      dailyPrice,
+      rentalDays,
+      pricingConfig,
+    });
   const baseSubtotal = roundCurrency(dailyPrice * rentalDays);
-  const discountPercent = appliedTier?.percent ?? 0;
-  const discountAmount = roundCurrency((baseSubtotal * discountPercent) / 100);
+  const discountAmount = roundCurrency(
+    discountBlocks.reduce((sum, block) => sum + block.discountAmount, 0),
+  );
   const subtotalBeforeTax = roundCurrency(baseSubtotal - discountAmount);
   const taxAmount = roundCurrency(
     (subtotalBeforeTax * pricingConfig.taxRatePercent) / 100,
@@ -134,12 +207,23 @@ export function calculateRentalPricing(args: {
     dailyPrice: roundCurrency(dailyPrice),
     rentalDays,
     baseSubtotal,
-    discountPercent,
+    discountPercent:
+      baseSubtotal > 0
+        ? roundCurrency((discountAmount / baseSubtotal) * 100)
+        : 0,
     discountAmount,
     subtotalBeforeTax,
     taxRatePercent: pricingConfig.taxRatePercent,
     taxAmount,
     totalPrice,
-    appliedTier,
+    appliedTier: discountBlocks[0]
+      ? {
+          minDays: discountBlocks[0].minDays,
+          percent: discountBlocks[0].percent,
+        }
+      : null,
+    discountBlocks,
+    fullPriceDays: remainingDays,
+    fullPriceSubtotal,
   };
 }

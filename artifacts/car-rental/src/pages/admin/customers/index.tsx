@@ -1,15 +1,26 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { getListCustomersQueryKey, useListCustomers } from "@workspace/api-client-react";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Search, Users } from "lucide-react";
+import { StatusBadge } from "@/components/status-badge";
+
+type CustomerDocument = {
+  id: number;
+  type: string;
+  status?: string | null;
+  uploadedAt?: string | null;
+  rentalRequestId?: number | null;
+};
 
 type CustomerRow = {
   id: number;
   cin?: string | null;
+  drivingLicenseNumber?: string | null;
   city?: string | null;
+  documents?: CustomerDocument[];
   user: {
     fullName: string;
     email: string;
@@ -17,6 +28,56 @@ type CustomerRow = {
     createdAt?: string | null;
   };
 };
+
+function getLatestDocument(
+  documents: CustomerDocument[] | undefined,
+  acceptedTypes: string[],
+) {
+  const statusWeight = (status?: string | null) => {
+    switch (status) {
+      case "APPROVED":
+      case "VALIDATED":
+        return 3;
+      case "PENDING":
+      case "RCVD":
+      case "RECEIVED":
+      case "SENT":
+        return 2;
+      case "REJECTED":
+        return 1;
+      default:
+        return 0;
+    }
+  };
+
+  return [...(documents ?? [])]
+    .filter((document) => acceptedTypes.includes(document.type))
+    .sort(
+      (left, right) =>
+        new Date(right.uploadedAt ?? 0).getTime() -
+          new Date(left.uploadedAt ?? 0).getTime() ||
+        statusWeight(right.status) - statusWeight(left.status) ||
+        Number(Boolean(right.rentalRequestId)) -
+          Number(Boolean(left.rentalRequestId)),
+    )[0] ?? null;
+}
+
+function getIdentityLabel(args: {
+  label: string;
+  value?: string | null;
+  document?: CustomerDocument | null;
+  missingLabel: string;
+}) {
+  if (args.value?.trim()) {
+    return args.value.trim();
+  }
+
+  if (args.document) {
+    return `${args.label} soumis`;
+  }
+
+  return args.missingLabel;
+}
 
 export default function AdminCustomers() {
   const [search, setSearch] = useState("");
@@ -32,6 +93,25 @@ export default function AdminCustomers() {
   );
 
   const customers = (data?.customers ?? []) as CustomerRow[];
+  const customersWithDocuments = useMemo(
+    () =>
+      customers.map((customer) => {
+        const cinDocument = getLatestDocument(customer.documents, [
+          "CIN",
+          "PASSPORT",
+        ]);
+        const drivingLicenseDocument = getLatestDocument(customer.documents, [
+          "PERMIS_CONDUIRE",
+        ]);
+
+        return {
+          ...customer,
+          cinDocument,
+          drivingLicenseDocument,
+        };
+      }),
+    [customers],
+  );
 
   return (
     <div className="space-y-6">
@@ -80,14 +160,49 @@ export default function AdminCustomers() {
                       </td>
                     </tr>
                   ))
-              ) : customers.length > 0 ? (
-                customers.map((customer) => (
+              ) : customersWithDocuments.length > 0 ? (
+                customersWithDocuments.map((customer) => (
                   <tr key={customer.id} className="border-b last:border-0 transition-colors hover:bg-muted/30">
                     <td className="px-6 py-4 font-medium">
                       <Link href={`/admin/clients/${customer.id}`} className="hover:text-primary hover:underline">
                         {customer.user.fullName}
                       </Link>
-                      <div className="text-xs text-muted-foreground">{customer.cin || "CIN non renseigne"}</div>
+                      <div className="mt-2 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span>
+                            {getIdentityLabel({
+                              label: "CIN",
+                              value: customer.cin,
+                              document: customer.cinDocument,
+                              missingLabel: "CIN non renseigne",
+                            })}
+                          </span>
+                          {customer.cinDocument?.status && (
+                            <StatusBadge
+                              status={customer.cinDocument.status}
+                              type="document"
+                              className="rounded-full text-[10px]"
+                            />
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span>
+                            {getIdentityLabel({
+                              label: "Permis",
+                              value: customer.drivingLicenseNumber,
+                              document: customer.drivingLicenseDocument,
+                              missingLabel: "Permis non renseigne",
+                            })}
+                          </span>
+                          {customer.drivingLicenseDocument?.status && (
+                            <StatusBadge
+                              status={customer.drivingLicenseDocument.status}
+                              type="document"
+                              className="rounded-full text-[10px]"
+                            />
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div>{customer.user.email}</div>

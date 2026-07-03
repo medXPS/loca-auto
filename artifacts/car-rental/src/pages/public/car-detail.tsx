@@ -409,7 +409,19 @@ export default function CarDetail() {
         settings: companySettings,
       }),
     [car?.dailyPrice, companySettings, rentalDays],
-  );
+  ) as ReturnType<typeof calculateRentalPricing> & {
+    discountBlocks: Array<{
+      minDays: number;
+      percent: number;
+      blocksCount: number;
+      daysCovered: number;
+      baseSubtotal: number;
+      discountAmount: number;
+      discountedSubtotal: number;
+    }>;
+    fullPriceDays: number;
+    fullPriceSubtotal: number;
+  };
   const estimatedTotalPrice = pricingBreakdown.totalPrice;
 
   const transmissionLabel =
@@ -894,21 +906,42 @@ export default function CarDetail() {
                   {rentalDays > 0 && (
                     <>
                       <div className="mt-2 flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Sous-total</span>
+                        <span className="text-muted-foreground">
+                          Base {rentalDays} jour{rentalDays > 1 ? "s" : ""}
+                        </span>
                         <span className="font-semibold text-foreground">
                           {formatPrice(pricingBreakdown.baseSubtotal)}
                         </span>
                       </div>
-                      {pricingBreakdown.discountAmount > 0 && (
-                        <div className="mt-2 flex items-center justify-between text-sm">
+                      {pricingBreakdown.discountBlocks.map((block) => (
+                        <div
+                          key={`${block.minDays}-${block.percent}`}
+                          className="mt-2 flex items-center justify-between text-sm"
+                        >
                           <span className="text-muted-foreground">
-                            Remise {pricingBreakdown.discountPercent}%
+                            Remise {block.percent}% sur{" "}
+                            {block.blocksCount > 1
+                              ? `${block.blocksCount} x ${block.minDays} jours`
+                              : `${block.daysCovered} jours`}
                           </span>
                           <span className="font-semibold text-[#17b26a]">
-                            - {formatPrice(pricingBreakdown.discountAmount)}
+                            - {formatPrice(block.discountAmount)}
                           </span>
                         </div>
-                      )}
+                      ))}
+                      {pricingBreakdown.fullPriceDays > 0 &&
+                        pricingBreakdown.discountBlocks.length > 0 && (
+                          <div className="mt-2 flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                              Reste au tarif normal
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              {pricingBreakdown.fullPriceDays} jour
+                              {pricingBreakdown.fullPriceDays > 1 ? "s" : ""} ·{" "}
+                              {formatPrice(pricingBreakdown.fullPriceSubtotal)}
+                            </span>
+                          </div>
+                        )}
                       {pricingBreakdown.taxAmount > 0 && (
                         <div className="mt-2 flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">
@@ -930,8 +963,8 @@ export default function CarDetail() {
                     </span>
                   </div>
                   <p className="mt-3 text-xs text-muted-foreground">
-                    Les remises configurees par l&apos;admin sont appliquees avant
-                    les taxes.
+                    Les remises configurees par l&apos;admin sont appliquees par
+                    blocs avant les taxes.
                   </p>
                 </div>
 

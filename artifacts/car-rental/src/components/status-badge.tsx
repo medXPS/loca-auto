@@ -3,7 +3,7 @@ import { cn, getStatusLabel } from "@/lib/utils";
 
 interface StatusBadgeProps {
   status: string;
-  type?: "rental" | "car";
+  type?: "rental" | "car" | "document";
   className?: string;
 }
 
@@ -57,10 +57,32 @@ function getCarTone(status: string) {
   }
 }
 
+function getDocumentTone(status: string) {
+  switch (status) {
+    case "APPROVED":
+    case "VALIDATED":
+      return "bg-emerald-500/12 text-emerald-700 hover:bg-emerald-500/18 border-emerald-200";
+    case "REJECTED":
+      return "bg-rose-500/12 text-rose-700 hover:bg-rose-500/18 border-rose-200";
+    case "PENDING":
+    case "RCVD":
+    case "RECEIVED":
+    case "SENT":
+    case "NEEDS_REVIEW":
+      return "bg-amber-500/12 text-amber-700 hover:bg-amber-500/18 border-amber-200";
+    default:
+      return "border-border bg-background text-foreground";
+  }
+}
+
 export function StatusBadge({ status, type = "rental", className }: StatusBadgeProps) {
   const label = getStatusLabel(status, type);
-
-  const tone = type === "rental" ? getRentalTone(status) : getCarTone(status);
+  const tone =
+    type === "document"
+      ? getDocumentTone(status)
+      : type === "rental"
+        ? getRentalTone(status)
+        : getCarTone(status);
 
   return (
     <Badge variant="outline" className={cn("whitespace-nowrap font-semibold uppercase tracking-[0.12em]", tone, className)}>

@@ -272,9 +272,9 @@ export default function AdminSettings() {
             <CardHeader>
               <CardTitle>Parametrage des prix</CardTitle>
               <CardDescription>
-                Les remises sont appliquees automatiquement sur le prix journalier
-                avant calcul des taxes. Exemple: 7 jours = 10 %, 30 jours = 30 %,
-                60 jours = 40 %.
+                Les remises sont appliquees par blocs, du plus grand palier vers
+                le plus petit, avant calcul des taxes. Exemple: 69 jours = bloc
+                60 jours + bloc 7 jours + 2 jours au tarif normal.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
