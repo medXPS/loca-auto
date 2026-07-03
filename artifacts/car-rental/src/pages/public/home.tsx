@@ -14,7 +14,6 @@ import {
   Clock3,
   Fuel,
   Headset,
-  MessageCircle,
   Settings2,
   ShieldCheck,
   Star,
@@ -352,16 +351,6 @@ export default function Home() {
                     Voir les véhicules
                     <ArrowRight className="h-4 w-4" />
                   </Link>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="h-13 w-full rounded-2xl border-white/14 bg-white/6 px-6 text-white hover:bg-white/10 hover:text-white sm:w-auto"
-                >
-                  <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-4 w-4" />
-                    WhatsApp
-                  </a>
                 </Button>
               </div>
             </div>
