@@ -1,4 +1,5 @@
 import pg from "pg";
+import { companySettingsMigrations } from "../../lib/db/src/schema/index.js";
 
 const { Pool } = pg;
 
@@ -13,6 +14,10 @@ async function main() {
   const client = await pool.connect();
 
   try {
+    for (const statement of companySettingsMigrations) {
+      await client.query(statement);
+    }
+
     await client.query(`
       alter type rental_status add value if not exists 'DOCUMENT_SUBMISSION_WINDOW';
       alter type rental_status add value if not exists 'PENDING_CALL_CONFIRMATION';
