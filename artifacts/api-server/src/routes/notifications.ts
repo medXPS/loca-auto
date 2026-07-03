@@ -1,16 +1,23 @@
 import { Router } from "express";
-import { eq, and } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware } from "../lib/auth";
+import { syncOperationalNotifications } from "../lib/notify";
 
 const router = Router();
 
 // GET /api/notifications
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    const notifications = await db.select().from(schema.notificationsTable)
+    if (req.user?.role === "ADMIN" || req.user?.role === "AGENT") {
+      await syncOperationalNotifications();
+    }
+
+    const notifications = await db
+      .select()
+      .from(schema.notificationsTable)
       .where(eq(schema.notificationsTable.userId, req.user!.userId))
-      .orderBy(schema.notificationsTable.createdAt);
+      .orderBy(desc(schema.notificationsTable.createdAt));
     res.json(notifications);
   } catch (err) {
     req.log.error(err);

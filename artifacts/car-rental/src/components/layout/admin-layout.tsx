@@ -41,6 +41,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     if (isAgentMode) {
       return [
         { href: `${basePath}`, label: "Tableau de bord", icon: LayoutDashboard },
+        { href: `${basePath}/notifications`, label: "Notifications", icon: Bell },
         { href: `${basePath}/calendrier`, label: "Calendrier", icon: CalendarDays },
         { href: `${basePath}/voitures`, label: "Véhicules", icon: Car },
         { href: `${basePath}/demandes`, label: "Réservations", icon: FileText },
@@ -51,6 +52,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
     return [
       { href: `${basePath}`, label: "Tableau de bord", icon: LayoutDashboard },
+      { href: `${basePath}/notifications`, label: "Notifications", icon: Bell },
       { href: `${basePath}/calendrier`, label: "Calendrier", icon: CalendarDays },
       { href: `${basePath}/voitures`, label: "Véhicules", icon: Car },
       { href: `${basePath}/demandes`, label: "Réservations", icon: FileText },
@@ -164,9 +166,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="flex items-center gap-4 ml-auto">
-            <Button variant={isAgentMode ? "outline" : "ghost"} size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full"></span>
+            <Button asChild variant={isAgentMode ? "outline" : "ghost"} size="icon" className="relative">
+              <Link href={`${basePath}/notifications`} aria-label="Notifications">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full"></span>
+              </Link>
             </Button>
             <div className="flex items-center gap-2">
               <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm", isAgentMode ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary")}>

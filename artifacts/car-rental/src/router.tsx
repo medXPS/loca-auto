@@ -37,6 +37,7 @@ import AdminEditBlogPost from "@/pages/admin/blog/edit";
 import AdminBrands from "@/pages/admin/brands";
 import AdminSettings from "@/pages/admin/settings";
 import AdminAuditLogs from "@/pages/admin/audit";
+import AdminNotifications from "@/pages/admin/notifications";
 import AgentDashboard from "@/pages/agent/dashboard";
 
 import CustomerDashboard from "@/pages/customer/dashboard";
@@ -97,6 +98,7 @@ export default function AppRouter() {
       <Route path="/admin/blog/nouveau" component={() => <AdminRoute component={AdminNewBlogPost} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/blog/:id" component={() => <AdminRoute component={AdminEditBlogPost} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/blog" component={() => <AdminRoute component={AdminBlog} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/notifications" component={() => <AdminRoute component={AdminNotifications} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/parametres" component={() => <AdminRoute component={AdminSettings} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/audit" component={() => <AdminRoute component={AdminAuditLogs} allowedRoles={["ADMIN"]} />} />
 
@@ -113,6 +115,7 @@ export default function AppRouter() {
       <Route path="/agent/blog/nouveau" component={() => <AdminRoute component={AdminNewBlogPost} allowedRoles={["AGENT"]} />} />
       <Route path="/agent/blog/:id" component={() => <AdminRoute component={AdminEditBlogPost} allowedRoles={["AGENT"]} />} />
       <Route path="/agent/blog" component={() => <AdminRoute component={AdminBlog} allowedRoles={["AGENT"]} />} />
+      <Route path="/agent/notifications" component={() => <AdminRoute component={AdminNotifications} allowedRoles={["AGENT"]} />} />
 
       {/* Customer Routes */}
       <Route path="/dashboard" component={() => <CustomerRoute component={CustomerDashboard} />} />
