@@ -210,6 +210,8 @@ L'objectif principal est de permettre a une agence de location de voitures de:
 - Tri par nouveaute
 - Tri par popularite
 - Cartes voitures avec badge de statut
+- Les cartes publiques n'affichent pas la caution
+- Le prix affiche sur les cartes reste le prix de location, sans depot
 
 #### Fiche voiture
 
@@ -219,7 +221,10 @@ L'objectif principal est de permettre a une agence de location de voitures de:
 - Videos
 - Media 360
 - Prix journalier, hebdo et mensuel
-- Caution / depot
+- Caution / depot par voiture
+- La caution peut etre activee ou masquee par l'admin
+- La caution n'apparait pas sur la premiere page publique
+- Elle devient visible dans le resume de reservation apres connexion
 - Description en francais
 - Caracteristiques techniques
 - Documents requis
@@ -261,6 +266,7 @@ L'objectif principal est de permettre a une agence de location de voitures de:
 - Annulation d'une demande si autorisee
 - Notes et avis apres completion
 - Recu de reservation / paiement
+- Resume complet de reservation avec prix de location et caution si activee
 
 ### 6.3 Espace agent
 
@@ -336,6 +342,9 @@ Principes visuels:
 - Couleur d'alerte uniquement pour les statuts urgents
 - CTA visibles, courts et repetes
 - Mise en avant des prix, de la disponibilite et du paiement a l'agence
+- La caution ne doit pas etre visible sur les cartes publiques du catalogue
+- La caution apparait uniquement dans le parcours connecte de reservation
+- Le recap final doit distinguer clairement le prix de location et le depot de caution
 
 Structure UX attendue:
 
@@ -459,6 +468,10 @@ Le design doit rester plus SaaS operationnel que marketing, tout en gardant une 
 - Le client est contacte par telephone
 - Si la demande est confirmee par appel, un delai de paiement commence
 - Le client doit venir physiquement payer pour bloquer definitivement la voiture
+- La caution est un depot separe du prix de location
+- La caution peut etre activee ou masquee par l'admin dans l'interface publique
+- La caution reste visible dans le resume de reservation connecte et dans le back-office
+- La caution n'est jamais comptabilisee comme revenu
 
 ### 7.2 Regle de delai
 
@@ -495,6 +508,7 @@ Le design doit rester plus SaaS operationnel que marketing, tout en gardant une 
 - Les reservations confirmees peuvent compter comme revenu attendu
 - Les demandes en attente peuvent compter comme pipeline
 - Les demandes abandonnees, annulees et refusees ne comptent pas comme revenu
+- La caution n'entre pas dans le revenu, meme si elle est encaissee ou bloquee a l'agence
 
 ### 7.6 Regle de rentabilite
 
