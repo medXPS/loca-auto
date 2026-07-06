@@ -25,6 +25,7 @@ const PAYMENT_STATUSES = [
   "WAITING_AGENCY_PAYMENT",
   "EXTENDED_PAYMENT_DEADLINE",
 ] as const;
+const CUSTOMER_PAYMENT_REMINDER_HOURS = 4;
 
 type OperationalMode = "return" | "departure" | "payment" | "documents";
 
@@ -213,6 +214,44 @@ async function loadOperationalRequests(): Promise<OperationalRequest[]> {
   return rows;
 }
 
+async function loadCustomerOperationalRequests(
+  customerUserId: number,
+): Promise<OperationalRequest[]> {
+  const rows = await db
+    .select({
+      id: schema.rentalRequestsTable.id,
+      fullName: schema.rentalRequestsTable.fullName,
+      status: schema.rentalRequestsTable.status,
+      startDate: schema.rentalRequestsTable.startDate,
+      returnDate: schema.rentalRequestsTable.returnDate,
+      startAt: schema.rentalRequestsTable.startAt,
+      returnAt: schema.rentalRequestsTable.returnAt,
+      paymentDeadline: schema.rentalRequestsTable.paymentDeadline,
+      documentDeadline: schema.rentalRequestsTable.documentDeadline,
+      pickupLocation: schema.rentalRequestsTable.pickupLocation,
+      returnLocation: schema.rentalRequestsTable.returnLocation,
+      brand: schema.carsTable.brand,
+      model: schema.carsTable.model,
+    })
+    .from(schema.rentalRequestsTable)
+    .innerJoin(
+      schema.customersTable,
+      eq(schema.rentalRequestsTable.customerId, schema.customersTable.id),
+    )
+    .leftJoin(
+      schema.carsTable,
+      eq(schema.rentalRequestsTable.carId, schema.carsTable.id),
+    )
+    .where(eq(schema.customersTable.userId, customerUserId))
+    .orderBy(
+      asc(schema.rentalRequestsTable.returnDate),
+      asc(schema.rentalRequestsTable.startDate),
+      asc(schema.rentalRequestsTable.id),
+    );
+
+  return rows;
+}
+
 function isInStatusSet(status: string, statuses: readonly string[]) {
   return statuses.includes(status);
 }
@@ -233,9 +272,64 @@ export async function createNotification(opts: {
   message: string;
 }): Promise<void> {
   try {
-    await db.insert(schema.notificationsTable).values(opts);
+    await upsertNotification(opts.userId, opts.title, opts.message);
   } catch {
     // Non-critical, don't throw.
+  }
+}
+
+export async function syncCustomerNotifications(
+  customerUserId: number,
+): Promise<void> {
+  try {
+    const now = new Date();
+    const tomorrow = localDateKey(addDays(now, 1));
+    const paymentCutoff = new Date(
+      now.getTime() + CUSTOMER_PAYMENT_REMINDER_HOURS * 60 * 60 * 1000,
+    );
+
+    const requests = await loadCustomerOperationalRequests(customerUserId);
+
+    const returnsSoon = requests
+      .filter((request) => isInStatusSet(request.status, ACTIVE_OPERATION_STATUSES))
+      .filter((request) => request.returnDate === tomorrow)
+      .sort((a, b) => sortByDateKey(a, b, "returnAt"));
+
+    const paymentsSoon = requests
+      .filter((request) => isInStatusSet(request.status, PAYMENT_STATUSES))
+      .filter(
+        (request) =>
+          !!request.paymentDeadline &&
+          request.paymentDeadline >= now &&
+          request.paymentDeadline <= paymentCutoff,
+      )
+      .sort((a, b) => sortByDateKey(a, b, "paymentDeadline"));
+
+    await Promise.all([
+      ...returnsSoon.map((request) => {
+        const carLabel = [request.brand, request.model].filter(Boolean).join(" ").trim() || "véhicule";
+        const returnTime = formatShortTime(request.returnAt);
+
+        return upsertNotification(
+          customerUserId,
+          `Retour demain - Demande #${request.id}`,
+          `Votre ${carLabel} doit être restitué demain${returnTime ? ` à ${returnTime}` : ""}.`,
+        );
+      }),
+      ...paymentsSoon.map((request) => {
+        const carLabel = [request.brand, request.model].filter(Boolean).join(" ").trim() || "véhicule";
+        const deadlineDate = formatShortDate(request.paymentDeadline);
+        const deadlineTime = formatShortTime(request.paymentDeadline);
+
+        return upsertNotification(
+          customerUserId,
+          `Paiement à l'agence - 4h restantes - Demande #${request.id}`,
+          `Il vous reste 4h pour régler ${carLabel} à l'agence${deadlineDate ? ` avant le ${deadlineDate}` : ""}${deadlineTime ? ` à ${deadlineTime}` : ""}.`,
+        );
+      }),
+    ]);
+  } catch {
+    // Never block customer reads if the sync fails.
   }
 }
 
