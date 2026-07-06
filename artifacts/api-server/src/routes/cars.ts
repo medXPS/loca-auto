@@ -141,11 +141,18 @@ function formatCarBase(
     dailyPrice: Number(car.dailyPrice),
     weeklyPrice: car.weeklyPrice ? Number(car.weeklyPrice) : null,
     monthlyPrice: car.monthlyPrice ? Number(car.monthlyPrice) : null,
-    depositAmount: car.depositAmount ? Number(car.depositAmount) : null,
+    depositAmount:
+      car.depositAmount == null ? null : Number(car.depositAmount),
     status: car.status,
     rawStatus: car.status,
     availability,
   };
+}
+
+function normalizeAmount(value: unknown) {
+  if (value === undefined || value === null || value === "") return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
 }
 
 function attachCarRelations(
@@ -345,6 +352,7 @@ router.post(
         .insert(schema.carsTable)
         .values({
           ...req.body,
+          depositAmount: normalizeAmount(req.body.depositAmount),
           ...brandPayload,
           ...agencyPayload,
         })
@@ -416,6 +424,7 @@ router.patch(
         .update(schema.carsTable)
         .set({
           ...req.body,
+          depositAmount: normalizeAmount(req.body.depositAmount),
           ...brandPayload,
           ...agencyPayload,
         })

@@ -77,7 +77,8 @@ async function fetchRequestWithCar(id: number) {
           dailyPrice: Number(car.dailyPrice),
           weeklyPrice: car.weeklyPrice ? Number(car.weeklyPrice) : null,
           monthlyPrice: car.monthlyPrice ? Number(car.monthlyPrice) : null,
-          depositAmount: car.depositAmount ? Number(car.depositAmount) : null,
+          depositAmount:
+            car.depositAmount == null ? null : Number(car.depositAmount),
         }
       : null,
   };

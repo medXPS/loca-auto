@@ -472,7 +472,20 @@ export default function AdminNewCar() {
                     <FormItem>
                       <FormLabel>Prix journalier (MAD)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={field.value ?? ""}
+                          onChange={(event) =>
+                            field.onChange(
+                              event.target.value === ""
+                                ? 0
+                                : Number.isNaN(event.target.valueAsNumber)
+                                  ? 0
+                                  : event.target.valueAsNumber,
+                            )
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -486,7 +499,21 @@ export default function AdminNewCar() {
                     <FormItem>
                       <FormLabel>Caution remboursable (MAD)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" min={0} {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min={0}
+                          value={field.value ?? ""}
+                          onChange={(event) =>
+                            field.onChange(
+                              event.target.value === ""
+                                ? 0
+                                : Number.isNaN(event.target.valueAsNumber)
+                                  ? 0
+                                  : event.target.valueAsNumber,
+                            )
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

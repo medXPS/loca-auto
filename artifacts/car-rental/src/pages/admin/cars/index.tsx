@@ -76,6 +76,8 @@ export default function AdminCars() {
                 data.cars.map((car) => {
                   const agency = (car as any).agency;
                   const brandMeta = (car as any).brandMeta;
+                  const depositAmount = Number(car.depositAmount ?? 0);
+                  const hasDepositAmount = Number.isFinite(depositAmount) && depositAmount > 0;
 
                   return (
                     <tr key={car.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
@@ -108,7 +110,14 @@ export default function AdminCars() {
                         <div className="text-xs text-muted-foreground">{agency?.city || car.city || "Maroc"}</div>
                       </td>
                       <td className="px-6 py-4">{car.category}</td>
-                      <td className="px-6 py-4 font-medium">{formatPrice(car.dailyPrice)}</td>
+                      <td className="px-6 py-4 font-medium">
+                        <div>{formatPrice(car.dailyPrice)}</div>
+                        {hasDepositAmount && (
+                          <div className="mt-1 text-xs font-normal text-amber-700">
+                            Caution: {formatPrice(depositAmount)}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-muted-foreground">{car.licensePlate || "-"}</td>
                       <td className="px-6 py-4">
                         <StatusBadge status={car.status} type="car" />
