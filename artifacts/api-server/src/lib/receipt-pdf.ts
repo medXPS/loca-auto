@@ -4,6 +4,7 @@ import {
   calculateIncludedTaxBreakdown,
   getCompanyPricingConfig,
 } from "./pricing";
+import { buildReceiptPdf as buildReceiptPdfSimple } from "./receipt-pdf-simple";
 
 type ReceiptRequest = {
   id: number;
@@ -690,7 +691,7 @@ type PdfRow = {
   tone?: "default" | "muted" | "warning";
 };
 
-export async function buildReceiptPdf(args: ReceiptArgs) {
+async function buildReceiptPdfLegacyCanvas(args: ReceiptArgs) {
   const { settings, request, receiptNumber, verificationUrl, baseUrl } = args;
   const car = request.car ?? {};
   const companyName = settings.brandName || "Location Auto Maroc";
@@ -1126,4 +1127,8 @@ export async function buildReceiptPdf(args: ReceiptArgs) {
 
   doc.end();
   return pdfDone;
+}
+
+export async function buildReceiptPdf(args: ReceiptArgs) {
+  return buildReceiptPdfSimple(args);
 }
