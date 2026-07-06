@@ -3,7 +3,7 @@ import { and, desc, eq, ilike, lt, or, sql } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 import { logAudit } from "../lib/audit";
-import { createNotification } from "../lib/notify";
+import { createNotification, syncCustomerNotifications } from "../lib/notify";
 import { sendReceiptEmail } from "../lib/mailer";
 import { buildReceiptHtml, buildReceiptPdf } from "../lib/receipt-pdf";
 import {
@@ -77,6 +77,7 @@ async function fetchRequestWithCar(id: number) {
           dailyPrice: Number(car.dailyPrice),
           weeklyPrice: car.weeklyPrice ? Number(car.weeklyPrice) : null,
           monthlyPrice: car.monthlyPrice ? Number(car.monthlyPrice) : null,
+          depositAmount: car.depositAmount ? Number(car.depositAmount) : null,
         }
       : null,
   };
@@ -1179,6 +1180,9 @@ router.get("/:id/receipt", authMiddleware, async (req, res) => {
 router.get("/", authMiddleware, async (req, res) => {
   try {
     await expireStaleAvailabilityLocks();
+    if (req.user!.role === "CUSTOMER") {
+      await syncCustomerNotifications(req.user!.userId);
+    }
     const {
       status,
       customerId,
@@ -1354,13 +1358,35 @@ router.post("/", authMiddleware, async (req, res) => {
     });
 
     let customerId = null;
+    let customerNotificationUserId: number | null = null;
     if (req.user!.role === "CUSTOMER") {
       const [customer] = await db
         .select()
         .from(schema.customersTable)
         .where(eq(schema.customersTable.userId, req.user!.userId))
         .limit(1);
-      if (customer) customerId = customer.id;
+      if (customer) {
+        customerId = customer.id;
+        customerNotificationUserId = customer.userId;
+      }
+    } else if (typeof email === "string" && email.trim()) {
+      const [customer] = await db
+        .select({
+          id: schema.customersTable.id,
+          userId: schema.customersTable.userId,
+        })
+        .from(schema.customersTable)
+        .innerJoin(
+          schema.usersTable,
+          eq(schema.customersTable.userId, schema.usersTable.id),
+        )
+        .where(eq(schema.usersTable.email, email.trim()))
+        .limit(1);
+
+      if (customer) {
+        customerId = customer.id;
+        customerNotificationUserId = customer.userId;
+      }
     }
 
     const [request] = await db
@@ -1385,6 +1411,14 @@ router.post("/", authMiddleware, async (req, res) => {
       })
       .returning();
     await createTemporaryHold(request);
+
+    if (customerNotificationUserId) {
+      await createNotification({
+        userId: customerNotificationUserId,
+        title: `Réservation enregistrée - Demande #${request.id}`,
+        message: `Votre demande n°${request.id} a bien été enregistrée. Nous vous contacterons dès qu'elle sera traitée.`,
+      });
+    }
 
     await logAudit(req, {
       userId: req.user!.userId,

@@ -21,6 +21,7 @@ type ReceiptRequest = {
     dailyPrice?: number | string | null;
     insuranceIncluded?: boolean | null;
     mainImageUrl?: string | null;
+    depositAmount?: number | string | null;
   } | null;
 };
 
@@ -89,7 +90,20 @@ function paymentMethod(method?: string | null) {
   return "Espèces à l'agence";
 }
 
-function svgIcon(name: "building" | "user" | "calendar" | "wallet" | "shield" | "pin" | "phone" | "car" | "clock" | "receipt") {
+function svgIcon(
+  name:
+    | "building"
+    | "user"
+    | "calendar"
+    | "wallet"
+    | "shield"
+    | "pin"
+    | "phone"
+    | "car"
+    | "clock"
+    | "receipt"
+    | "handshake"
+) {
   const paths = {
     building: '<path d="M4 21h16M6 21V4h12v17M9 8h2m2 0h2M9 12h2m2 0h2M9 16h2m2 0h2"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
@@ -101,6 +115,7 @@ function svgIcon(name: "building" | "user" | "calendar" | "wallet" | "shield" | 
     car: '<path d="m5 11 2-5h10l2 5M3 12h18v6H3zM6 18v2m12-2v2M6.5 15h.01m11 0h.01"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6m-6 4h6"/>',
+    handshake: '<path d="m7 12 3-3 3 3 4-4 4 4-6 6a3 3 0 0 1-4.2 0L3 10l4-4 3 3"/>',
   } as const;
 
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]}</svg>`;
@@ -127,11 +142,18 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
   const taxBreakdown = calculateIncludedTaxBreakdown(total, pricingConfig.taxRatePercent);
   const taxes = taxBreakdown.taxAmount;
   const insurance = 0;
+  const depositAmount = Number(car.depositAmount || 0);
+  const showDepositAmount =
+    Number.isFinite(depositAmount) && depositAmount > 0;
   const subtotal = taxBreakdown.subtotalBeforeTax;
-  const days = Math.max(1, Math.floor((toLocalMidnight(request.returnDate).getTime() - toLocalMidnight(request.startDate).getTime()) / 86_400_000) + 1);
+  const days = Math.max(
+    1,
+    Math.floor((toLocalMidnight(request.returnDate).getTime() - toLocalMidnight(request.startDate).getTime()) / 86_400_000) + 1
+  );
   const vehicleName = `${car.brand ?? ""} ${car.model ?? ""}`.trim() || `Véhicule #${request.carId}`;
   const qrDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, width: 220 });
   const logoUrl = assetUrl(settings.logoUrl, baseUrl);
+  const carImageUrl = assetUrl(car.mainImageUrl, baseUrl);
 
   return `<!doctype html>
 <html lang="fr">
@@ -141,126 +163,167 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
   <title>Reçu ${escapeHtml(receiptNumber)}</title>
   <style>
     @page { size: A4; margin: 0; }
-    :root { --navy:#102f66; --blue:#1f56b4; --ink:#10213d; --muted:#65748b; --line:#d7e0ec; --soft:#f7faff; }
+    :root {
+      --navy:#082b63;
+      --navy-2:#063b8e;
+      --blue:#0b55c7;
+      --ink:#0d1830;
+      --muted:#65758f;
+      --line:#d8e2f0;
+      --soft:#f6f9ff;
+      --paper:#ffffff;
+    }
     * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; font-family: Arial, Helvetica, sans-serif; color: var(--ink); background: #eef2f7; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    body { line-height: 1.4; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: #eef3f9;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
     .print-tools { width: 210mm; margin: 18px auto; display: flex; justify-content: flex-end; }
-    .print-tools button { border: 0; border-radius: 10px; padding: 11px 18px; background: var(--navy); color: white; font: 700 14px Arial; cursor: pointer; }
-    .receipt-page { width: 210mm; min-height: 297mm; height: 297mm; margin: 0 auto 24px; padding: 8mm 9mm; box-sizing: border-box; overflow: hidden; background: white; display: flex; flex-direction: column; gap: 4mm; }
-    .receipt-header { display: grid; grid-template-columns: minmax(0, 1.58fr) minmax(200px, .82fr); gap: 5mm; align-items: start; }
-    .brand { display: flex; align-items: center; gap: 13px; margin-bottom: 10px; }
-    .brand-logo { width: 45px; height: 45px; object-fit: contain; }
-    .brand-mark { width: 45px; height: 45px; color: var(--navy); }
-    .brand-mark svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; }
-    .brand-name { font-size: 22px; line-height: 1.05; font-weight: 800; letter-spacing: .02em; color: var(--navy); text-transform: uppercase; max-width: 250px; }
-    h1 { margin: 0 0 4px; color: var(--navy); font-size: 27px; line-height: 1.12; letter-spacing: .01em; }
-    .subtitle { margin: 0 0 5px; color: var(--blue); font-size: 14px; }
-    .description { margin: 0; max-width: 470px; color: var(--ink); font-size: 11px; line-height: 1.35; }
-    .contact-row { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); font-size: 10px; }
-    .contact-row span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
-    .contact-row svg { width: 15px; height: 15px; fill: none; stroke: var(--navy); stroke-width: 1.8; }
-    .header-side { min-width: 0; }
-    .receipt-info { border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; background: white; display: grid; grid-template-columns: 32px 1fr; gap: 10px; }
-    .receipt-info > svg { width: 30px; height: 30px; fill: none; stroke: var(--navy); stroke-width: 1.7; }
-    .receipt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
-    .receipt-meta > div { min-width: 0; }
-    small, .label { display: block; color: var(--muted); font-size: 8px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-    .receipt-meta strong { display: block; margin-top: 2px; color: var(--navy); font-size: 12px; line-height: 1.2; }
-    .card { border: 1px solid var(--line); border-radius: 14px; padding: 4.5mm 4.8mm; background: white; page-break-inside: avoid; break-inside: avoid; }
-    .section-title { display: flex; align-items: center; gap: 9px; margin: 0 0 9px; color: var(--navy); font-size: 12px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; }
-    .section-icon { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; flex: 0 0 auto; color: white; background: var(--navy); }
-    .section-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-    .party-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4.5mm; }
-    .party-card { min-width: 0; }
-    .party-row { display: grid; grid-template-columns: 16px 76px minmax(0, 1fr); gap: 8px; align-items: center; min-height: 18px; }
-    .party-row + .party-row { margin-top: 3px; }
-    .party-row > span svg { width: 14px; height: 14px; fill: none; stroke: var(--navy); stroke-width: 1.8; }
+    .print-tools button { border: 0; border-radius: 12px; padding: 11px 18px; background: var(--navy); color: white; font: 800 14px Arial; cursor: pointer; }
+    .receipt-page {
+      width: 210mm;
+      min-height: 297mm;
+      height: 297mm;
+      margin: 0 auto 24px;
+      padding: 9mm 10mm;
+      background: var(--paper);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 4.2mm;
+      border: 1px solid #cfd9e8;
+    }
+    .receipt-header { display: grid; grid-template-columns: 1.35fr .9fr; gap: 8mm; align-items: start; }
+    .brand { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; }
+    .brand-logo, .brand-mark { width: 48px; height: 48px; flex: 0 0 auto; }
+    .brand-logo { object-fit: contain; }
+    .brand-mark { display: grid; place-items: center; color: var(--navy); }
+    .brand-mark svg { width: 46px; height: 46px; fill: none; stroke: currentColor; stroke-width: 1.9; }
+    .brand-name { color: var(--navy); font-size: 22px; font-weight: 900; line-height: 1.05; letter-spacing: .02em; text-transform: uppercase; }
+    h1 { margin: 0 0 9px; color: var(--ink); font-size: 31px; line-height: 1; letter-spacing: -.03em; }
+    h1 span { color: var(--navy); }
+    .subtitle { margin: 0 0 6px; color: var(--blue); font-size: 14px; }
+    .description { margin: 0; max-width: 455px; font-size: 11px; line-height: 1.45; color: var(--ink); }
+    .contact-row { display: flex; flex-wrap: wrap; gap: 26px; margin-top: 13px; font-size: 10.5px; }
+    .contact-row span { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .contact-row svg { width: 15px; height: 15px; fill: none; stroke: var(--navy); stroke-width: 2; }
+    .receipt-box { border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; display: grid; grid-template-columns: 42px 1fr; gap: 12px; align-items: center; background: #fff; }
+    .big-icon { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: white; background: linear-gradient(135deg, var(--navy), var(--navy-2)); }
+    .big-icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.9; }
+    .receipt-number small, small { display: block; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .receipt-number strong { display: block; margin-top: 3px; color: var(--blue); font-size: 22px; line-height: 1; letter-spacing: .02em; }
+    .receipt-date { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .receipt-date strong { display: block; margin-top: 4px; font-size: 12px; color: var(--ink); }
+    .car-cover { margin-top: 5mm; height: 31mm; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, #eef3f9, #dbe6f3); position: relative; }
+    .car-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .car-cover.empty { display: grid; place-items: center; color: var(--navy); }
+    .car-cover.empty svg { width: 70px; height: 70px; fill: none; stroke: currentColor; stroke-width: 1.4; opacity: .35; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5mm; }
+    .card { border: 1px solid var(--line); border-radius: 15px; padding: 4.8mm 5.3mm; background: white; break-inside: avoid; page-break-inside: avoid; }
+    .section-title { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: var(--navy); font-size: 13px; font-weight: 900; letter-spacing: .03em; text-transform: uppercase; }
+    .section-icon { width: 31px; height: 31px; border-radius: 50%; display: grid; place-items: center; color: white; background: var(--navy); flex: 0 0 auto; }
+    .section-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; }
+    .party-row { display: grid; grid-template-columns: 17px 90px minmax(0, 1fr); gap: 9px; align-items: center; min-height: 22px; border-bottom: 1px solid #eef2f7; }
+    .party-row:last-child { border-bottom: 0; }
+    .party-row > span svg { width: 14px; height: 14px; fill: none; stroke: var(--navy); stroke-width: 1.9; }
     .party-row small { font-size: 7.5px; letter-spacing: 0; text-transform: none; font-weight: 500; }
-    .party-row strong { min-width: 0; overflow-wrap: anywhere; font-size: 9.5px; }
+    .party-row strong { min-width: 0; overflow-wrap: anywhere; font-size: 10px; }
     .details-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .detail-item { min-width: 0; display: flex; align-items: center; gap: 10px; padding: 7px 10px; }
+    .detail-item { min-width: 0; display: flex; align-items: center; gap: 11px; padding: 8px 12px; }
     .detail-item:nth-child(3n+2), .detail-item:nth-child(3n+3) { border-left: 1px solid var(--line); }
     .detail-item:nth-child(n+4) { border-top: 1px solid var(--line); }
-    .detail-item .mini-icon { width: 24px; height: 24px; flex: 0 0 auto; display: grid; place-items: center; color: var(--navy); }
-    .detail-item svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-    .detail-item strong { display: block; margin-top: 2px; font-size: 10px; overflow-wrap: anywhere; }
-    .payment-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9px; }
-    .payment-table td { height: 17px; padding: 1px 8px; border-bottom: 1px solid var(--line); }
+    .mini-icon { width: 22px; height: 22px; display: grid; place-items: center; color: var(--navy); flex: 0 0 auto; }
+    .mini-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; }
+    .detail-item strong { display: block; margin-top: 3px; font-size: 11px; overflow-wrap: anywhere; }
+    .payment-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9.5px; }
+    .payment-table td { height: 19px; padding: 1px 10px; border-bottom: 1px solid var(--line); }
     .payment-table td:first-child { color: var(--muted); }
-    .payment-table td:last-child { width: 155px; text-align: right; color: var(--ink); }
-    .payment-table .total td { height: 25px; border: 0; background: var(--navy); color: white; font-size: 10.5px; font-weight: 800; }
-    .payment-table .total td:first-child { border-radius: 7px 0 0 7px; }
-    .payment-table .total td:last-child { border-radius: 0 7px 7px 0; color: white; }
-    .payment-table .meta td { border-bottom: 0; }
-    .verification-grid { display: grid; grid-template-columns: 84px minmax(0, 1fr) minmax(0, 1.35fr); gap: 12px; align-items: start; }
-    .qr { width: 78px; height: 78px; display: block; }
-    .verification-copy { padding: 4px 14px 4px 0; border-right: 1px solid var(--line); font-size: 9px; }
-    .verification-copy a { display: block; margin-top: 9px; color: var(--blue); font-weight: 700; overflow-wrap: anywhere; }
-    .signatures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
-    .signature { min-width: 0; }
-    .signature-line { height: 34px; margin-top: 4px; border-bottom: 1px solid var(--navy); }
-    .signature.agency .signature-line::after { content: "Location Auto Maroc"; display: block; padding: 10px 5px 0; color: var(--navy); font: italic 14px Georgia, serif; transform: rotate(-3deg); }
-    .receipt-footer { margin-top: auto; padding-top: 7px; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; font-size: 8.5px; color: var(--muted); }
-    .receipt-footer strong { display: block; font-size: 10px; color: var(--navy); }
-    .receipt-footer div { line-height: 1.25; }
-    .receipt-footer > span { display: flex; align-items: center; gap: 7px; }
-    .footer-note { margin-top: 1px; }
-    .receipt-footer svg { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: var(--navy); stroke-width: 1.8; }
+    .payment-table td:last-child { width: 165px; text-align: right; font-weight: 700; color: var(--ink); }
+    .payment-table .total td { height: 31px; border: 0; background: linear-gradient(135deg, var(--navy), var(--navy-2)); color: #fff; font-size: 12px; font-weight: 900; text-transform: uppercase; }
+    .payment-table .total td:first-child { border-radius: 9px 0 0 9px; }
+    .payment-table .total td:last-child { border-radius: 0 9px 9px 0; color: #fff; font-size: 14px; }
+    .payment-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 20mm; margin-top: 9px; padding: 0 10px; font-size: 10px; }
+    .payment-meta strong { display: block; margin-top: 3px; }
+    .verification-grid { display: grid; grid-template-columns: 88px minmax(0, 1fr) minmax(0, 1.55fr); gap: 14px; align-items: start; }
+    .qr { width: 82px; height: 82px; display: block; border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
+    .verify-help { font-size: 9.5px; line-height: 1.55; padding-right: 14px; border-right: 1px solid var(--line); }
+    .verify-link a { color: var(--blue); font-size: 9.5px; font-weight: 800; overflow-wrap: anywhere; }
+    .signatures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+    .signature-line { height: 31px; margin-top: 3px; border-bottom: 1.5px solid var(--navy); }
+    .signature.agency .signature-line::after { content: "Location Auto Maroc"; display: block; padding: 9px 6px 0; color: var(--navy); font: italic 14px Georgia, serif; transform: rotate(-5deg); }
+    .footer-bar { margin-top: auto; border-radius: 14px; padding: 14px 18px; background: linear-gradient(135deg, var(--navy), var(--navy-2)); color: white; display: grid; grid-template-columns: 42px 1fr 1px 170px; gap: 14px; align-items: center; }
+    .footer-badge { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--navy); background: white; }
+    .footer-badge svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+    .footer-bar strong { display: block; font-size: 12px; }
+    .footer-bar small { margin-top: 2px; color: rgba(255,255,255,.85); font-size: 9px; letter-spacing: 0; text-transform: none; font-weight: 500; }
+    .footer-sep { height: 34px; background: rgba(255,255,255,.65); }
+    .footer-help { font-size: 9px; line-height: 1.35; }
+    .footer-help b { display: block; font-size: 10px; }
     @media print {
-      html, body { margin: 0; background: white; }
+      html, body { background: white; }
       .print-tools { display: none !important; }
-      .receipt-page { margin: 0; page-break-inside: avoid; break-inside: avoid; overflow: hidden; }
+      .receipt-page { margin: 0; border: 0; }
     }
     @media screen and (max-width: 820px) {
       .print-tools { width: calc(100% - 24px); }
       .receipt-page { width: calc(100% - 24px); height: auto; min-height: 0; padding: 24px; overflow: visible; }
-      .receipt-header, .party-grid, .verification-grid { grid-template-columns: 1fr; }
+      .receipt-header, .grid-2, .verification-grid { grid-template-columns: 1fr; }
       .details-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .detail-item { border: 0 !important; border-top: 1px solid var(--line) !important; }
-      .verification-copy { border-right: 0; border-bottom: 1px solid var(--line); padding: 0 0 15px; }
-      .receipt-footer { grid-template-columns: 1fr; }
+      .detail-item { border-left: 0 !important; border-top: 1px solid var(--line) !important; }
+      .footer-bar { grid-template-columns: 42px 1fr; }
+      .footer-sep, .footer-help { display: none; }
+      .verify-help { border-right: 0; border-bottom: 1px solid var(--line); padding: 0 0 12px; }
     }
   </style>
 </head>
 <body>
   <div class="print-tools"><button type="button" onclick="window.print()">Imprimer le reçu</button></div>
+
   <main class="receipt-page">
     <header class="receipt-header">
       <div>
         <div class="brand">
-          ${logoUrl ? `<img class="brand-logo" src="${escapeHtml(logoUrl)}" alt="" />` : `<span class="brand-mark">${svgIcon("car")}</span>`}
+          ${logoUrl ? `<img class="brand-logo" src="${escapeHtml(logoUrl)}" alt="${escapeHtml(companyName)}" />` : `<span class="brand-mark">${svgIcon("car")}</span>`}
           <div class="brand-name">${escapeHtml(companyName)}</div>
         </div>
-        <h1>REÇU DE PAIEMENT</h1>
+
+        <h1><span>REÇU</span> DE PAIEMENT</h1>
         <p class="subtitle">Document archivable et imprimable</p>
-        <p class="description">Ce document confirme le paiement effectué auprès de l'agence et peut être conservé dans le dossier du client.</p>
+        <p class="description">Ce document confirme le paiement effectué à l'agence et peut être conservé dans le dossier client.</p>
+
         <div class="contact-row">
           <span>${svgIcon("pin")} ${escapeHtml(`${companyCity}, Maroc`)}</span>
           <span>${svgIcon("phone")} ${escapeHtml(companyPhone)}</span>
         </div>
       </div>
-      <div class="header-side">
-        <div class="receipt-info">
-          ${svgIcon("receipt")}
-          <div class="receipt-meta">
-            <div><small>N° reçu</small><strong>${escapeHtml(receiptNumber)}</strong></div>
-            <div><small>Date</small><strong>${escapeHtml(formatDate(paidAt))}</strong></div>
-            <div><small>Véhicule</small><strong>${escapeHtml(vehicleName)}</strong></div>
-            <div><small>Client</small><strong>${escapeHtml(request.fullName)}</strong></div>
+
+      <aside>
+        <div class="receipt-box">
+          <span class="big-icon">${svgIcon("receipt")}</span>
+          <div class="receipt-number">
+            <small>N° reçu</small>
+            <strong>${escapeHtml(receiptNumber)}</strong>
+            <div class="receipt-date"><small>Date</small><strong>${escapeHtml(formatDate(paidAt))}</strong></div>
           </div>
         </div>
-      </div>
+        ${carImageUrl ? `<div class="car-cover"><img src="${escapeHtml(carImageUrl)}" alt="${escapeHtml(vehicleName)}" /></div>` : `<div class="car-cover empty">${svgIcon("car")}</div>`}
+      </aside>
     </header>
 
-    <section class="party-grid">
-      <article class="card party-card">
+    <section class="grid-2">
+      <article class="card">
         <h2 class="section-title"><span class="section-icon">${svgIcon("building")}</span>Agence</h2>
         ${partyRow("building", "Nom", companyName)}
         ${partyRow("phone", "Téléphone", companyPhone)}
         ${partyRow("pin", "Adresse", companyAddress)}
       </article>
-      <article class="card party-card">
+
+      <article class="card">
         <h2 class="section-title"><span class="section-icon">${svgIcon("user")}</span>Client</h2>
         ${partyRow("user", "Nom complet", request.fullName)}
         ${partyRow("receipt", "CIN", request.cinOrPassport || "—")}
@@ -288,30 +351,37 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
           <tr><td>Sous-total</td><td>${escapeHtml(formatMoney(subtotal))}</td></tr>
           <tr><td>Taxes${pricingConfig.taxRatePercent > 0 ? ` (${pricingConfig.taxRatePercent}%)` : ""}</td><td>${escapeHtml(formatMoney(taxes))}</td></tr>
           <tr><td>Assurance</td><td>${escapeHtml(formatMoney(insurance))}</td></tr>
+          ${showDepositAmount ? `<tr><td>Caution (remboursable)</td><td>${escapeHtml(formatMoney(depositAmount))}</td></tr>` : ""}
           <tr><td>Réparations éventuelles</td><td>${escapeHtml(formatMoney(0))}</td></tr>
           <tr class="total"><td>Montant total payé</td><td>${escapeHtml(formatMoney(total))}</td></tr>
-          <tr class="meta"><td>Date de paiement</td><td>${escapeHtml(formatDateTime(paidAt))}</td></tr>
-          <tr class="meta"><td>Mode de paiement</td><td>${escapeHtml(paymentMethod(request.paymentMethod))}</td></tr>
         </tbody>
       </table>
+      <div class="payment-meta">
+        <div><small>Date de paiement</small><strong>${escapeHtml(formatDateTime(paidAt))}</strong></div>
+        <div><small>Mode de paiement</small><strong>${escapeHtml(paymentMethod(request.paymentMethod))}</strong></div>
+      </div>
     </section>
 
     <section class="card">
       <h2 class="section-title"><span class="section-icon">${svgIcon("shield")}</span>Vérification et signatures</h2>
       <div class="verification-grid">
         <img class="qr" src="${qrDataUrl}" alt="QR code de vérification" />
-        <div class="verification-copy"><small>Vérification</small><a href="${escapeHtml(verificationUrl)}">${escapeHtml(verificationUrl)}</a></div>
-        <div class="signatures">
-          <div class="signature agency"><small>Signature agence</small><div class="signature-line"></div></div>
-          <div class="signature"><small>Signature client</small><div class="signature-line"></div></div>
+        <div class="verify-help">Scannez pour vérifier l'authenticité de ce reçu ou visitez le lien ci-dessous.</div>
+        <div>
+          <div class="verify-link"><small>Lien de vérification</small><a href="${escapeHtml(verificationUrl)}">${escapeHtml(verificationUrl)}</a></div>
+          <div class="signatures">
+            <div class="signature agency"><small>Signature agence</small><div class="signature-line"></div></div>
+            <div class="signature"><small>Signature client</small><div class="signature-line"></div></div>
+          </div>
         </div>
       </div>
     </section>
 
-    <footer class="receipt-footer">
-      <div><strong>Merci de votre confiance.</strong><div class="footer-note">Pour toute question, contactez notre agence.</div></div>
-      <span>${svgIcon("phone")} ${escapeHtml(companyPhone)}</span>
-      <span>${svgIcon("pin")} ${escapeHtml(`${companyCity}, Maroc`)}</span>
+    <footer class="footer-bar">
+      <span class="footer-badge">${svgIcon("handshake")}</span>
+      <div><strong>Merci de votre confiance.</strong><small>Nous vous remercions d'avoir choisi ${escapeHtml(companyName)}.</small></div>
+      <span class="footer-sep"></span>
+      <div class="footer-help"><b>Besoin d'aide ?</b>${escapeHtml(companyPhone)}</div>
     </footer>
   </main>
 </body>
