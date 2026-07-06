@@ -73,6 +73,7 @@ const carSchema = z.object({
   seats: z.coerce.number().min(2),
   doors: z.coerce.number().min(2),
   dailyPrice: z.coerce.number().min(1),
+  depositAmount: z.coerce.number().min(0),
   city: z.string().min(1, "Requis"),
   licensePlate: z.string().optional(),
   description: z.string().optional(),
@@ -114,6 +115,7 @@ export default function AdminNewCar() {
       seats: 5,
       doors: 4,
       dailyPrice: 200,
+      depositAmount: 0,
       city: "Casablanca",
       licensePlate: "",
       description: "",
@@ -470,7 +472,21 @@ export default function AdminNewCar() {
                     <FormItem>
                       <FormLabel>Prix journalier (MAD)</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" step="0.01" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="depositAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Caution remboursable (MAD)</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" min={0} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

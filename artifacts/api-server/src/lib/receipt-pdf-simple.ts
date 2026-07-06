@@ -1,7 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
 import PDFDocument from "pdfkit";
-import QRCode from "qrcode";
 import {
   calculateIncludedTaxBreakdown,
   getCompanyPricingConfig,
@@ -210,10 +209,7 @@ export async function buildReceiptPdf(args: ReceiptArgs) {
     `${car.brand ?? ""} ${car.model ?? ""}`.trim() || `Vehicule #${request.carId}`;
   const paymentLabel = paymentMethod(request.paymentMethod);
 
-  const [qrBuffer, logoBuffer] = await Promise.all([
-    QRCode.toBuffer(verificationUrl, { margin: 1, width: 180 }),
-    fetchImageBuffer(settings.logoUrl, baseUrl),
-  ]);
+  const logoBuffer = await fetchImageBuffer(settings.logoUrl, baseUrl);
 
   const doc = new PDFDocument({
     size: "A4",
@@ -436,68 +432,6 @@ export async function buildReceiptPdf(args: ReceiptArgs) {
     });
   }
 
-  function drawVerificationCard(x: number, y: number, width: number) {
-    const height = 112;
-    const qrSize = 80;
-    const textX = x + cardPaddingX + qrSize + 14;
-    const textWidth = width - cardPaddingX * 2 - qrSize - 14;
-    const qrY = y + cardPaddingY + titleHeight + 12;
-
-    doc.save();
-    doc.fillColor(colors.paper).strokeColor(colors.line);
-    doc.roundedRect(x, y, width, height, 12).fillAndStroke();
-    doc.restore();
-
-    doc.fillColor(colors.navy).font(fonts.bold).fontSize(10.25);
-    doc.text("VERIFICATION", x + cardPaddingX, y + cardPaddingY, {
-      width: contentWidth,
-      height: titleHeight,
-      ellipsis: true,
-    });
-
-    const ruleY = y + cardPaddingY + titleHeight + 4;
-    doc.moveTo(x + cardPaddingX, ruleY);
-    doc.lineTo(x + width - cardPaddingX, ruleY);
-    doc.strokeColor(colors.line).lineWidth(1).stroke();
-
-    doc.save();
-    doc.fillColor(colors.paper).strokeColor(colors.line);
-    doc.roundedRect(x + cardPaddingX, qrY, qrSize, qrSize, 10).fillAndStroke();
-    doc.restore();
-    doc.image(qrBuffer, x + cardPaddingX + 4, qrY + 4, {
-      fit: [qrSize - 8, qrSize - 8],
-      align: "center",
-      valign: "center",
-    });
-
-    doc.fillColor(colors.text).font(fonts.regular).fontSize(8.5);
-    doc.text("Scannez le QR code pour verifier ce recu en ligne.", textX, qrY, {
-      width: textWidth,
-      height: 24,
-      ellipsis: true,
-    });
-    doc.fillColor(colors.accent).font(fonts.bold).fontSize(8.6);
-    doc.text(receiptNumber, textX, qrY + 24, {
-      width: textWidth,
-      height: 12,
-      ellipsis: true,
-    });
-    doc.fillColor(colors.muted).font(fonts.regular).fontSize(7.9);
-    doc.text(verificationUrl, textX, qrY + 38, {
-      width: textWidth,
-      height: 24,
-      ellipsis: true,
-      link: verificationUrl,
-    });
-    doc.text("Document genere automatiquement par Location Auto Maroc.", textX, qrY + 64, {
-      width: textWidth,
-      height: 20,
-      ellipsis: true,
-    });
-
-    return height;
-  }
-
   function drawFooter(y: number) {
     const footerHeight = 28;
 
@@ -557,15 +491,6 @@ export async function buildReceiptPdf(args: ReceiptArgs) {
       label: "Assurance",
       value: car.insuranceIncluded === true ? "Incluse" : "Non incluse",
     },
-    ...(showDepositAmount
-      ? [
-          {
-            label: "Caution remboursable",
-            value: formatMoney(depositAmount),
-            tone: "warning" as const,
-          },
-        ]
-      : []),
   ];
 
   const locationRows: PdfRow[] = [
@@ -576,13 +501,10 @@ export async function buildReceiptPdf(args: ReceiptArgs) {
   ];
 
   const paymentRows: PdfRow[] = [
-    { label: "Sous-total location", value: formatMoney(subtotal) },
+    { label: "Montant HT", value: formatMoney(subtotal) },
     {
-      label: "Taxes",
-      value:
-        pricingConfig.taxRatePercent > 0
-          ? `${formatMoney(taxes)} (${pricingConfig.taxRatePercent}%)`
-          : formatMoney(taxes),
+      label: pricingConfig.taxRatePercent > 0 ? `TVA (${pricingConfig.taxRatePercent}%)` : "TVA",
+      value: formatMoney(taxes),
     },
     { label: "Assurance", value: formatMoney(insurance) },
     ...(showDepositAmount
@@ -596,8 +518,8 @@ export async function buildReceiptPdf(args: ReceiptArgs) {
       : []),
     { label: "Mode de paiement", value: paymentLabel },
     { label: "Date de paiement", value: formatDateTime(paidAt) },
-    { label: "Reference", value: receiptNumber },
-    { label: "Total location", value: formatMoney(total), strong: true },
+    { label: "Référence", value: receiptNumber },
+    { label: "Total TTC", value: formatMoney(total), strong: true },
   ];
 
   let cursorY = pageTop;
@@ -649,7 +571,6 @@ export async function buildReceiptPdf(args: ReceiptArgs) {
   });
   cursorY += rowCardHeight(paymentRows.length) + gap;
 
-  cursorY += drawVerificationCard(pageLeft, cursorY, pageWidth) + gap;
   drawFooter(cursorY);
 
   doc.end();

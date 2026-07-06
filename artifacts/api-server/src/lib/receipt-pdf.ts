@@ -183,10 +183,6 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
   );
   const vehicleName =
     `${car.brand ?? ""} ${car.model ?? ""}`.trim() || `Vehicule #${request.carId}`;
-  const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
-    margin: 1,
-    width: 120,
-  });
   const logoUrl = assetUrl(settings.logoUrl, baseUrl);
 
   const html = `<!doctype html>
@@ -622,11 +618,11 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
         <div>
           <table class="payment-table" aria-label="Détails du paiement">
             <tbody>
-              <tr><td>Sous-total location</td><td>${escapeHtml(formatMoney(subtotal))}</td></tr>
-              <tr><td>Taxes${pricingConfig.taxRatePercent > 0 ? ` (${pricingConfig.taxRatePercent}%)` : ""}</td><td>${escapeHtml(formatMoney(taxes))}</td></tr>
+              <tr><td>Montant HT</td><td>${escapeHtml(formatMoney(subtotal))}</td></tr>
+              <tr><td>TVA${pricingConfig.taxRatePercent > 0 ? ` (${pricingConfig.taxRatePercent}%)` : ""}</td><td>${escapeHtml(formatMoney(taxes))}</td></tr>
               <tr><td>Assurance</td><td>${escapeHtml(formatMoney(insurance))}</td></tr>
               ${showDepositAmount ? `<tr class="deposit"><td>Caution remboursable</td><td>${escapeHtml(formatMoney(depositAmount))}</td></tr>` : ""}
-              <tr class="total"><td>Total location</td><td>${escapeHtml(formatMoney(total))}</td></tr>
+              <tr class="total"><td>Total TTC</td><td>${escapeHtml(formatMoney(total))}</td></tr>
             </tbody>
           </table>
           <div class="payment-note">${escapeHtml(paymentNote)}</div>
@@ -643,28 +639,6 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
           <div class="mini-box">
             <small>Référence</small>
             <strong>${escapeHtml(receiptNumber)}</strong>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2 class="section-title">Vérification</h2>
-      <div class="verification">
-        <img class="qr" src="${qrDataUrl}" alt="QR code de vérification" />
-        <div class="verify-copy">
-          <p>Ce reçu peut être vérifié en ligne.</p>
-          <a href="${escapeHtml(verificationUrl)}">${escapeHtml(verificationUrl)}</a>
-          <p style="margin-top: 6px; color: var(--muted);">Document généré automatiquement par Location Auto Maroc.</p>
-        </div>
-        <div class="signatures">
-          <div class="signature agency">
-            <small>Signature agence</small>
-            <div class="signature-line"></div>
-          </div>
-          <div class="signature">
-            <small>Signature client</small>
-            <div class="signature-line"></div>
           </div>
         </div>
       </div>

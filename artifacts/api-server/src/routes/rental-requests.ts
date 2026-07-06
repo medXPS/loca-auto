@@ -218,6 +218,8 @@ async function buildReceiptPdfLegacy(args: {
   const paidAmount = Number(
     request.finalPrice || request.estimatedTotalPrice || 0,
   );
+  const depositAmount = Number(requestCar.depositAmount ?? 0);
+  const showDepositAmount = Number.isFinite(depositAmount) && depositAmount > 0;
   const pricingConfig = getCompanyPricingConfig(settings);
   const breakdown = calculateBreakdown(
     paidAmount,
@@ -292,9 +294,9 @@ async function buildReceiptPdfLegacy(args: {
   const locationTop = cardsTop + 120;
   const locationCardHeight = 136;
   const paymentCardHeight = 176;
-  const verificationCardHeight = 118;
   const paymentTop = locationTop + locationCardHeight + 12;
   const verificationTop = paymentTop + paymentCardHeight + 12;
+  const verificationCardHeight = 0;
   const footerTop = verificationTop + verificationCardHeight + 12;
 
   const drawGlyph = (
@@ -836,12 +838,15 @@ async function buildReceiptPdfLegacy(args: {
       "Prix journalier",
       formatMoney(Number(requestCar.dailyPrice || paidAmount || 0)),
     ],
-    ["Sous-total", formatMoney(breakdown.subtotal)],
+    ["Montant HT", formatMoney(breakdown.subtotal)],
     [
-      `Taxes${pricingConfig.taxRatePercent > 0 ? ` (${pricingConfig.taxRatePercent}%)` : ""}`,
+      `TVA${pricingConfig.taxRatePercent > 0 ? ` (${pricingConfig.taxRatePercent}%)` : ""}`,
       formatMoney(breakdown.taxes),
     ],
     ["Assurance", formatMoney(breakdown.assurance)],
+    ...(showDepositAmount
+      ? [["Caution remboursable", formatMoney(depositAmount)] as [string, string]]
+      : []),
     ["Réparations éventuelles", formatMoney(breakdown.repairs)],
   ];
 
@@ -926,7 +931,8 @@ async function buildReceiptPdfLegacy(args: {
       },
     );
 
-  drawCard(
+  if (false) {
+    drawCard(
     pageLeft,
     verificationTop,
     pageWidth,
@@ -1033,6 +1039,7 @@ async function buildReceiptPdfLegacy(args: {
     .lineTo(pageRight - 24, leftColumnY + 58)
     .strokeColor(colors.border)
     .stroke();
+  }
 
   doc.roundedRect(pageLeft, footerTop, pageWidth, 46, 14).fill(colors.navyDeep);
   drawGlyph("phone", pageLeft + 12, footerTop + 10, 20, colors.white);

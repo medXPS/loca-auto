@@ -107,6 +107,8 @@ export default function CarDetailScreen() {
     settings: companySettings,
   });
   const total = pricingBreakdown.totalPrice;
+  const depositAmount = Number(car?.depositAmount ?? 0);
+  const hasDepositAmount = Number.isFinite(depositAmount) && depositAmount > 0;
 
   async function handleBook() {
     if (!startDate || !returnDate) {
@@ -313,6 +315,11 @@ export default function CarDetailScreen() {
         <Text style={[styles.price, { color: colors.primary }]}>
           {formatPrice(car.dailyPrice)}
         </Text>
+        {hasDepositAmount && (
+          <Text style={[styles.caution, { color: colors.mutedForeground }]}>
+            Caution: {new Intl.NumberFormat("fr-MA").format(depositAmount)} MAD
+          </Text>
+        )}
 
         <View
           style={[
@@ -520,6 +527,13 @@ const styles = StyleSheet.create({
     marginTop: -8,
   },
   price: { fontSize: 20, fontFamily: "Inter_700Bold", fontWeight: "700" as const },
+  caution: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500" as const,
+    marginTop: -4,
+    marginBottom: 8,
+  },
   specGrid: {
     borderRadius: 16,
     borderWidth: 1,

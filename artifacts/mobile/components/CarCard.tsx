@@ -36,6 +36,8 @@ export function CarCard({ car, onPress }: CarCardProps) {
   const colors = useColors();
   const available = car.status === "AVAILABLE";
   const imageUrl = car.mainImageUrl ?? null;
+  const depositAmount = Number(car.depositAmount ?? 0);
+  const hasDepositAmount = Number.isFinite(depositAmount) && depositAmount > 0;
   const [imageFailed, setImageFailed] = useState(false);
 
   return (
@@ -109,6 +111,11 @@ export function CarCard({ car, onPress }: CarCardProps) {
         <Text style={[styles.price, { color: colors.primary }]}>
           {formatPrice(car.dailyPrice)}
         </Text>
+        {hasDepositAmount && (
+          <Text style={[styles.caution, { color: colors.mutedForeground }]}>
+            Caution: {new Intl.NumberFormat("fr-MA").format(depositAmount)} MAD
+          </Text>
+        )}
       </View>
     </Pressable>
   );
@@ -185,5 +192,11 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_700Bold",
     fontWeight: "700" as const,
     marginTop: 6,
+  },
+  caution: {
+    fontSize: 12,
+    fontFamily: "Inter_500Medium",
+    fontWeight: "500" as const,
+    marginTop: 4,
   },
 });

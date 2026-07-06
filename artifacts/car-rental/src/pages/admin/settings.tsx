@@ -269,14 +269,14 @@ export default function AdminSettings() {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Parametrage des prix</CardTitle>
-              <CardDescription>
-                Les remises sont appliquees par blocs, du plus grand palier vers
-                le plus petit, avant calcul des taxes. Exemple: 69 jours = bloc
-                60 jours + bloc 7 jours + 2 jours au tarif normal.
-              </CardDescription>
-            </CardHeader>
+              <CardHeader>
+                <CardTitle>Parametrage des prix</CardTitle>
+                <CardDescription>
+                  Les remises sont appliquees par blocs, du plus grand palier vers
+                  le plus petit, avant calcul de la TVA. Exemple: 69 jours = bloc
+                  60 jours + bloc 7 jours + 2 jours au tarif normal.
+                </CardDescription>
+              </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField
@@ -284,7 +284,7 @@ export default function AdminSettings() {
                   name="taxRatePercent"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Taxes (%)</FormLabel>
+                      <FormLabel>TVA (%)</FormLabel>
                       <FormControl>
                         <Input type="number" min={0} max={100} {...field} />
                       </FormControl>

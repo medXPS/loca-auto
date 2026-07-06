@@ -423,6 +423,8 @@ export default function CarDetail() {
     fullPriceSubtotal: number;
   };
   const estimatedTotalPrice = pricingBreakdown.totalPrice;
+  const cautionAmount = Number(car?.depositAmount ?? 0);
+  const hasCaution = Number.isFinite(cautionAmount) && cautionAmount > 0;
 
   const transmissionLabel =
     car?.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
@@ -945,7 +947,7 @@ export default function CarDetail() {
                       {pricingBreakdown.taxAmount > 0 && (
                         <div className="mt-2 flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">
-                            Taxes {pricingBreakdown.taxRatePercent}%
+                            TVA {pricingBreakdown.taxRatePercent}%
                           </span>
                           <span className="font-semibold text-foreground">
                             + {formatPrice(pricingBreakdown.taxAmount)}
@@ -955,16 +957,24 @@ export default function CarDetail() {
                     </>
                   )}
                   <div className="mt-3 flex items-center justify-between border-t border-border/70 pt-3 text-lg font-semibold">
-                    <span>Total estime</span>
+                    <span>Total TTC estime</span>
                     <span className="text-primary">
                       {estimatedTotalPrice > 0
                         ? formatPrice(estimatedTotalPrice)
                         : formatPrice(car.dailyPrice)}
                     </span>
                   </div>
+                  {hasCaution && (
+                    <div className="mt-2 flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Caution</span>
+                      <span className="font-semibold text-amber-600">
+                        {formatPrice(cautionAmount)}
+                      </span>
+                    </div>
+                  )}
                   <p className="mt-3 text-xs text-muted-foreground">
                     Les remises configurees par l&apos;admin sont appliquees par
-                    blocs avant les taxes.
+                    blocs avant la TVA.
                   </p>
                 </div>
 
@@ -1046,6 +1056,11 @@ export default function CarDetail() {
                 <p className="mt-1 text-3xl font-semibold tracking-tight text-[#F04B45] sm:text-4xl">
                   {formatPrice(car.dailyPrice)}
                 </p>
+                {hasCaution && (
+                  <p className="mt-1 text-sm font-medium text-white/75">
+                    Caution: {formatPrice(cautionAmount)}
+                  </p>
+                )}
                 <p className="mt-1 text-sm text-white/62">
                   Paiement à l'agence
                 </p>

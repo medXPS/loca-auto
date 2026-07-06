@@ -45,6 +45,7 @@ const carSchema = z.object({
   seats: z.coerce.number().min(2),
   doors: z.coerce.number().min(2),
   dailyPrice: z.coerce.number().min(1),
+  depositAmount: z.coerce.number().min(0),
   city: z.string().min(1, "Requis"),
   status: z.string().min(1, "Requis"),
   licensePlate: z.string().optional(),
@@ -96,6 +97,7 @@ export default function AdminEditCar() {
       seats: 5,
       doors: 4,
       dailyPrice: 200,
+      depositAmount: 0,
       city: "Casablanca",
       status: "AVAILABLE",
       licensePlate: "",
@@ -122,6 +124,7 @@ export default function AdminEditCar() {
       seats: car.seats,
       doors: car.doors,
       dailyPrice: car.dailyPrice,
+      depositAmount: car.depositAmount ?? 0,
       city: car.city || "Casablanca",
       status: car.status,
       licensePlate: car.licensePlate || "",
@@ -319,7 +322,10 @@ export default function AdminEditCar() {
                   <FormItem><FormLabel>Matricule (optionnel)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="dailyPrice" render={({ field }) => (
-                  <FormItem><FormLabel>Prix journalier (MAD)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Prix journalier (MAD)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="depositAmount" render={({ field }) => (
+                  <FormItem><FormLabel>Caution remboursable (MAD)</FormLabel><FormControl><Input type="number" min={0} step="0.01" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
 
                 <FormField control={form.control} name="status" render={({ field }) => (

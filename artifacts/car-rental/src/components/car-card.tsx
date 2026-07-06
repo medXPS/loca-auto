@@ -76,6 +76,8 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
   const brandMeta = (car as any).brandMeta;
   const agency = (car as any).agency;
   const availabilityCopy = getAvailabilityCopy(car);
+  const depositAmount = Number(car.depositAmount ?? 0);
+  const hasDepositAmount = Number.isFinite(depositAmount) && depositAmount > 0;
 
   if (isCompact) {
     return (
@@ -150,12 +152,17 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
               </div>
             </div>
 
-            <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div className="w-full sm:w-auto">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Prix par jour</p>
-                <p className="mt-1 text-2xl font-semibold text-primary sm:text-3xl">{formatPrice(car.dailyPrice)}</p>
-                <p className="mt-1 text-sm text-muted-foreground">Par jour</p>
-              </div>
+              <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div className="w-full sm:w-auto">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Prix par jour</p>
+                  <p className="mt-1 text-2xl font-semibold text-primary sm:text-3xl">{formatPrice(car.dailyPrice)}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Par jour</p>
+                  {hasDepositAmount && (
+                    <p className="mt-1 text-xs font-medium text-amber-700">
+                      Caution: {formatPrice(depositAmount)}
+                    </p>
+                  )}
+                </div>
 
               <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                 <Button variant="outline" size="sm" className="w-full rounded-full border-border/70 bg-white sm:w-auto">
@@ -239,6 +246,11 @@ export function CarCard({ car, variant = "featured" }: CarCardProps) {
           <div className="w-full rounded-[1.15rem] border border-white/12 bg-white/92 px-4 py-3 text-left backdrop-blur-sm sm:w-auto sm:text-right">
             <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">À partir de</p>
             <p className="text-2xl font-semibold tracking-tight text-[#F04B45] sm:text-3xl">{formatPrice(car.dailyPrice)}</p>
+            {hasDepositAmount && (
+              <p className="mt-1 text-xs font-medium text-slate-600">
+                Caution: {formatPrice(depositAmount)}
+              </p>
+            )}
           </div>
         </div>
       </Link>
