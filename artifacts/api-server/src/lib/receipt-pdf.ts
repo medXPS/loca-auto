@@ -1,6 +1,9 @@
 import puppeteer from "puppeteer";
 import QRCode from "qrcode";
-import { calculateIncludedTaxBreakdown, getCompanyPricingConfig } from "./pricing";
+import {
+  calculateIncludedTaxBreakdown,
+  getCompanyPricingConfig,
+} from "./pricing";
 
 type ReceiptRequest = {
   id: number;
@@ -74,7 +77,6 @@ function formatDateTime(value: string | Date) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
     hour12: false,
   }).format(new Date(value));
 }
@@ -102,31 +104,42 @@ function svgIcon(
     | "car"
     | "clock"
     | "receipt"
-    | "handshake"
+    | "check",
 ) {
   const paths = {
-    building: '<path d="M4 21h16M6 21V4h12v17M9 8h2m2 0h2M9 12h2m2 0h2M9 16h2m2 0h2"/>',
+    building:
+      '<path d="M4 21h16M6 21V4h12v17M9 8h2m2 0h2M9 12h2m2 0h2M9 16h2m2 0h2"/>',
     user: '<circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/>',
-    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 10h18"/>',
-    wallet: '<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M16 11h5v5h-5a2.5 2.5 0 0 1 0-5Z"/>',
-    shield: '<path d="M12 3 5 6v5c0 4.8 2.8 8.2 7 10 4.2-1.8 7-5.2 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/>',
-    pin: '<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
-    phone: '<path d="M6.6 3.5 9 8 6.8 9.7c1.4 3 3.5 5.1 6.5 6.5L15 14l4.5 2.4-.5 4c-.1.9-.9 1.6-1.8 1.6C9 21.5 2.5 15 2 6.8 2 5.9 2.7 5.1 3.6 5l3-.5Z"/>',
+    calendar:
+      '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 10h18"/>',
+    wallet:
+      '<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M16 11h5v5h-5a2.5 2.5 0 0 1 0-5Z"/>',
+    shield:
+      '<path d="M12 3 5 6v5c0 4.8 2.8 8.2 7 10 4.2-1.8 7-5.2 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-5"/>',
+    pin:
+      '<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>',
+    phone:
+      '<path d="M6.6 3.5 9 8 6.8 9.7c1.4 3 3.5 5.1 6.5 6.5L15 14l4.5 2.4-.5 4c-.1.9-.9 1.6-1.8 1.6C9 21.5 2.5 15 2 6.8 2 5.9 2.7 5.1 3.6 5l3-.5Z"/>',
     car: '<path d="m5 11 2-5h10l2 5M3 12h18v6H3zM6 18v2m12-2v2M6.5 15h.01m11 0h.01"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
-    receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6m-6 4h6"/>',
-    handshake: '<path d="m7 12 3-3 3 3 4-4 4 4-6 6a3 3 0 0 1-4.2 0L3 10l4-4 3 3"/>',
+    receipt:
+      '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6m-6 4h6"/>',
+    check: '<path d="m5 13 4 4 10-12"/>',
   } as const;
 
   return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name]}</svg>`;
 }
 
-function detailItem(icon: Parameters<typeof svgIcon>[0], label: string, value: string) {
-  return `<div class="detail-item"><span class="mini-icon">${svgIcon(icon)}</span><span><small>${escapeHtml(label)}</small><strong>${escapeHtml(value)}</strong></span></div>`;
+function row(label: string, value: string, highlight = false) {
+  return `<div class="row${highlight ? " highlight" : ""}"><span>${escapeHtml(
+    label,
+  )}</span><strong>${escapeHtml(value || "—")}</strong></div>`;
 }
 
-function partyRow(icon: Parameters<typeof svgIcon>[0], label: string, value: string) {
-  return `<div class="party-row"><span>${svgIcon(icon)}</span><small>${escapeHtml(label)}</small><strong>${escapeHtml(value || "—")}</strong></div>`;
+function metaItem(label: string, value: string) {
+  return `<div class="meta-item"><small>${escapeHtml(
+    label,
+  )}</small><strong>${escapeHtml(value || "—")}</strong></div>`;
 }
 
 export async function buildReceiptHtml(args: ReceiptArgs) {
@@ -137,25 +150,45 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
   const companyAddress = settings.address || `${companyCity}, Maroc`;
   const companyPhone = settings.phone || "+212600000000";
   const paidAt = request.paidAtAgencyAt ? new Date(request.paidAtAgencyAt) : new Date();
-  const total = Number(request.finalPrice || request.estimatedTotalPrice || 0);
+  const total = Number(request.finalPrice ?? request.estimatedTotalPrice ?? 0);
   const pricingConfig = getCompanyPricingConfig(settings);
   const taxBreakdown = calculateIncludedTaxBreakdown(total, pricingConfig.taxRatePercent);
   const taxes = taxBreakdown.taxAmount;
   const insurance = 0;
-  const depositAmount = Number(car.depositAmount || 0);
-  const showDepositAmount =
-    Number.isFinite(depositAmount) && depositAmount > 0;
+  const dailyPriceValue = Number(car.dailyPrice ?? Number.NaN);
+  const dailyPriceLabel =
+    Number.isFinite(dailyPriceValue) && dailyPriceValue > 0
+      ? formatMoney(dailyPriceValue)
+      : "—";
+  const depositAmount = Number(car.depositAmount ?? 0);
+  const showDepositAmount = Number.isFinite(depositAmount) && depositAmount > 0;
+  const paymentNote = showDepositAmount
+    ? "La caution est distincte du revenu. Elle reste visible pour le client et peut être restituée a la fin de la location."
+    : "Le montant ci-dessus correspond au paiement de la location valide en agence.";
   const subtotal = taxBreakdown.subtotalBeforeTax;
   const days = Math.max(
     1,
-    Math.floor((toLocalMidnight(request.returnDate).getTime() - toLocalMidnight(request.startDate).getTime()) / 86_400_000) + 1
+    Math.floor(
+      (toLocalMidnight(request.returnDate).getTime() -
+        toLocalMidnight(request.startDate).getTime()) /
+        86_400_000,
+    ) + 1,
   );
-  const vehicleName = `${car.brand ?? ""} ${car.model ?? ""}`.trim() || `Véhicule #${request.carId}`;
-  const qrDataUrl = await QRCode.toDataURL(verificationUrl, { margin: 1, width: 220 });
+  const vehicleName =
+    `${car.brand ?? ""} ${car.model ?? ""}`.trim() || `Véhicule #${request.carId}`;
+  const qrDataUrl = await QRCode.toDataURL(verificationUrl, {
+    margin: 1,
+    width: 180,
+  });
   const logoUrl = assetUrl(settings.logoUrl, baseUrl);
-  const carImageUrl = assetUrl(car.mainImageUrl, baseUrl);
+  const insuranceState =
+    car.insuranceIncluded === true
+      ? "Incluse"
+      : car.insuranceIncluded === false
+        ? "Non incluse"
+        : "Non précisée";
 
-  return `<!doctype html>
+  const html = `<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
@@ -164,14 +197,15 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
   <style>
     @page { size: A4; margin: 0; }
     :root {
-      --navy:#082b63;
-      --navy-2:#063b8e;
-      --blue:#0b55c7;
-      --ink:#0d1830;
-      --muted:#65758f;
-      --line:#d8e2f0;
-      --soft:#f6f9ff;
-      --paper:#ffffff;
+      --navy: #123a72;
+      --blue: #1f56b4;
+      --ink: #10213d;
+      --muted: #667085;
+      --line: #d7e0ec;
+      --soft: #f6f9ff;
+      --paper: #ffffff;
+      --success: #eaf7ef;
+      --success-ink: #13704b;
     }
     * { box-sizing: border-box; }
     html, body {
@@ -183,209 +217,596 @@ export async function buildReceiptHtml(args: ReceiptArgs) {
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
-    .print-tools { width: 210mm; margin: 18px auto; display: flex; justify-content: flex-end; }
-    .print-tools button { border: 0; border-radius: 12px; padding: 11px 18px; background: var(--navy); color: white; font: 800 14px Arial; cursor: pointer; }
-    .receipt-page {
+    body { line-height: 1.3; }
+    .print-tools {
+      width: 210mm;
+      margin: 14px auto 0;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .print-tools button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 16px;
+      background: var(--navy);
+      color: white;
+      font: 700 13px Arial, sans-serif;
+      cursor: pointer;
+    }
+    .page {
       width: 210mm;
       min-height: 297mm;
       height: 297mm;
-      margin: 0 auto 24px;
-      padding: 9mm 10mm;
+      margin: 0 auto 16px;
+      padding: 8.5mm;
       background: var(--paper);
-      overflow: hidden;
+      border: 1px solid #d5deea;
       display: flex;
       flex-direction: column;
-      gap: 4.2mm;
-      border: 1px solid #cfd9e8;
+      gap: 4mm;
+      overflow: hidden;
     }
-    .receipt-header { display: grid; grid-template-columns: 1.35fr .9fr; gap: 8mm; align-items: start; }
-    .brand { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; }
-    .brand-logo, .brand-mark { width: 48px; height: 48px; flex: 0 0 auto; }
-    .brand-logo { object-fit: contain; }
-    .brand-mark { display: grid; place-items: center; color: var(--navy); }
-    .brand-mark svg { width: 46px; height: 46px; fill: none; stroke: currentColor; stroke-width: 1.9; }
-    .brand-name { color: var(--navy); font-size: 22px; font-weight: 900; line-height: 1.05; letter-spacing: .02em; text-transform: uppercase; }
-    h1 { margin: 0 0 9px; color: var(--ink); font-size: 31px; line-height: 1; letter-spacing: -.03em; }
-    h1 span { color: var(--navy); }
-    .subtitle { margin: 0 0 6px; color: var(--blue); font-size: 14px; }
-    .description { margin: 0; max-width: 455px; font-size: 11px; line-height: 1.45; color: var(--ink); }
-    .contact-row { display: flex; flex-wrap: wrap; gap: 26px; margin-top: 13px; font-size: 10.5px; }
-    .contact-row span { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
-    .contact-row svg { width: 15px; height: 15px; fill: none; stroke: var(--navy); stroke-width: 2; }
-    .receipt-box { border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; display: grid; grid-template-columns: 42px 1fr; gap: 12px; align-items: center; background: #fff; }
-    .big-icon { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; color: white; background: linear-gradient(135deg, var(--navy), var(--navy-2)); }
-    .big-icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.9; }
-    .receipt-number small, small { display: block; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-    .receipt-number strong { display: block; margin-top: 3px; color: var(--blue); font-size: 22px; line-height: 1; letter-spacing: .02em; }
-    .receipt-date { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
-    .receipt-date strong { display: block; margin-top: 4px; font-size: 12px; color: var(--ink); }
-    .car-cover { margin-top: 5mm; height: 31mm; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, #eef3f9, #dbe6f3); position: relative; }
-    .car-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .car-cover.empty { display: grid; place-items: center; color: var(--navy); }
-    .car-cover.empty svg { width: 70px; height: 70px; fill: none; stroke: currentColor; stroke-width: 1.4; opacity: .35; }
-    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5mm; }
-    .card { border: 1px solid var(--line); border-radius: 15px; padding: 4.8mm 5.3mm; background: white; break-inside: avoid; page-break-inside: avoid; }
-    .section-title { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; color: var(--navy); font-size: 13px; font-weight: 900; letter-spacing: .03em; text-transform: uppercase; }
-    .section-icon { width: 31px; height: 31px; border-radius: 50%; display: grid; place-items: center; color: white; background: var(--navy); flex: 0 0 auto; }
-    .section-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; }
-    .party-row { display: grid; grid-template-columns: 17px 90px minmax(0, 1fr); gap: 9px; align-items: center; min-height: 22px; border-bottom: 1px solid #eef2f7; }
-    .party-row:last-child { border-bottom: 0; }
-    .party-row > span svg { width: 14px; height: 14px; fill: none; stroke: var(--navy); stroke-width: 1.9; }
-    .party-row small { font-size: 7.5px; letter-spacing: 0; text-transform: none; font-weight: 500; }
-    .party-row strong { min-width: 0; overflow-wrap: anywhere; font-size: 10px; }
-    .details-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .detail-item { min-width: 0; display: flex; align-items: center; gap: 11px; padding: 8px 12px; }
-    .detail-item:nth-child(3n+2), .detail-item:nth-child(3n+3) { border-left: 1px solid var(--line); }
-    .detail-item:nth-child(n+4) { border-top: 1px solid var(--line); }
-    .mini-icon { width: 22px; height: 22px; display: grid; place-items: center; color: var(--navy); flex: 0 0 auto; }
-    .mini-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; }
-    .detail-item strong { display: block; margin-top: 3px; font-size: 11px; overflow-wrap: anywhere; }
-    .payment-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9.5px; }
-    .payment-table td { height: 19px; padding: 1px 10px; border-bottom: 1px solid var(--line); }
-    .payment-table td:first-child { color: var(--muted); }
-    .payment-table td:last-child { width: 165px; text-align: right; font-weight: 700; color: var(--ink); }
-    .payment-table .total td { height: 31px; border: 0; background: linear-gradient(135deg, var(--navy), var(--navy-2)); color: #fff; font-size: 12px; font-weight: 900; text-transform: uppercase; }
-    .payment-table .total td:first-child { border-radius: 9px 0 0 9px; }
-    .payment-table .total td:last-child { border-radius: 0 9px 9px 0; color: #fff; font-size: 14px; }
-    .payment-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 20mm; margin-top: 9px; padding: 0 10px; font-size: 10px; }
-    .payment-meta strong { display: block; margin-top: 3px; }
-    .verification-grid { display: grid; grid-template-columns: 88px minmax(0, 1fr) minmax(0, 1.55fr); gap: 14px; align-items: start; }
-    .qr { width: 82px; height: 82px; display: block; border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
-    .verify-help { font-size: 9.5px; line-height: 1.55; padding-right: 14px; border-right: 1px solid var(--line); }
-    .verify-link a { color: var(--blue); font-size: 9.5px; font-weight: 800; overflow-wrap: anywhere; }
-    .signatures { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
-    .signature-line { height: 31px; margin-top: 3px; border-bottom: 1.5px solid var(--navy); }
-    .signature.agency .signature-line::after { content: "Location Auto Maroc"; display: block; padding: 9px 6px 0; color: var(--navy); font: italic 14px Georgia, serif; transform: rotate(-5deg); }
-    .footer-bar { margin-top: auto; border-radius: 14px; padding: 14px 18px; background: linear-gradient(135deg, var(--navy), var(--navy-2)); color: white; display: grid; grid-template-columns: 42px 1fr 1px 170px; gap: 14px; align-items: center; }
-    .footer-badge { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; color: var(--navy); background: white; }
-    .footer-badge svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-    .footer-bar strong { display: block; font-size: 12px; }
-    .footer-bar small { margin-top: 2px; color: rgba(255,255,255,.85); font-size: 9px; letter-spacing: 0; text-transform: none; font-weight: 500; }
-    .footer-sep { height: 34px; background: rgba(255,255,255,.65); }
-    .footer-help { font-size: 9px; line-height: 1.35; }
-    .footer-help b { display: block; font-size: 10px; }
+    .header {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr);
+      gap: 4mm;
+      align-items: stretch;
+    }
+    .brand-card,
+    .meta-card,
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+    }
+    .brand-card {
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+    .brand-top {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .brand-logo,
+    .brand-fallback {
+      width: 46px;
+      height: 46px;
+      flex: 0 0 auto;
+      border-radius: 12px;
+    }
+    .brand-logo {
+      object-fit: contain;
+      background: white;
+      padding: 4px;
+      border: 1px solid var(--line);
+    }
+    .brand-fallback {
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--navy), var(--blue));
+    }
+    .brand-fallback svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.9;
+    }
+    .eyebrow {
+      margin: 0 0 4px;
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      color: var(--navy);
+      font-size: 28px;
+      line-height: 1.05;
+      letter-spacing: -.03em;
+    }
+    .subtitle {
+      margin: 6px 0 0;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--navy);
+      font-size: 10px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .chip svg {
+      width: 13px;
+      height: 13px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+    .meta-card {
+      padding: 12px;
+      background: linear-gradient(135deg, var(--navy), #0f4a98);
+      color: #fff;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 12px;
+    }
+    .meta-item small,
+    .row span,
+    .section-title small {
+      display: block;
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 700;
+    }
+    .meta-item small {
+      color: rgba(255, 255, 255, .75);
+    }
+    .meta-item strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 12px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.13);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .status-badge svg {
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 4mm;
+    }
+    .card {
+      padding: 11px 12px;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 10px;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .section-title svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      flex: 0 0 auto;
+    }
+    .rows {
+      display: grid;
+      gap: 6px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #eef2f7;
+    }
+    .row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+    .row span {
+      color: var(--muted);
+      line-height: 1.15;
+    }
+    .row strong {
+      min-width: 0;
+      text-align: right;
+      font-size: 11px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+    .row.highlight {
+      padding: 8px 10px;
+      border: 1px solid #cfe0ff;
+      border-radius: 12px;
+      background: #f4f8ff;
+    }
+    .row.highlight span {
+      color: var(--blue);
+    }
+    .payment-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(220px, .85fr);
+      gap: 4mm;
+      align-items: start;
+    }
+    .payment-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 9.5px;
+    }
+    .payment-table td {
+      padding: 6px 0;
+      border-bottom: 1px solid #eef2f7;
+      vertical-align: top;
+    }
+    .payment-table td:first-child {
+      color: var(--muted);
+      padding-right: 8px;
+    }
+    .payment-table td:last-child {
+      text-align: right;
+      font-weight: 700;
+      word-break: break-word;
+    }
+    .payment-table .total td {
+      border-top: 1px solid #c9d7ea;
+      border-bottom: 0;
+      padding-top: 8px;
+      font-size: 11px;
+      color: var(--navy);
+      font-weight: 900;
+    }
+    .payment-table .deposit td:first-child {
+      color: #b05600;
+    }
+    .payment-table .deposit td:last-child {
+      color: #b05600;
+    }
+    .payment-note {
+      margin-top: 9px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: #fff8ea;
+      color: #8a5a00;
+      font-size: 9px;
+      line-height: 1.4;
+    }
+    .payment-meta {
+      display: grid;
+      gap: 8px;
+    }
+    .mini-box {
+      padding: 9px 10px;
+      border: 1px solid #dfe7f2;
+      border-radius: 12px;
+      background: #fafcff;
+    }
+    .mini-box small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 700;
+    }
+    .mini-box strong {
+      display: block;
+      margin-top: 3px;
+      font-size: 11px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+    .verification-layout {
+      display: grid;
+      grid-template-columns: 86px minmax(0, 1fr) minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .qr-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+    }
+    .qr-box img {
+      width: 82px;
+      height: 82px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+    }
+    .qr-box span {
+      font-size: 8px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.35;
+    }
+    .verification-copy {
+      padding-right: 10px;
+      border-right: 1px solid var(--line);
+      font-size: 9px;
+      line-height: 1.5;
+    }
+    .verification-copy p {
+      margin: 0 0 8px;
+    }
+    .verification-copy a {
+      color: var(--blue);
+      font-weight: 700;
+      word-break: break-all;
+    }
+    .hint {
+      margin-top: 8px !important;
+      color: var(--muted);
+    }
+    .signatures {
+      display: grid;
+      gap: 12px;
+    }
+    .signature small {
+      display: block;
+      color: var(--muted);
+      font-size: 8px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 700;
+    }
+    .signature-line {
+      height: 30px;
+      margin-top: 4px;
+      border-bottom: 1.5px solid var(--navy);
+    }
+    .signature.agency .signature-line::after {
+      content: "Location Auto Maroc";
+      display: block;
+      padding-top: 9px;
+      color: var(--navy);
+      font: italic 13px Georgia, serif;
+      transform: rotate(-3deg);
+    }
+    .footer {
+      margin-top: auto;
+      padding-top: 6px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 8.5px;
+      color: var(--muted);
+    }
+    .footer strong {
+      display: block;
+      color: var(--navy);
+      font-size: 10px;
+    }
+    .footer .right {
+      text-align: right;
+    }
     @media print {
       html, body { background: white; }
       .print-tools { display: none !important; }
-      .receipt-page { margin: 0; border: 0; }
+      .page { margin: 0; border: 0; }
     }
     @media screen and (max-width: 820px) {
       .print-tools { width: calc(100% - 24px); }
-      .receipt-page { width: calc(100% - 24px); height: auto; min-height: 0; padding: 24px; overflow: visible; }
-      .receipt-header, .grid-2, .verification-grid { grid-template-columns: 1fr; }
-      .details-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .detail-item { border-left: 0 !important; border-top: 1px solid var(--line) !important; }
-      .footer-bar { grid-template-columns: 42px 1fr; }
-      .footer-sep, .footer-help { display: none; }
-      .verify-help { border-right: 0; border-bottom: 1px solid var(--line); padding: 0 0 12px; }
+      .page {
+        width: calc(100% - 24px);
+        height: auto;
+        min-height: 0;
+        padding: 20px;
+        overflow: visible;
+      }
+      .header,
+      .grid,
+      .payment-layout,
+      .verification-layout {
+        grid-template-columns: 1fr;
+      }
+      .row {
+        grid-template-columns: 1fr;
+      }
+      .row strong {
+        text-align: left;
+      }
+      .verification-copy {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        padding-right: 0;
+        padding-bottom: 12px;
+      }
+      .footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .footer .right {
+        text-align: left;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="print-tools"><button type="button" onclick="window.print()">Imprimer le reçu</button></div>
+  <div class="print-tools">
+    <button type="button" onclick="window.print()">Imprimer le reçu</button>
+  </div>
 
-  <main class="receipt-page">
-    <header class="receipt-header">
-      <div>
-        <div class="brand">
-          ${logoUrl ? `<img class="brand-logo" src="${escapeHtml(logoUrl)}" alt="${escapeHtml(companyName)}" />` : `<span class="brand-mark">${svgIcon("car")}</span>`}
-          <div class="brand-name">${escapeHtml(companyName)}</div>
-        </div>
-
-        <h1><span>REÇU</span> DE PAIEMENT</h1>
-        <p class="subtitle">Document archivable et imprimable</p>
-        <p class="description">Ce document confirme le paiement effectué à l'agence et peut être conservé dans le dossier client.</p>
-
-        <div class="contact-row">
-          <span>${svgIcon("pin")} ${escapeHtml(`${companyCity}, Maroc`)}</span>
-          <span>${svgIcon("phone")} ${escapeHtml(companyPhone)}</span>
-        </div>
-      </div>
-
-      <aside>
-        <div class="receipt-box">
-          <span class="big-icon">${svgIcon("receipt")}</span>
-          <div class="receipt-number">
-            <small>N° reçu</small>
-            <strong>${escapeHtml(receiptNumber)}</strong>
-            <div class="receipt-date"><small>Date</small><strong>${escapeHtml(formatDate(paidAt))}</strong></div>
+  <main class="page">
+    <header class="header">
+      <section class="brand-card">
+        <div class="brand-top">
+          ${logoUrl
+            ? `<img class="brand-logo" src="${escapeHtml(logoUrl)}" alt="${escapeHtml(companyName)}" />`
+            : `<span class="brand-fallback">${svgIcon("car")}</span>`}
+          <div>
+            <p class="eyebrow">${escapeHtml(companyName)}</p>
+            <h1>Reçu de paiement</h1>
+            <p class="subtitle">Paiement validé en agence. Document lisible, simple et archivable.</p>
           </div>
         </div>
-        ${carImageUrl ? `<div class="car-cover"><img src="${escapeHtml(carImageUrl)}" alt="${escapeHtml(vehicleName)}" /></div>` : `<div class="car-cover empty">${svgIcon("car")}</div>`}
+        <div class="chips">
+          <span class="chip">${svgIcon("check")}Paiement agence</span>
+          <span class="chip">${svgIcon("shield")}Vérification QR</span>
+          <span class="chip">${svgIcon("receipt")}Réf. ${escapeHtml(receiptNumber)}</span>
+        </div>
+      </section>
+
+      <aside class="meta-card">
+        <div class="meta-grid">
+          ${metaItem("N° reçu", receiptNumber)}
+          ${metaItem("Date", formatDate(paidAt))}
+          ${metaItem("Client", request.fullName)}
+          ${metaItem("Véhicule", vehicleName)}
+        </div>
+        <div class="status-badge">${svgIcon("check")}Payé à l'agence</div>
       </aside>
     </header>
 
-    <section class="grid-2">
+    <section class="grid">
       <article class="card">
-        <h2 class="section-title"><span class="section-icon">${svgIcon("building")}</span>Agence</h2>
-        ${partyRow("building", "Nom", companyName)}
-        ${partyRow("phone", "Téléphone", companyPhone)}
-        ${partyRow("pin", "Adresse", companyAddress)}
+        <h2 class="section-title">${svgIcon("building")}Agence</h2>
+        <div class="rows">
+          ${row("Nom", companyName)}
+          ${row("Téléphone", companyPhone)}
+          ${row("Adresse", companyAddress)}
+        </div>
       </article>
 
       <article class="card">
-        <h2 class="section-title"><span class="section-icon">${svgIcon("user")}</span>Client</h2>
-        ${partyRow("user", "Nom complet", request.fullName)}
-        ${partyRow("receipt", "CIN", request.cinOrPassport || "—")}
-        ${partyRow("phone", "Téléphone", request.phone || "—")}
+        <h2 class="section-title">${svgIcon("user")}Client</h2>
+        <div class="rows">
+          ${row("Nom complet", request.fullName)}
+          ${row("Téléphone", request.phone || "—")}
+          ${row("CIN / passeport", request.cinOrPassport || "—")}
+        </div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2 class="section-title">${svgIcon("car")}Véhicule</h2>
+        <div class="rows">
+          ${row("Modèle", vehicleName)}
+          ${row("Prix journalier", dailyPriceLabel)}
+          ${row("Assurance", insuranceState)}
+          ${showDepositAmount ? row("Caution remboursable", formatMoney(depositAmount), true) : ""}
+        </div>
+      </article>
+
+      <article class="card">
+        <h2 class="section-title">${svgIcon("calendar")}Location</h2>
+        <div class="rows">
+          ${row("Réservation", `#${request.id}`)}
+          ${row("Départ", formatDate(request.startDate))}
+          ${row("Retour", formatDate(request.returnDate))}
+          ${row("Durée", `${days} jour(s)`)}
+        </div>
       </article>
     </section>
 
     <section class="card">
-      <h2 class="section-title"><span class="section-icon">${svgIcon("calendar")}</span>Détails de la location</h2>
-      <div class="details-grid">
-        ${detailItem("calendar", "Réservation", `#${request.id}`)}
-        ${detailItem("car", "Véhicule", vehicleName)}
-        ${detailItem("calendar", "Départ", formatDate(request.startDate))}
-        ${detailItem("calendar", "Retour", formatDate(request.returnDate))}
-        ${detailItem("clock", "Durée", `${days} jour(s)`)}
-        ${detailItem("building", "Agence", companyCity)}
-      </div>
-    </section>
-
-    <section class="card">
-      <h2 class="section-title"><span class="section-icon">${svgIcon("wallet")}</span>Détails de paiement</h2>
-      <table class="payment-table" aria-label="Détails du paiement">
-        <tbody>
-          <tr><td>Prix journalier</td><td>${escapeHtml(formatMoney(Number(car.dailyPrice || total)))}</td></tr>
-          <tr><td>Sous-total</td><td>${escapeHtml(formatMoney(subtotal))}</td></tr>
-          <tr><td>Taxes${pricingConfig.taxRatePercent > 0 ? ` (${pricingConfig.taxRatePercent}%)` : ""}</td><td>${escapeHtml(formatMoney(taxes))}</td></tr>
-          <tr><td>Assurance</td><td>${escapeHtml(formatMoney(insurance))}</td></tr>
-          ${showDepositAmount ? `<tr><td>Caution (remboursable)</td><td>${escapeHtml(formatMoney(depositAmount))}</td></tr>` : ""}
-          <tr><td>Réparations éventuelles</td><td>${escapeHtml(formatMoney(0))}</td></tr>
-          <tr class="total"><td>Montant total payé</td><td>${escapeHtml(formatMoney(total))}</td></tr>
-        </tbody>
-      </table>
-      <div class="payment-meta">
-        <div><small>Date de paiement</small><strong>${escapeHtml(formatDateTime(paidAt))}</strong></div>
-        <div><small>Mode de paiement</small><strong>${escapeHtml(paymentMethod(request.paymentMethod))}</strong></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2 class="section-title"><span class="section-icon">${svgIcon("shield")}</span>Vérification et signatures</h2>
-      <div class="verification-grid">
-        <img class="qr" src="${qrDataUrl}" alt="QR code de vérification" />
-        <div class="verify-help">Scannez pour vérifier l'authenticité de ce reçu ou visitez le lien ci-dessous.</div>
+      <h2 class="section-title">${svgIcon("wallet")}Paiement</h2>
+      <div class="payment-layout">
         <div>
-          <div class="verify-link"><small>Lien de vérification</small><a href="${escapeHtml(verificationUrl)}">${escapeHtml(verificationUrl)}</a></div>
-          <div class="signatures">
-            <div class="signature agency"><small>Signature agence</small><div class="signature-line"></div></div>
-            <div class="signature"><small>Signature client</small><div class="signature-line"></div></div>
+          <table class="payment-table" aria-label="Détails du paiement">
+            <tbody>
+              <tr><td>Sous-total location</td><td>${escapeHtml(formatMoney(subtotal))}</td></tr>
+              <tr><td>Taxes${pricingConfig.taxRatePercent > 0 ? ` (${pricingConfig.taxRatePercent}%)` : ""}</td><td>${escapeHtml(formatMoney(taxes))}</td></tr>
+              <tr><td>Assurance</td><td>${escapeHtml(formatMoney(insurance))}</td></tr>
+              ${showDepositAmount ? `<tr class="deposit"><td>Caution remboursable</td><td>${escapeHtml(formatMoney(depositAmount))}</td></tr>` : ""}
+              <tr class="total"><td>Total location</td><td>${escapeHtml(formatMoney(total))}</td></tr>
+            </tbody>
+          </table>
+          <div class="payment-note">${escapeHtml(paymentNote)}</div>
+        </div>
+        <div class="payment-meta">
+          <div class="mini-box">
+            <small>Date de paiement</small>
+            <strong>${escapeHtml(formatDateTime(paidAt))}</strong>
+          </div>
+          <div class="mini-box">
+            <small>Mode de paiement</small>
+            <strong>${escapeHtml(paymentMethod(request.paymentMethod))}</strong>
+          </div>
+          <div class="mini-box">
+            <small>Référence</small>
+            <strong>${escapeHtml(receiptNumber)}</strong>
           </div>
         </div>
       </div>
     </section>
 
-    <footer class="footer-bar">
-      <span class="footer-badge">${svgIcon("handshake")}</span>
-      <div><strong>Merci de votre confiance.</strong><small>Nous vous remercions d'avoir choisi ${escapeHtml(companyName)}.</small></div>
-      <span class="footer-sep"></span>
-      <div class="footer-help"><b>Besoin d'aide ?</b>${escapeHtml(companyPhone)}</div>
+    <section class="card">
+      <h2 class="section-title">${svgIcon("shield")}Vérification</h2>
+      <div class="verification-layout">
+        <div class="qr-box">
+          <img src="${qrDataUrl}" alt="QR code de vérification" />
+          <span>Scanner pour vérifier l'authenticité du reçu</span>
+        </div>
+        <div class="verification-copy">
+          <p>Ce reçu peut être vérifié en ligne via le lien ci-dessous.</p>
+          <a href="${escapeHtml(verificationUrl)}">${escapeHtml(verificationUrl)}</a>
+          <p class="hint">Document généré automatiquement par Location Auto Maroc.</p>
+        </div>
+        <div class="signatures">
+          <div class="signature agency">
+            <small>Signature agence</small>
+            <div class="signature-line"></div>
+          </div>
+          <div class="signature">
+            <small>Signature client</small>
+            <div class="signature-line"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div>
+        <strong>${escapeHtml(companyName)}</strong>
+        <span>${escapeHtml(companyCity)}, Maroc · ${escapeHtml(companyPhone)}</span>
+      </div>
+      <div class="right">Paiement agence uniquement · Reçu archivable</div>
     </footer>
   </main>
 </body>
 </html>`;
+
+  return html;
 }
 
 export async function buildReceiptPdf(args: ReceiptArgs) {
@@ -399,7 +820,7 @@ export async function buildReceiptPdf(args: ReceiptArgs) {
     const page = await browser.newPage();
     await page.setViewport({ width: 794, height: 1123, deviceScaleFactor: 1 });
     await page.setContent(html, { waitUntil: "domcontentloaded", timeout: 30_000 });
-    await page.waitForNetworkIdle({ idleTime: 500, timeout: 30_000 });
+    await page.waitForNetworkIdle({ idleTime: 300, timeout: 30_000 });
     await page.emulateMediaType("print");
     const pdf = await page.pdf({
       format: "A4",
