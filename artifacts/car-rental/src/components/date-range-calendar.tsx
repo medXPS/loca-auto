@@ -412,8 +412,8 @@ export function DateRangeCalendar({
           onClickCapture={handleSwipeClickCapture}
           className={
             isCompact
-              ? "touch-pan-y select-none p-1.5"
-              : "touch-pan-y select-none p-2 sm:p-3"
+              ? "touch-pan-x select-none p-1.5"
+              : "touch-pan-x select-none p-2 sm:p-3"
           }
         >
           <Calendar

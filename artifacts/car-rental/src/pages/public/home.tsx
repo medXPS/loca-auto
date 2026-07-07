@@ -1,7 +1,7 @@
-import { useMemo, useState, type ComponentType } from "react";
+import { useMemo, useRef, useState, type ComponentType } from "react";
 import { Link, useLocation } from "wouter";
-import { Car, useListCars } from "@workspace/api-client-react";
 import { useQuery } from "@tanstack/react-query";
+import { Car, useListCars } from "@workspace/api-client-react";
 import { ReservationSearchBar } from "@/components/reservation-search-bar";
 import { Seo } from "@/components/seo";
 import { Button } from "@/components/ui/button";
@@ -10,17 +10,133 @@ import { getAvailabilityCopy, formatAvailabilityDate } from "@/lib/car-availabil
 import { CATEGORY_TRANSLATIONS, FUEL_TRANSLATIONS, formatPrice } from "@/lib/utils";
 import {
   ArrowRight,
+  CalendarDays,
+  CarFront,
+  ChevronLeft,
+  ChevronRight,
   CircleDollarSign,
   Clock3,
+  CreditCard,
   Fuel,
   Headset,
   Heart,
+  KeyRound,
   MapPin,
   Settings2,
   ShieldCheck,
+  Sparkles,
   Star,
   Users,
 } from "lucide-react";
+
+type IconType = ComponentType<{ className?: string }>;
+
+const heroPerks = [
+  {
+    icon: CircleDollarSign,
+    title: "Prix transparents",
+    description: "Aucun frais cache, tout est clair des le depart.",
+  },
+  {
+    icon: Clock3,
+    title: "Annulation flexible",
+    description: "Reservez l esprit libre avec une marge de securite.",
+  },
+  {
+    icon: Headset,
+    title: "Support 7j/7",
+    description: "Une equipe disponible pour vous guider a chaque etape.",
+  },
+  {
+    icon: CarFront,
+    title: "Livraison disponible",
+    description: "A l aeroport ou a domicile selon votre besoin.",
+  },
+];
+
+const heroStats = [
+  { value: "+1200", label: "Clients satisfaits" },
+  { value: "+350", label: "Vehicules disponibles" },
+  { value: "20+", label: "Villes couvertes" },
+  { value: "4.8/5", label: "Note moyenne" },
+];
+
+const steps = [
+  {
+    icon: CalendarDays,
+    title: "Choisissez vos dates",
+    description: "Selectionnez la ville, les dates et le lieu de prise en charge.",
+  },
+  {
+    icon: CarFront,
+    title: "Choisissez votre voiture",
+    description: "Comparez et reservez le vehicule qui vous convient.",
+  },
+  {
+    icon: CreditCard,
+    title: "Reservez en ligne",
+    description: "Paiement securise et confirmation immediate.",
+  },
+  {
+    icon: KeyRound,
+    title: "Recuperez et profitez",
+    description: "Recuperez votre voiture et profitez pleinement du trajet.",
+  },
+];
+
+const benefits = [
+  {
+    icon: ShieldCheck,
+    title: "Meilleurs prix garantis",
+    description: "Des tarifs competitifs sans frais caches.",
+  },
+  {
+    icon: Clock3,
+    title: "Annulation flexible",
+    description: "Modifiez ou annulez jusqu a 48h avant.",
+  },
+  {
+    icon: Headset,
+    title: "Assistance 7/7",
+    description: "Support client disponible a tout moment.",
+  },
+  {
+    icon: CarFront,
+    title: "Vehicules recents",
+    description: "Flotte moderne et parfaitement entretenue.",
+  },
+  {
+    icon: MapPin,
+    title: "Livraison partout",
+    description: "A l aeroport, hotel ou adresse de votre choix.",
+  },
+  {
+    icon: CreditCard,
+    title: "Paiement securise",
+    description: "Transactions 100% securisees en ligne.",
+  },
+];
+
+const testimonials = [
+  {
+    initials: "SL",
+    name: "Sophie L.",
+    location: "Paris, France",
+    text: "Service impeccable. Voiture propre, recente et equipe tres professionnelle. Je recommande a 100%.",
+  },
+  {
+    initials: "YA",
+    name: "Youssef A.",
+    location: "Marrakech, Maroc",
+    text: "Excellent rapport qualite-prix. Livraison a l aeroport ponctuelle et sans aucun souci.",
+  },
+  {
+    initials: "ED",
+    name: "Emma D.",
+    location: "Lyon, France",
+    text: "Reservation facile et rapide a la fin. La voiture etait parfaite pour notre road trip au Maroc.",
+  },
+];
 
 function SectionHeading({
   eyebrow,
@@ -32,12 +148,77 @@ function SectionHeading({
   description: string;
 }) {
   return (
-    <div className="max-w-2xl">
-      <p className="text-xs font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">{eyebrow}</p>
-      <h2 className="mt-3 font-serif text-2xl leading-tight text-slate-950 sm:text-3xl md:text-5xl">
+    <div className="max-w-3xl">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">{eyebrow}</p>
+      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl md:text-[2.6rem]">
         {title}
       </h2>
-      <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">{description}</p>
+      <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">{description}</p>
+    </div>
+  );
+}
+
+function StatTile({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="rounded-[1.4rem] border border-slate-200 bg-white px-4 py-4 text-center shadow-[0_12px_30px_-24px_rgba(15,23,42,0.18)]">
+      <p className="text-lg font-semibold tracking-tight text-slate-950 sm:text-xl">{value}</p>
+      <p className="mt-1 text-xs font-medium text-slate-500">{label}</p>
+    </div>
+  );
+}
+
+function FeatureTile({
+  icon: Icon,
+  title,
+  description,
+  dark = false,
+}: {
+  icon: IconType;
+  title: string;
+  description: string;
+  dark?: boolean;
+}) {
+  return (
+    <div
+      className={dark
+        ? "flex items-start gap-3 rounded-[1.35rem] border border-white/14 bg-white/5 p-4 text-white shadow-[0_18px_42px_-28px_rgba(0,0,0,0.45)] backdrop-blur"
+        : "flex items-start gap-3 rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_16px_34px_-26px_rgba(15,23,42,0.12)]"}
+    >
+      <div
+        className={dark
+          ? "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#ff4d43]/30 bg-[#ff4d43]/12 text-[#ff7f77]"
+          : "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#ff4d43]/15 bg-[#ff4d43]/10 text-[#ff4d43]"}
+      >
+        <Icon className="h-5 w-5" />
+      </div>
+      <div className="min-w-0">
+        <h3 className={dark ? "text-sm font-semibold text-white" : "text-sm font-semibold text-slate-950"}>
+          {title}
+        </h3>
+        <p className={dark ? "mt-1 text-xs leading-5 text-white/70" : "mt-1 text-xs leading-5 text-slate-500"}>
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SpecLine({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: IconType;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[1.15rem] border border-slate-200 bg-slate-50 px-3 py-3">
+      <div className="flex items-center gap-2 text-[#ff4d43]">
+        <Icon className="h-4 w-4" />
+        <span className="text-[10px] uppercase tracking-[0.18em] text-slate-500">{label}</span>
+      </div>
+      <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
@@ -53,13 +234,13 @@ function FeaturedCarCard({ car }: { car: Car }) {
   const reserveHref = `/voitures/${car.id}?reserve=1`;
 
   return (
-    <article className="overflow-hidden rounded-[1.9rem] border border-slate-200 bg-white shadow-[0_22px_56px_-34px_rgba(15,23,42,0.18)]">
-      <Link href={detailHref} className="group relative block aspect-[4/3] overflow-hidden bg-slate-100">
+    <article className="group overflow-hidden rounded-[1.7rem] border border-slate-200 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.22)]">
+      <Link href={detailHref} className="relative block aspect-[16/10] overflow-hidden bg-slate-100">
         {car.mainImageUrl ? (
           <img
             src={car.mainImageUrl}
             alt={`${car.brand} ${car.model}`}
-            className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+            className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.05]"
           />
         ) : (
           <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,#111827,#334155)] px-6 text-center text-white">
@@ -72,15 +253,13 @@ function FeaturedCarCard({ car }: { car: Car }) {
           </div>
         )}
 
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,31,0.06),rgba(7,15,31,0.3))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,31,0.04),rgba(7,15,31,0.24))]" />
 
-        <div className="absolute left-4 top-4 flex max-w-[calc(100%-5.5rem)] flex-col gap-2">
+        <div className="absolute left-4 top-4 flex max-w-[calc(100%-5rem)] flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={`rounded-full px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em] ${
-                availabilityCopy.isBlocked
-                  ? "bg-[#ff4d43] text-white"
-                  : "bg-[#17b26a] text-white"
+                availabilityCopy.isBlocked ? "bg-[#ff4d43] text-white" : "bg-[#17b26a] text-white"
               }`}
             >
               {availabilityCopy.badge}
@@ -105,95 +284,118 @@ function FeaturedCarCard({ car }: { car: Car }) {
       </Link>
 
       <div className="space-y-4 p-5">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-            {categoryLabel}
-          </p>
-          <h3 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
-            {car.brand} {car.model}
-          </h3>
-          <p className="mt-1 inline-flex items-center gap-2 text-sm text-slate-500">
-            <MapPin className="h-4 w-4 text-[#ff4d43]" />
-            {agency?.name || car.city || "Maroc"}
-          </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">
+              {categoryLabel}
+            </p>
+            <h3 className="mt-2 truncate text-xl font-semibold tracking-tight text-slate-950">
+              {car.brand} {car.model}
+            </h3>
+            <p className="mt-1 inline-flex items-center gap-2 text-sm text-slate-500">
+              <MapPin className="h-4 w-4 text-[#ff4d43]" />
+              {agency?.name || car.city || "Maroc"}
+            </p>
+          </div>
+
+          <div className="shrink-0 rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-right">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">A partir de</p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
+              {formatPrice(car.dailyPrice)}
+            </p>
+            <p className="text-xs text-slate-500">/ jour</p>
+          </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <SpecChip icon={Settings2} label="Transmission" value={transmissionLabel} />
-          <SpecChip icon={Fuel} label="Carburant" value={fuelLabel} />
-          <SpecChip icon={Users} label="Places" value={`${car.seats} places`} />
+          <SpecLine icon={Settings2} label="Transmission" value={transmissionLabel} />
+          <SpecLine icon={Fuel} label="Carburant" value={fuelLabel} />
+          <SpecLine icon={Users} label="Places" value={`${car.seats} places`} />
         </div>
 
-        <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50 px-4 py-4">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">A partir de</p>
-              <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-                {formatPrice(car.dailyPrice)}
-              </p>
-              <p className="text-xs text-slate-500">/ jour</p>
-            </div>
-          </div>
-
-          <p className="mt-2 text-xs text-slate-500">
-            {availabilityCopy.isBlocked && availabilityCopy.availableFrom
-              ? `Disponible a partir du ${formatAvailabilityDate(availabilityCopy.availableFrom)}`
-              : availabilityCopy.label}
-          </p>
-
-          <Button
-            asChild
-            className="mt-4 h-12 w-full rounded-full bg-[#ff4d43] text-white shadow-[0_18px_30px_-18px_rgba(255,77,67,0.68)] hover:bg-[#f03d32]"
-          >
-            <Link href={reserveHref}>
-              Reserver maintenant
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
+        <Button
+          asChild
+          className="h-12 w-full rounded-full bg-[#ff4d43] text-white shadow-[0_18px_30px_-18px_rgba(255,77,67,0.68)] hover:bg-[#f03d32]"
+        >
+          <Link href={reserveHref}>
+            Reserver maintenant
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
       </div>
     </article>
   );
 }
 
-function SpecChip({
+function StepCard({
   icon: Icon,
-  label,
-  value,
+  title,
+  description,
+  hasArrow = false,
 }: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  value: string;
+  icon: IconType;
+  title: string;
+  description: string;
+  hasArrow?: boolean;
 }) {
   return (
-    <div className="rounded-[1.15rem] border border-slate-200 bg-white px-3 py-3">
-      <div className="flex items-center gap-2 text-[#ff4d43]">
-        <Icon className="h-4 w-4" />
-        <span className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</span>
+    <div className="relative rounded-[1.45rem] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.16)]">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#ff4d43]/15 bg-[#ff4d43]/10 text-[#ff4d43]">
+        <Icon className="h-5 w-5" />
       </div>
-      <p className="mt-2 text-sm font-semibold text-slate-900">{value}</p>
+      <h3 className="mt-4 text-base font-semibold text-slate-950">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+      {hasArrow && <ArrowRight className="absolute -right-3 top-1/2 hidden h-5 w-5 -translate-y-1/2 text-slate-300 xl:block" />}
     </div>
   );
 }
 
-function FeatureColumn({
-  icon: Icon,
-  title,
-  description,
+function TestimonialCard({
+  initials,
+  name,
+  location,
+  text,
 }: {
-  icon: ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
+  initials: string;
+  name: string;
+  location: string;
+  text: string;
 }) {
   return (
-    <div className="flex items-start gap-4">
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#ff4d43]/15 bg-[#ff4d43]/10 text-[#ff4d43]">
-        <Icon className="h-6 w-6" />
+    <article className="w-[300px] flex-none rounded-[1.45rem] border border-slate-200 bg-white p-5 shadow-[0_18px_42px_-28px_rgba(15,23,42,0.16)] sm:w-[330px]">
+      <div className="flex items-start gap-3">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 to-slate-600 text-sm font-semibold text-white">
+          {initials}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-slate-950">{name}</p>
+          <p className="text-xs text-slate-500">{location}</p>
+          <div className="mt-1 flex items-center gap-1 text-amber-400" aria-hidden="true">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <Star key={index} className="h-3.5 w-3.5 fill-current" />
+            ))}
+          </div>
+        </div>
       </div>
-      <div>
-        <h3 className="text-base font-semibold text-slate-950">{title}</h3>
-        <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
-      </div>
+      <p className="mt-4 text-sm leading-7 text-slate-600">{text}</p>
+    </article>
+  );
+}
+
+function BrandCard({
+  name,
+  logoUrl,
+}: {
+  name: string;
+  logoUrl?: string | null;
+}) {
+  return (
+    <div className="flex min-w-[140px] flex-none items-center justify-center rounded-[1.3rem] border border-slate-200 bg-white px-4 py-4 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.18)]">
+      {logoUrl ? (
+        <img src={logoUrl} alt={name} className="max-h-10 max-w-[4.6rem] object-contain" />
+      ) : (
+        <span className="text-sm font-bold uppercase tracking-[0.12em] text-slate-700">{name}</span>
+      )}
     </div>
   );
 }
@@ -203,6 +405,8 @@ export default function Home() {
   const [city, setCity] = useState("");
   const [startDate, setStartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
+  const brandTrackRef = useRef<HTMLDivElement>(null);
+  const testimonialsTrackRef = useRef<HTMLDivElement>(null);
 
   const { data: featuredCars, isLoading } = useListCars({
     limit: 6,
@@ -254,20 +458,29 @@ export default function Home() {
     return items;
   }, [brands, featuredCars]);
 
-  const featuredShowcase = useMemo(() => (featuredCars?.cars ?? []).slice(0, 3), [featuredCars]);
   const visibleBrandCards = useMemo(() => {
-    if (brandShowcase.length === 0) return [];
-    if (brandShowcase.length >= 6) return brandShowcase;
+    const fallbackBrands: Array<{ key: string; name: string; logoUrl?: string | null }> = [
+      { key: "byd", name: "BYD" },
+      { key: "ford", name: "Ford" },
+      { key: "porsche", name: "Porsche" },
+      { key: "hyundai", name: "Hyundai" },
+      { key: "mercedes-benz", name: "Mercedes-Benz" },
+      { key: "renault", name: "Renault" },
+      { key: "kia", name: "Kia" },
+      { key: "bmw", name: "BMW" },
+    ];
 
-    const padded = [...brandShowcase];
+    const base = brandShowcase.length > 0 ? brandShowcase : fallbackBrands;
+    const padded = [...base];
 
-    while (padded.length < 6) {
-      padded.push(brandShowcase[padded.length % brandShowcase.length]);
+    while (padded.length < 8) {
+      padded.push(base[padded.length % base.length]);
     }
 
-    return padded;
+    return padded.slice(0, 8);
   }, [brandShowcase]);
-  const animatedBrandCards = useMemo(() => [...visibleBrandCards, ...visibleBrandCards], [visibleBrandCards]);
+
+  const featuredShowcase = useMemo(() => (featuredCars?.cars ?? []).slice(0, 3), [featuredCars]);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -279,13 +492,17 @@ export default function Home() {
     setLocation(`/reservation${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
+  const scrollTrack = (ref: { current: HTMLDivElement | null }, direction: 1 | -1) => {
+    ref.current?.scrollBy({ left: direction * 340, behavior: "smooth" });
+  };
+
   return (
-    <div className="bg-[#f4f6fb]">
+    <div className="bg-[#f5f7fb]">
       <Seo
         title="Location de voitures au Maroc"
         description="Trouvez votre vehicule en quelques clics. Comparez les prix, reservez rapidement et contactez l'agence sur WhatsApp."
         canonical="https://demo-locationauto.shonenx.shop/"
-        image="/opengraph.jpg"
+        image="/hero-porsche-sunset.jpg"
         jsonLd={[
           {
             "@context": "https://schema.org",
@@ -311,31 +528,34 @@ export default function Home() {
         ]}
       />
 
-      <section className="relative overflow-hidden bg-[#070b14]">
+      <section className="relative overflow-hidden bg-[#07101b]">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1587667548502-8fafd51f864b?auto=format&fit=crop&w=1800&q=80"
-            alt="Porsche 911 de nuit"
-            className="h-full w-full object-cover object-center md:object-[center_46%]"
+            src="/hero-porsche-sunset.jpg"
+            alt="Porsche blanc au coucher du soleil"
+            className="h-full w-full object-cover object-[center_55%]"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,9,18,0.92)_0%,rgba(6,9,18,0.78)_34%,rgba(6,9,18,0.46)_58%,rgba(6,9,18,0.16)_80%,rgba(6,9,18,0.06)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(255,77,67,0.26),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(255,255,255,0.14),transparent_18%),radial-gradient(circle_at_76%_82%,rgba(255,255,255,0.08),transparent_18%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,11,20,0.95)_0%,rgba(7,11,20,0.84)_28%,rgba(7,11,20,0.52)_52%,rgba(7,11,20,0.22)_76%,rgba(7,11,20,0.12)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,77,67,0.24),transparent_22%),radial-gradient(circle_at_86%_20%,rgba(255,255,255,0.16),transparent_18%),radial-gradient(circle_at_80%_78%,rgba(255,255,255,0.08),transparent_18%)]" />
         </div>
 
-        <div className="container relative z-10 mx-auto px-4 pb-16 pt-8 md:pb-20 md:pt-10 lg:pb-24 lg:pt-14">
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.82fr)] lg:items-center">
-            <div className="max-w-3xl py-6 lg:py-10 text-white">
-              <p className="text-xs font-semibold uppercase tracking-[0.36em] text-[#ff9b95]">
+        <div className="container relative z-10 mx-auto px-4 pb-10 pt-8 md:pb-12 lg:pb-14 lg:pt-12">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1.03fr)_minmax(380px,0.82fr)] lg:items-start">
+            <div className="max-w-3xl py-6 text-white lg:py-10">
+              <p className="inline-flex items-center gap-2 rounded-full border border-white/14 bg-white/5 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.34em] text-[#ff7e76] backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" />
                 Votre voyage, notre passion
               </p>
-              <h1 className="mt-5 max-w-3xl text-4xl font-extrabold leading-[0.96] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[4.9rem]">
+
+              <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-[0.94] tracking-tight text-balance text-white sm:text-5xl md:text-6xl lg:text-[4.8rem]">
                 Louez la voiture
-                <span className="block">ideale pour decouvrir</span>
-                <span className="block font-serif text-[#ff7269]">le Maroc</span>
+                <span className="block">idéale pour découvrir</span>
+                <span className="block font-serif text-[#ff6f66]">le Maroc</span>
               </h1>
-              <p className="mt-6 max-w-xl text-base leading-8 text-white/72">
-                Des voitures selectionnees avec soin, un service premium et des prix transparents.
-                Reservez en quelques clics et partez l esprit leger.
+
+              <p className="mt-6 max-w-xl text-sm leading-7 text-white/72 sm:text-base">
+                Des voitures sélectionnées avec soin, un service premium et des prix transparents.
+                Réservez en quelques clics.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-5">
@@ -367,24 +587,12 @@ export default function Home() {
                   <p className="mt-1 text-sm text-white/58">+1200 clients satisfaits</p>
                 </div>
               </div>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Button
-                  asChild
-                  className="h-13 w-full rounded-2xl bg-[#ff4d43] px-6 text-white shadow-[0_22px_35px_-20px_rgba(255,77,67,0.72)] hover:bg-[#f03d32] sm:w-auto"
-                >
-                  <Link href="/voitures">
-                    Voir les vehicules
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
             </div>
 
-            <div className="w-full max-w-[470px] justify-self-end">
+            <div className="w-full max-w-[450px] justify-self-end">
               <ReservationSearchBar
                 title="Trouvez votre voiture"
-                subtitle="Reservez votre voiture au meilleur prix"
+                subtitle="Réservez votre voiture au meilleur prix"
                 cities={cities}
                 city={city}
                 startDate={startDate}
@@ -399,66 +607,68 @@ export default function Home() {
               />
             </div>
           </div>
+
+          <div className="mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {heroPerks.map((item) => {
+              const Icon = item.icon;
+              return <FeatureTile key={item.title} icon={Icon} title={item.title} description={item.description} dark />;
+            })}
+          </div>
+
+          <div className="mt-4 grid gap-4 rounded-[1.75rem] border border-white/16 bg-white/92 px-4 py-4 shadow-[0_26px_64px_-38px_rgba(0,0,0,0.35)] backdrop-blur sm:grid-cols-2 xl:grid-cols-4">
+            {heroStats.map((stat) => (
+              <StatTile key={stat.label} value={stat.value} label={stat.label} />
+            ))}
+          </div>
         </div>
       </section>
 
       {visibleBrandCards.length > 0 && (
-        <section className="relative z-10 -mt-10">
+        <section className="relative z-10 -mt-6">
           <div className="container mx-auto px-4">
-            <div className="rounded-[2rem] border border-slate-200 bg-white px-5 py-6 shadow-[0_28px_70px_-40px_rgba(15,23,42,0.24)] md:px-6">
+            <div className="rounded-[2rem] border border-slate-200 bg-white px-5 py-6 shadow-[0_28px_70px_-40px_rgba(15,23,42,0.18)] md:px-6">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#ff4d43]">Marques disponibles</p>
-                  <p className="mt-2 text-sm text-slate-500">Un bandeau vivant avec les logos des plus grandes marques.</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#ff4d43]">
+                    Nos marques partenaires
+                  </p>
+                  <p className="mt-2 text-sm text-slate-500">Les plus grandes marques</p>
                 </div>
+
                 <div className="hidden items-center gap-2 sm:flex">
                   <button
                     type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm"
-                    aria-label="Marques precedentes"
+                    onClick={() => scrollTrack(brandTrackRef, -1)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
+                    aria-label="Marques précédentes"
                   >
-                    <ArrowRight className="h-4 w-4 -rotate-180" />
+                    <ChevronLeft className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm"
+                    onClick={() => scrollTrack(brandTrackRef, 1)}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
                     aria-label="Marques suivantes"
                   >
-                    <ArrowRight className="h-4 w-4" />
+                    <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
               </div>
 
-              <div className="group mt-5 overflow-hidden">
-                <div
-                  className="flex w-max items-center gap-2 sm:gap-3 md:gap-4 group-hover:[animation-play-state:paused]"
-                  style={{ animation: "home-brand-marquee 24s linear infinite" }}
-                >
-                  {animatedBrandCards.map((brand, index) => (
-                    <div
-                      key={`${brand.key}-${index}`}
-                      className="flex min-w-[170px] flex-none items-center gap-3 rounded-[1.3rem] border border-slate-200 bg-white px-4 py-3 shadow-[0_12px_30px_-24px_rgba(15,23,42,0.24)] sm:min-w-[220px] sm:px-6 sm:py-3.5"
-                    >
-                      <div className="flex h-9 w-14 items-center justify-center rounded-xl bg-slate-50 sm:h-10 sm:w-[4.5rem]">
-                        {brand.logoUrl ? (
-                          <img src={brand.logoUrl} alt={brand.name} className="max-h-8 max-w-14 object-contain" />
-                        ) : (
-                          <span className="text-xs font-bold text-slate-700 sm:text-sm">
-                            {brand.name.slice(0, 2).toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-sm font-semibold text-slate-600 sm:text-sm">{brand.name}</span>
-                    </div>
-                  ))}
-                </div>
+              <div
+                ref={brandTrackRef}
+                className="mt-5 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {visibleBrandCards.map((brand, index) => (
+                  <BrandCard key={`${brand.key}-${index}`} name={brand.name} logoUrl={brand.logoUrl} />
+                ))}
               </div>
             </div>
           </div>
         </section>
       )}
 
-      <section className="container mx-auto px-4 pb-14 pt-18 md:pb-18 md:pt-22">
+      <section className="container mx-auto px-4 pb-14 pt-16 md:pb-16 md:pt-18">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
             eyebrow="Selection populaire"
@@ -480,9 +690,9 @@ export default function Home() {
             ? Array.from({ length: 3 }).map((_, index) => (
                 <div
                   key={index}
-                  className="overflow-hidden rounded-[1.9rem] border border-slate-200 bg-white shadow-[0_22px_56px_-34px_rgba(15,23,42,0.18)]"
+                  className="overflow-hidden rounded-[1.7rem] border border-slate-200 bg-white shadow-[0_24px_60px_-36px_rgba(15,23,42,0.18)]"
                 >
-                  <div className="aspect-[4/3] animate-pulse bg-slate-200" />
+                  <div className="aspect-[16/10] animate-pulse bg-slate-200" />
                   <div className="space-y-4 p-5">
                     <div className="h-5 w-24 animate-pulse rounded-full bg-slate-200" />
                     <div className="h-8 w-3/4 animate-pulse rounded-full bg-slate-200" />
@@ -491,45 +701,100 @@ export default function Home() {
                         <div key={specIndex} className="h-20 animate-pulse rounded-[1.15rem] bg-slate-100" />
                       ))}
                     </div>
-                    <div className="h-16 animate-pulse rounded-[1.35rem] bg-slate-200" />
+                    <div className="h-12 animate-pulse rounded-full bg-slate-200" />
                   </div>
                 </div>
               ))
             : featuredShowcase.map((car) => <FeaturedCarCard key={car.id} car={car} />)}
         </div>
+      </section>
 
-        <div className="mt-8 rounded-[2rem] border border-slate-200 bg-white px-6 py-7 shadow-[0_32px_70px_-44px_rgba(15,23,42,0.18)] md:px-8 md:py-8">
-          <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-4">
-            <FeatureColumn
-              icon={ShieldCheck}
-              title="Securite garantie"
-              description="Vehicules controles et assures pour votre tranquillite."
+      <section className="container mx-auto px-4 pb-14">
+        <SectionHeading
+          eyebrow="Comment ça marche"
+          title="Louez en 4 étapes simples"
+          description="Le parcours reste fluide et direct, du choix des dates jusqu à la remise des clés."
+        />
+
+        <div className="mt-8 grid gap-4 xl:grid-cols-4">
+          {steps.map((step, index) => (
+            <StepCard
+              key={step.title}
+              icon={step.icon}
+              title={step.title}
+              description={step.description}
+              hasArrow={index < steps.length - 1}
             />
-            <FeatureColumn
-              icon={CircleDollarSign}
-              title="Prix transparents"
-              description="Aucun frais cache, tout est clair des le depart."
-            />
-            <FeatureColumn
-              icon={Clock3}
-              title="Reservation rapide"
-              description="Reservez en quelques clics et gagnez du temps."
-            />
-            <FeatureColumn
-              icon={Headset}
-              title="Support 7j/7"
-              description="Notre equipe reste disponible a tout moment."
-            />
-          </div>
+          ))}
         </div>
       </section>
 
-      <style>{`
-        @keyframes home-brand-marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(calc(-50% - 0.5rem)); }
-        }
-      `}</style>
+      <section className="container mx-auto px-4 pb-14">
+        <SectionHeading
+          eyebrow="Pourquoi nous choisir"
+          title="Une expérience de location premium"
+          description="Une lecture plus rassurante des prix, des disponibilités et des conditions avant de réserver."
+        />
+
+        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+          {benefits.map((item) => {
+            const Icon = item.icon;
+
+            return (
+              <FeatureTile
+                key={item.title}
+                icon={Icon}
+                title={item.title}
+                description={item.description}
+              />
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-18">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <SectionHeading
+            eyebrow="Ils nous font confiance"
+            title="Ce que disent nos clients"
+            description="Des retours simples et directs qui confirment l expérience de réservation."
+          />
+
+          <div className="hidden items-center gap-2 sm:flex">
+            <button
+              type="button"
+              onClick={() => scrollTrack(testimonialsTrackRef, -1)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
+              aria-label="Avis précédents"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollTrack(testimonialsTrackRef, 1)}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
+              aria-label="Avis suivants"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        <div
+          ref={testimonialsTrackRef}
+          className="mt-8 flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {testimonials.map((item) => (
+            <TestimonialCard
+              key={item.name}
+              initials={item.initials}
+              name={item.name}
+              location={item.location}
+              text={item.text}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

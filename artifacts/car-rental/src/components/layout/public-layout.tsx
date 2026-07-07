@@ -19,6 +19,7 @@ import {
   Music2,
   Newspaper,
   Phone,
+  Sparkles,
   UserCircle2,
   X,
   Youtube,
@@ -40,6 +41,7 @@ function getDashboardHref(role?: string) {
 const navLinks: NavItem[] = [
   { href: "/", label: "Accueil", icon: House },
   { href: "/voitures", label: "Véhicules", icon: CarFront },
+  { href: "/a-propos", label: "À propos", icon: Sparkles },
   { href: "/blog", label: "Blog", icon: Newspaper },
   { href: "/contact", label: "Contact", icon: Phone },
 ];
@@ -87,14 +89,13 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           isHomePage ? "border-slate-200/80 bg-white/92 text-slate-950 shadow-sm" : "border-border/60 bg-white/92",
         )}
       >
-        <div className="container mx-auto flex h-[68px] items-center justify-between gap-4 px-4">
+        <div className="container mx-auto flex h-[64px] items-center justify-between gap-4 px-4">
           <Link href="/" className="min-w-0">
             <SiteLogo tone="dark" />
           </Link>
 
           <nav className="hidden items-center gap-1 lg:flex">
             {navLinks.map((link) => {
-              const Icon = link.icon;
               const active = isActive(link.href);
 
               return (
@@ -102,17 +103,16 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "relative inline-flex h-12 items-center gap-2 px-3.5 text-sm font-medium transition-colors",
+                    "relative inline-flex h-12 items-center px-3.5 text-sm font-medium transition-colors",
                     isHomePage
                       ? active
                         ? "text-primary"
                         : "text-slate-700 hover:text-slate-950"
                       : active
-                        ? "text-primary"
-                        : "text-foreground/72 hover:text-foreground",
+                      ? "text-primary"
+                      : "text-foreground/72 hover:text-foreground",
                   )}
                 >
-                  <Icon className={cn("h-4 w-4", active && isHomePage ? "text-[#ff4d43]" : "")} />
                   {link.label}
                   {active && (
                     <span
