@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, CarFront, MapPin, Plane, Search } from "lucide-react";
+import { CalendarDays, CarFront, MapPin, Search } from "lucide-react";
 import { formatDisplayDate } from "@workspace/api-client-react/availability";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -56,20 +56,13 @@ export function ReservationSearchBar({
         )}
       >
         <div className="border-b border-slate-200/80 bg-white/95">
-          <div className="grid grid-cols-2">
+          <div className="grid grid-cols-1">
             <button
               type="button"
               className="flex h-14 items-center justify-center gap-2 border-b-2 border-[#ff4d43] text-sm font-semibold text-[#ff4d43]"
             >
               <CarFront className="h-4 w-4" />
               Location voiture
-            </button>
-            <button
-              type="button"
-              className="flex h-14 items-center justify-center gap-2 border-b-2 border-transparent text-sm font-semibold text-slate-500"
-            >
-              <Plane className="h-4 w-4" />
-              Transfert aéroport
             </button>
           </div>
         </div>
