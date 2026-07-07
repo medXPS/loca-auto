@@ -22,14 +22,17 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ImagePlus, Trash2 } from "lucide-react";
+import { ArrowLeft, AlertTriangle, ImagePlus, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { fetchAgencies, fetchBrands } from "@/lib/fleet-catalog";
 import { uploadCarMedia } from "@/lib/car-media-upload";
+import { formatAvailabilityDate } from "@/lib/car-availability";
+import { getStatusLabel } from "@/lib/utils";
 
 const NO_VALUE = "__none__";
 
@@ -135,6 +138,17 @@ export default function AdminEditCar() {
 
   const selectedAgencyId = form.watch("agencyId");
   const selectedBrandId = form.watch("brandId");
+  const hasActiveAvailabilityBlock = Boolean(car?.availability?.hasActiveBlock);
+  const hasBlockingCarStatus = Boolean(
+    car && ["TEMPORARILY_HELD", "RESERVED", "RENTED", "MAINTENANCE", "INACTIVE"].includes(car.status),
+  );
+  const showMaintenanceNotice = hasActiveAvailabilityBlock || hasBlockingCarStatus;
+  const maintenanceNoticeSummary = hasActiveAvailabilityBlock
+    ? "Ce vehicule a deja un blocage actif."
+    : `Ce vehicule est deja ${getStatusLabel(car?.status, "car").toLowerCase()}.`;
+  const availabilityFrom = car?.availability?.availableFrom
+    ? formatAvailabilityDate(car.availability.availableFrom)
+    : null;
 
   const onSubmit = (data: CarFormValues) => {
     updateCar.mutate({ id, data: data as any }, {
@@ -333,11 +347,11 @@ export default function AdminEditCar() {
                   </FormItem>
                 )} />
 
-                <FormField control={form.control} name="status" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Statut</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl><SelectTrigger><SelectValue placeholder="Selectionnez" /></SelectTrigger></FormControl>
+              <FormField control={form.control} name="status" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Statut</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger><SelectValue placeholder="Selectionnez" /></SelectTrigger></FormControl>
                       <SelectContent>
                         <SelectItem value="AVAILABLE">Disponible</SelectItem>
                         <SelectItem value="TEMPORARILY_HELD">En attente de paiement</SelectItem>
@@ -346,6 +360,29 @@ export default function AdminEditCar() {
                         <SelectItem value="MAINTENANCE">En maintenance</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">
+                      La maintenance bloque les nouvelles reservations. Les reservations deja en cours restent en place.
+                    </p>
+                    {showMaintenanceNotice && (
+                      <Alert className="border-amber-200 bg-amber-50/80 text-amber-900">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Blocage deja present</AlertTitle>
+                        <AlertDescription className="space-y-2">
+                          <p>
+                            {maintenanceNoticeSummary}
+                            Le passage en maintenance reste possible, mais il ne supprime pas une reservation ou un blocage deja enregistre.
+                          </p>
+                          {availabilityFrom && (
+                            <p className="text-xs text-amber-800">
+                              {car?.availability?.blockType === "MAINTENANCE"
+                                ? "Retour prevu"
+                                : "Disponible a partir du"}{" "}
+                              {availabilityFrom}.
+                            </p>
+                          )}
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )} />
