@@ -311,29 +311,29 @@ export default function Home() {
         ]}
       />
 
-      <section className="relative overflow-hidden bg-[#f4f6fb]">
+      <section className="relative overflow-hidden bg-[#070b14]">
         <div className="absolute inset-0">
           <img
-            src="https://images.unsplash.com/photo-1553440569-bcc63803a83d?auto=format&fit=crop&w=1800&q=80"
-            alt="Voiture premium"
-            className="h-full w-full object-cover object-center"
+            src="https://images.unsplash.com/photo-1587667548502-8fafd51f864b?auto=format&fit=crop&w=1800&q=80"
+            alt="Porsche 911 de nuit"
+            className="h-full w-full object-cover object-center md:object-[center_46%]"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(244,246,251,0.96)_0%,rgba(244,246,251,0.88)_36%,rgba(244,246,251,0.62)_68%,rgba(244,246,251,0.32)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_12%,rgba(255,77,67,0.16),transparent_24%),radial-gradient(circle_at_84%_24%,rgba(255,255,255,0.55),transparent_20%),radial-gradient(circle_at_78%_82%,rgba(15,23,42,0.08),transparent_20%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,9,18,0.92)_0%,rgba(6,9,18,0.78)_34%,rgba(6,9,18,0.46)_58%,rgba(6,9,18,0.16)_80%,rgba(6,9,18,0.06)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(255,77,67,0.26),transparent_24%),radial-gradient(circle_at_84%_18%,rgba(255,255,255,0.14),transparent_18%),radial-gradient(circle_at_76%_82%,rgba(255,255,255,0.08),transparent_18%)]" />
         </div>
 
         <div className="container relative z-10 mx-auto px-4 pb-16 pt-8 md:pb-20 md:pt-10 lg:pb-24 lg:pt-14">
           <div className="grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.82fr)] lg:items-center">
-            <div className="max-w-3xl py-6 lg:py-10">
-              <p className="text-xs font-semibold uppercase tracking-[0.36em] text-[#ff6a61]">
+            <div className="max-w-3xl py-6 lg:py-10 text-white">
+              <p className="text-xs font-semibold uppercase tracking-[0.36em] text-[#ff9b95]">
                 Votre voyage, notre passion
               </p>
-              <h1 className="mt-5 max-w-3xl text-4xl font-extrabold leading-[0.96] tracking-tight text-slate-950 sm:text-5xl md:text-6xl lg:text-[4.9rem]">
+              <h1 className="mt-5 max-w-3xl text-4xl font-extrabold leading-[0.96] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[4.9rem]">
                 Louez la voiture
                 <span className="block">ideale pour decouvrir</span>
-                <span className="block font-serif text-[#ff4d43]">le Maroc</span>
+                <span className="block font-serif text-[#ff7269]">le Maroc</span>
               </h1>
-              <p className="mt-6 max-w-xl text-base leading-8 text-slate-600">
+              <p className="mt-6 max-w-xl text-base leading-8 text-white/72">
                 Des voitures selectionnees avec soin, un service premium et des prix transparents.
                 Reservez en quelques clics et partez l esprit leger.
               </p>
@@ -348,7 +348,7 @@ export default function Home() {
                   ].map((person) => (
                     <div
                       key={person.initials}
-                      className={`flex h-12 w-12 items-center justify-center rounded-full border-2 border-[#f4f6fb] bg-gradient-to-br ${person.bg} text-xs font-extrabold text-white shadow-lg`}
+                      className={`flex h-12 w-12 items-center justify-center rounded-full border-2 border-white/10 bg-gradient-to-br ${person.bg} text-xs font-extrabold text-white shadow-lg`}
                     >
                       {person.initials}
                     </div>
@@ -356,7 +356,7 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-white">
                     <span>4.8/5</span>
                     <span className="flex items-center gap-1 text-[#ffcc66]">
                       {Array.from({ length: 5 }).map((_, index) => (
@@ -364,7 +364,7 @@ export default function Home() {
                       ))}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-slate-500">+1200 clients satisfaits</p>
+                  <p className="mt-1 text-sm text-white/58">+1200 clients satisfaits</p>
                 </div>
               </div>
 
