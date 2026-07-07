@@ -517,6 +517,24 @@
     will-change: opacity;
   }
 
+  @keyframes brand-marquee {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+
+  .brand-marquee {
+    animation: brand-marquee 34s linear infinite;
+    will-change: transform;
+  }
+
+  .brand-marquee:hover {
+    animation-play-state: paused;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .rdp-weeks_before_enter,
     .rdp-weeks_before_exit,
@@ -528,6 +546,10 @@
     .rdp-caption_after_exit {
       animation-duration: 1ms !important;
       animation-iteration-count: 1 !important;
+    }
+
+    .brand-marquee {
+      animation: none !important;
     }
   }
 }

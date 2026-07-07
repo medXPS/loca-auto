@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useMemo, useRef, useState, type ComponentType } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Car, useListCars } from "@workspace/api-client-react";
@@ -371,7 +371,6 @@ export default function Home() {
   const [city, setCity] = useState("");
   const [startDate, setStartDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
-  const brandTrackRef = useRef<HTMLDivElement>(null);
   const testimonialsTrackRef = useRef<HTMLDivElement>(null);
 
   const { data: featuredCars, isLoading } = useListCars({
@@ -461,48 +460,6 @@ export default function Home() {
   const scrollTrack = (ref: { current: HTMLDivElement | null }, direction: 1 | -1) => {
     ref.current?.scrollBy({ left: direction * 340, behavior: "smooth" });
   };
-
-  useEffect(() => {
-    const track = brandTrackRef.current;
-
-    if (!track || typeof window === "undefined") {
-      return;
-    }
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
-
-    let frameId = 0;
-    let previousTime = 0;
-    const speed = 0.028;
-
-    const animate = (time: number) => {
-      if (!previousTime) {
-        previousTime = time;
-      }
-
-      const delta = time - previousTime;
-      previousTime = time;
-
-      if (track.scrollWidth > track.clientWidth && !track.matches(":hover") && !track.matches(":active")) {
-        const halfWidth = track.scrollWidth / 2;
-        track.scrollLeft += delta * speed;
-
-        if (track.scrollLeft >= halfWidth) {
-          track.scrollLeft -= halfWidth;
-        }
-      }
-
-      frameId = window.requestAnimationFrame(animate);
-    };
-
-    frameId = window.requestAnimationFrame(animate);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
-  }, [visibleBrandCards.length]);
 
   return (
     <div className="bg-[#f5f7fb]">
@@ -643,35 +600,16 @@ export default function Home() {
                   <p className="mt-2 text-sm text-slate-500">Les plus grandes marques</p>
                 </div>
 
-                <div className="hidden items-center gap-2 sm:flex">
-                  <button
-                    type="button"
-                    onClick={() => scrollTrack(brandTrackRef, -1)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
-                    aria-label="Marques précédentes"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollTrack(brandTrackRef, 1)}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
-                    aria-label="Marques suivantes"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
               </div>
 
-              <div
-                ref={brandTrackRef}
-                className="mt-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-                <div className="flex w-max gap-3">
-                  {visibleBrandCards.map((brand, index) => (
-                    <BrandCard key={`${brand.key}-${index}`} name={brand.name} logoUrl={brand.logoUrl} />
-                  ))}
-                  <div className="flex gap-3" aria-hidden="true">
+              <div className="mt-5 overflow-hidden">
+                <div className="brand-marquee flex w-max">
+                  <div className="flex gap-3 pr-3">
+                    {visibleBrandCards.map((brand, index) => (
+                      <BrandCard key={`${brand.key}-${index}`} name={brand.name} logoUrl={brand.logoUrl} />
+                    ))}
+                  </div>
+                  <div className="flex gap-3 pr-3" aria-hidden="true">
                     {visibleBrandCards.map((brand, index) => (
                       <BrandCard key={`${brand.key}-dup-${index}`} name={brand.name} logoUrl={brand.logoUrl} />
                     ))}
