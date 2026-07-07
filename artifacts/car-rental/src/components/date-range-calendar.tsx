@@ -5,6 +5,7 @@ import type {
 } from "react";
 import { addMonths, startOfMonth } from "date-fns";
 import { CalendarCheck2, CalendarDays, CalendarX, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 import { fr } from "date-fns/locale/fr";
 import type { AvailabilityBlock } from "@workspace/api-client-react";
@@ -17,6 +18,7 @@ import {
   todayIso,
   toIsoDate,
 } from "@workspace/api-client-react/availability";
+import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 
 interface DateRangeCalendarProps {
@@ -124,6 +126,23 @@ export function DateRangeCalendar({
   );
 
   const selectedLabel = formatRangeSummary(startDate, returnDate);
+  const visibleMonthLabel = useMemo(() => {
+    const currentLabel = visibleMonth.toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric",
+    });
+
+    if (monthCount <= 1) {
+      return currentLabel;
+    }
+
+    const nextLabel = addMonths(visibleMonth, monthCount - 1).toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric",
+    });
+
+    return `${currentLabel} - ${nextLabel}`;
+  }, [monthCount, visibleMonth]);
 
   useEffect(() => {
     setVisibleMonth(initialVisibleMonth);
@@ -357,6 +376,34 @@ export function DateRangeCalendar({
           </div>
         </div>
 
+        <div className="flex items-center justify-between gap-3 border-b border-primary/10 bg-background/80 px-2.5 py-2 sm:px-4">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => navigateMonth(-1)}
+            aria-label="Mois précédent"
+            className="h-9 w-9 rounded-full border-primary/10 bg-background/90 text-muted-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          <div className="min-w-0 flex-1 text-center text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground sm:text-[11px]">
+            {visibleMonthLabel}
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => navigateMonth(1)}
+            aria-label="Mois suivant"
+            className="h-9 w-9 rounded-full border-primary/10 bg-background/90 text-muted-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
         <div
           onPointerDownCapture={handleSwipePointerDownCapture}
           onPointerMoveCapture={handleSwipePointerMoveCapture}
@@ -386,6 +433,7 @@ export function DateRangeCalendar({
             }
             startMonth={minMonth}
             endMonth={maxMonth}
+            hideNavigation
             pagedNavigation
             animate
             showOutsideDays
