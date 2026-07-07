@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Car, useListCars } from "@workspace/api-client-react";
@@ -462,6 +462,48 @@ export default function Home() {
     ref.current?.scrollBy({ left: direction * 340, behavior: "smooth" });
   };
 
+  useEffect(() => {
+    const track = brandTrackRef.current;
+
+    if (!track || typeof window === "undefined") {
+      return;
+    }
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+
+    let frameId = 0;
+    let previousTime = 0;
+    const speed = 0.028;
+
+    const animate = (time: number) => {
+      if (!previousTime) {
+        previousTime = time;
+      }
+
+      const delta = time - previousTime;
+      previousTime = time;
+
+      if (track.scrollWidth > track.clientWidth && !track.matches(":hover") && !track.matches(":active")) {
+        const halfWidth = track.scrollWidth / 2;
+        track.scrollLeft += delta * speed;
+
+        if (track.scrollLeft >= halfWidth) {
+          track.scrollLeft -= halfWidth;
+        }
+      }
+
+      frameId = window.requestAnimationFrame(animate);
+    };
+
+    frameId = window.requestAnimationFrame(animate);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [visibleBrandCards.length]);
+
   return (
     <div className="bg-[#f5f7fb]">
       <Seo
@@ -623,11 +665,18 @@ export default function Home() {
 
               <div
                 ref={brandTrackRef}
-                className="mt-5 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="mt-5 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
-                {visibleBrandCards.map((brand, index) => (
-                  <BrandCard key={`${brand.key}-${index}`} name={brand.name} logoUrl={brand.logoUrl} />
-                ))}
+                <div className="flex w-max gap-3">
+                  {visibleBrandCards.map((brand, index) => (
+                    <BrandCard key={`${brand.key}-${index}`} name={brand.name} logoUrl={brand.logoUrl} />
+                  ))}
+                  <div className="flex gap-3" aria-hidden="true">
+                    {visibleBrandCards.map((brand, index) => (
+                      <BrandCard key={`${brand.key}-dup-${index}`} name={brand.name} logoUrl={brand.logoUrl} />
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
