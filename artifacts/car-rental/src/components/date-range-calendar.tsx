@@ -230,6 +230,7 @@ export function DateRangeCalendar({
             locale={fr}
             weekStartsOn={1}
             numberOfMonths={monthCount}
+            pagedNavigation={monthCount > 1}
             showOutsideDays
             className={isCompact ? "bg-transparent p-0 [--cell-size:0.92rem]" : "bg-transparent p-1 [--cell-size:2.35rem] sm:[--cell-size:2.55rem]"}
             classNames={{
