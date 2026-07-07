@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import type {
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+  WheelEvent as ReactWheelEvent,
+} from "react";
 import { addMonths, startOfMonth } from "date-fns";
 import { CalendarCheck2, CalendarDays, CalendarX, RotateCcw } from "lucide-react";
 import type { DateRange } from "react-day-picker";
@@ -82,6 +86,7 @@ export function DateRangeCalendar({
   const isWideCalendar = useMediaQuery("(min-width: 900px)");
   const isCompact = compact || minimal;
   const monthCount = isCompact || !isWideCalendar ? 1 : 2;
+  const swipeStep = monthCount > 1 ? monthCount : 1;
   const hasSelection = Boolean(startDate || returnDate);
   const minMonth = useMemo(() => startOfMonth(parseIsoDate(minDate)), [minDate]);
   const maxMonth = useMemo(
@@ -134,8 +139,21 @@ export function DateRangeCalendar({
 
   const navigateMonth = (direction: 1 | -1) => {
     setVisibleMonth((currentMonth) =>
-      clampMonth(addMonths(currentMonth, direction), minMonth, maxMonth),
+      clampMonth(addMonths(currentMonth, direction * swipeStep), minMonth, maxMonth),
     );
+  };
+
+  const handleSwipeWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
+    if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) {
+      return;
+    }
+
+    if (Math.abs(event.deltaX) < 20) {
+      return;
+    }
+
+    event.preventDefault();
+    navigateMonth(event.deltaX < 0 ? 1 : -1);
   };
 
   const handleSwipePointerDownCapture = (
@@ -190,6 +208,7 @@ export function DateRangeCalendar({
     gesture.swiped = true;
     suppressNextClickRef.current = true;
     lastSwipeAtRef.current = performance.now();
+    event.preventDefault();
     navigateMonth(deltaX < 0 ? 1 : -1);
   };
 
@@ -379,10 +398,11 @@ export function DateRangeCalendar({
           onPointerUpCapture={handleSwipePointerUpCapture}
           onPointerCancelCapture={handleSwipePointerCancelCapture}
           onClickCapture={handleSwipeClickCapture}
+          onWheelCapture={handleSwipeWheel}
           className={
             isCompact
-              ? "touch-pan-y select-none p-1.5"
-              : "touch-pan-y select-none p-2 sm:p-3"
+              ? "touch-none select-none p-1.5"
+              : "touch-none select-none p-2 sm:p-3"
           }
         >
           <Calendar
@@ -410,7 +430,7 @@ export function DateRangeCalendar({
                 : "bg-transparent p-1 [--cell-size:2.35rem] sm:[--cell-size:2.55rem]"
             }
             classNames={{
-              months: monthCount > 1 ? "grid gap-4 lg:grid-cols-2" : isCompact ? "grid gap-1" : "grid gap-4",
+              months: monthCount > 1 ? "flex w-full max-w-none flex-nowrap gap-4" : isCompact ? "grid gap-1" : "grid gap-4",
               month: isCompact ? "flex min-w-0 flex-col gap-1" : "flex min-w-0 flex-col gap-3",
               month_caption: isCompact ? "flex h-7 w-full items-center justify-center px-6" : "flex h-10 w-full items-center justify-center px-10",
               caption_label: isCompact ? "text-[0.74rem] font-semibold text-foreground" : "text-sm font-semibold text-foreground",
