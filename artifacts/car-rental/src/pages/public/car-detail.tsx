@@ -43,7 +43,6 @@ import {
   Fuel,
   ImageIcon,
   MapPin,
-  MessageCircle,
   PlayCircle,
   Settings2,
   ShieldCheck,
@@ -60,8 +59,25 @@ type GalleryImage = {
   mediaType?: string | null;
 };
 
-function buildWhatsAppHref(carName: string, message: string) {
-  return `https://wa.me/212600000000?text=${encodeURIComponent(`${carName}\n${message}`)}`;
+function roundMoney(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+function calculateCautionAmount(depositValue: number, rentalSubtotal: number) {
+  if (
+    !Number.isFinite(depositValue) ||
+    depositValue <= 0 ||
+    !Number.isFinite(rentalSubtotal) ||
+    rentalSubtotal <= 0
+  ) {
+    return 0;
+  }
+
+  if (depositValue <= 100) {
+    return roundMoney((rentalSubtotal * depositValue) / 100);
+  }
+
+  return roundMoney(depositValue);
 }
 
 function looksLikeVideoUrl(url: string) {
@@ -423,7 +439,13 @@ export default function CarDetail() {
     fullPriceSubtotal: number;
   };
   const estimatedTotalPrice = pricingBreakdown.totalPrice;
-  const cautionAmount = Number(car?.depositAmount ?? 0);
+  const cautionValue = Number(car?.depositAmount ?? 0);
+  const cautionIsPercent =
+    Number.isFinite(cautionValue) && cautionValue > 0 && cautionValue <= 100;
+  const cautionAmount = calculateCautionAmount(
+    cautionValue,
+    pricingBreakdown.baseSubtotal,
+  );
   const hasCaution = Number.isFinite(cautionAmount) && cautionAmount > 0;
 
   const transmissionLabel =
@@ -463,11 +485,6 @@ export default function CarDetail() {
           )
         : [],
     [car?.brand, car?.images, car?.mainImageUrl, car?.model],
-  );
-
-  const whatsappHref = buildWhatsAppHref(
-    car ? `${car.brand} ${car.model}` : "Location Auto Maroc",
-    `Bonjour, je souhaite réserver${car ? ` ${car.brand} ${car.model}` : ""}${startDate ? ` du ${formatDisplayDate(startDate)}` : ""}${returnDate ? ` au ${formatDisplayDate(returnDate)}` : ""}${estimatedTotalPrice > 0 ? `. Budget estimé : ${formatPrice(estimatedTotalPrice)}` : ""}.`,
   );
 
   const backHref = useMemo(() => {
@@ -1058,7 +1075,9 @@ export default function CarDetail() {
                 </p>
                 {hasCaution && (
                   <p className="mt-1 text-sm font-medium text-white/75">
-                    Caution: {formatPrice(cautionAmount)}
+                    {cautionIsPercent
+                      ? `Caution: ${formatPrice(cautionAmount)} (${cautionValue}% du prix de location)`
+                      : `Caution: ${formatPrice(cautionAmount)}`}
                   </p>
                 )}
                 <p className="mt-1 text-sm text-white/62">
@@ -1100,20 +1119,6 @@ export default function CarDetail() {
                   <a href="#reservation">
                     Réserver
                     <ArrowRight className="h-4 w-4" />
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="h-12 rounded-full border-white/15 bg-white/5 text-white hover:bg-white/10"
-                >
-                  <a
-                    href={whatsappHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    WhatsApp
                   </a>
                 </Button>
               </div>
@@ -1184,7 +1189,7 @@ export default function CarDetail() {
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-white/96 px-3 py-3 shadow-[0_-12px_36px_-24px_rgba(16,23,34,0.24)] backdrop-blur md:hidden">
-        <div className="mx-auto grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="mx-auto grid max-w-xl grid-cols-1 gap-3">
           <Button
             asChild
             className="h-12 rounded-full bg-[#F04B45] text-white hover:bg-[#e63f39]"
@@ -1192,16 +1197,6 @@ export default function CarDetail() {
             <a href="#reservation">
               Réserver
               <ArrowRight className="h-4 w-4" />
-            </a>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="h-12 rounded-full border-border/70 bg-white"
-          >
-            <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
             </a>
           </Button>
         </div>
