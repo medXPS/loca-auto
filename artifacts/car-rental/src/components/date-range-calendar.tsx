@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import { addMonths, startOfMonth } from "date-fns";
 import { CalendarCheck2, CalendarDays, CalendarX, RotateCcw } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 import { fr } from "date-fns/locale/fr";
@@ -41,6 +43,20 @@ function useMediaQuery(query: string) {
   return matches;
 }
 
+function clampMonth(month: Date, minMonth: Date, maxMonth?: Date) {
+  const normalizedMonth = startOfMonth(month);
+
+  if (normalizedMonth.getTime() < minMonth.getTime()) {
+    return minMonth;
+  }
+
+  if (maxMonth && normalizedMonth.getTime() > maxMonth.getTime()) {
+    return maxMonth;
+  }
+
+  return normalizedMonth;
+}
+
 export function DateRangeCalendar({
   label = "Calendrier",
   startDate,
@@ -54,10 +70,34 @@ export function DateRangeCalendar({
 }: DateRangeCalendarProps) {
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const lastClickedIsoRef = useRef<string | null>(null);
+  const swipeSurfaceRef = useRef<HTMLDivElement>(null);
+  const swipeGestureRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    swiped: boolean;
+  } | null>(null);
+  const suppressNextClickRef = useRef(false);
+  const lastSwipeAtRef = useRef<number | null>(null);
   const isWideCalendar = useMediaQuery("(min-width: 900px)");
   const isCompact = compact || minimal;
   const monthCount = isCompact || !isWideCalendar ? 1 : 2;
   const hasSelection = Boolean(startDate || returnDate);
+  const minMonth = useMemo(() => startOfMonth(parseIsoDate(minDate)), [minDate]);
+  const maxMonth = useMemo(
+    () => (maxDate ? startOfMonth(parseIsoDate(maxDate)) : undefined),
+    [maxDate],
+  );
+  const initialVisibleMonth = useMemo(
+    () =>
+      clampMonth(
+        startOfMonth(parseIsoDate(startDate || minDate)),
+        minMonth,
+        maxMonth,
+      ),
+    [maxDate, minDate, minMonth, maxMonth, startDate],
+  );
+  const [visibleMonth, setVisibleMonth] = useState<Date>(initialVisibleMonth);
 
   const selectedRange = useMemo<DateRange | undefined>(() => {
     if (!startDate) return undefined;
@@ -83,10 +123,124 @@ export function DateRangeCalendar({
   const selectedLabel = formatRangeSummary(startDate, returnDate);
 
   useEffect(() => {
+    setVisibleMonth(initialVisibleMonth);
+  }, [initialVisibleMonth]);
+
+  useEffect(() => {
     if (!startDate && !returnDate) {
       setWarningMessage(null);
     }
   }, [returnDate, startDate]);
+
+  const navigateMonth = (direction: 1 | -1) => {
+    setVisibleMonth((currentMonth) =>
+      clampMonth(addMonths(currentMonth, direction), minMonth, maxMonth),
+    );
+  };
+
+  const handleSwipePointerDownCapture = (
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) => {
+    if (event.button !== 0 || !event.isPrimary) return;
+
+    swipeGestureRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      swiped: false,
+    };
+    suppressNextClickRef.current = false;
+    lastSwipeAtRef.current = null;
+
+    try {
+      swipeSurfaceRef.current?.setPointerCapture(event.pointerId);
+    } catch {
+      // Some browsers can throw if capture is unsupported for the target node.
+    }
+  };
+
+  const handleSwipePointerMoveCapture = (
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) => {
+    const gesture = swipeGestureRef.current;
+
+    if (!gesture || gesture.pointerId !== event.pointerId || gesture.swiped) {
+      return;
+    }
+
+    const deltaX = event.clientX - gesture.startX;
+    const deltaY = event.clientY - gesture.startY;
+
+    if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 12) {
+      swipeGestureRef.current = null;
+
+      try {
+        swipeSurfaceRef.current?.releasePointerCapture(event.pointerId);
+      } catch {
+        // Ignore capture release failures.
+      }
+
+      return;
+    }
+
+    if (Math.abs(deltaX) < 44 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+      return;
+    }
+
+    gesture.swiped = true;
+    suppressNextClickRef.current = true;
+    lastSwipeAtRef.current = performance.now();
+    navigateMonth(deltaX < 0 ? 1 : -1);
+  };
+
+  const clearSwipeGesture = (pointerId: number) => {
+    if (swipeGestureRef.current?.pointerId === pointerId) {
+      swipeGestureRef.current = null;
+    }
+
+    try {
+      swipeSurfaceRef.current?.releasePointerCapture(pointerId);
+    } catch {
+      // Ignore capture release failures.
+    }
+  };
+
+  const handleSwipePointerUpCapture = (
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) => {
+    const gesture = swipeGestureRef.current;
+
+    if (gesture?.pointerId === event.pointerId && gesture.swiped) {
+      suppressNextClickRef.current = true;
+    }
+
+    clearSwipeGesture(event.pointerId);
+  };
+
+  const handleSwipePointerCancelCapture = (
+    event: ReactPointerEvent<HTMLDivElement>,
+  ) => {
+    clearSwipeGesture(event.pointerId);
+  };
+
+  const handleSwipeClickCapture = (
+    event: ReactMouseEvent<HTMLDivElement>,
+  ) => {
+    const lastSwipeAt = lastSwipeAtRef.current;
+    const isRecentSwipe =
+      suppressNextClickRef.current &&
+      lastSwipeAt !== null &&
+      performance.now() - lastSwipeAt < 500;
+
+    if (!isRecentSwipe) {
+      return;
+    }
+
+    suppressNextClickRef.current = false;
+    lastSwipeAtRef.current = null;
+    event.preventDefault();
+    event.stopPropagation();
+  };
 
   const handleSelect = (range: DateRange | undefined) => {
     if (!range?.from) {
@@ -218,7 +372,19 @@ export function DateRangeCalendar({
           </div>
         </div>
 
-        <div className={isCompact ? "p-1.5" : "p-2 sm:p-3"}>
+        <div
+          ref={swipeSurfaceRef}
+          onPointerDownCapture={handleSwipePointerDownCapture}
+          onPointerMoveCapture={handleSwipePointerMoveCapture}
+          onPointerUpCapture={handleSwipePointerUpCapture}
+          onPointerCancelCapture={handleSwipePointerCancelCapture}
+          onClickCapture={handleSwipeClickCapture}
+          className={
+            isCompact
+              ? "touch-pan-y select-none p-1.5"
+              : "touch-pan-y select-none p-2 sm:p-3"
+          }
+        >
           <Calendar
             mode="range"
             selected={selectedRange}
@@ -230,9 +396,19 @@ export function DateRangeCalendar({
             locale={fr}
             weekStartsOn={1}
             numberOfMonths={monthCount}
-            pagedNavigation={monthCount > 1}
+            month={visibleMonth}
+            onMonthChange={(month) =>
+              setVisibleMonth(clampMonth(month, minMonth, maxMonth))
+            }
+            startMonth={minMonth}
+            endMonth={maxMonth}
+            animate
             showOutsideDays
-            className={isCompact ? "bg-transparent p-0 [--cell-size:0.92rem]" : "bg-transparent p-1 [--cell-size:2.35rem] sm:[--cell-size:2.55rem]"}
+            className={
+              isCompact
+                ? "bg-transparent p-0 [--cell-size:0.92rem]"
+                : "bg-transparent p-1 [--cell-size:2.35rem] sm:[--cell-size:2.55rem]"
+            }
             classNames={{
               months: monthCount > 1 ? "grid gap-4 lg:grid-cols-2" : isCompact ? "grid gap-1" : "grid gap-4",
               month: isCompact ? "flex min-w-0 flex-col gap-1" : "flex min-w-0 flex-col gap-3",
