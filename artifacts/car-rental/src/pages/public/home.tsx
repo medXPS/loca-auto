@@ -118,17 +118,6 @@ function FeaturedCarCard({ car }: { car: Car }) {
           <SpecChip icon={Users} label="Places" value={`${car.seats} places`} />
         </div>
 
-        <div className="flex items-center justify-between gap-3 rounded-[1.15rem] border border-slate-200 bg-slate-50 px-4 py-3">
-          <span className="text-sm text-slate-700">Réservation rapide</span>
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              availabilityCopy.isBlocked ? "bg-[#ff4d43]/10 text-[#ff4d43]" : "bg-[#17b26a]/10 text-[#168f58]"
-            }`}
-          >
-            {availabilityCopy.badge}
-          </span>
-        </div>
-
         <Button asChild className="h-12 w-full rounded-full bg-[#ff4d43] text-white shadow-[0_18px_30px_-18px_rgba(255,77,67,0.68)] hover:bg-[#f03d32]">
           <Link href={reserveHref}>
             Réserver maintenant
