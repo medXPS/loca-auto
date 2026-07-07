@@ -422,6 +422,7 @@ export function DateRangeCalendar({
             }
             startMonth={minMonth}
             endMonth={maxMonth}
+            pagedNavigation
             animate
             showOutsideDays
             className={
