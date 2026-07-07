@@ -42,28 +42,6 @@ function SectionHeading({
   );
 }
 
-function HeroBenefit({
-  icon: Icon,
-  title,
-  description,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex items-start gap-4 rounded-[1.35rem] border border-white/75 bg-white/90 p-4 shadow-[0_16px_34px_-24px_rgba(15,23,42,0.2)] backdrop-blur">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#ff4d43]/15 bg-[#ff4d43]/10 text-[#ff4d43]">
-        <Icon className="h-5 w-5" />
-      </div>
-      <div>
-        <h3 className="text-sm font-semibold text-slate-950">{title}</h3>
-        <p className="mt-1 text-xs leading-5 text-slate-500">{description}</p>
-      </div>
-    </div>
-  );
-}
-
 function FeaturedCarCard({ car }: { car: Car }) {
   const availabilityCopy = getAvailabilityCopy(car);
   const transmissionLabel = car.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle";
@@ -291,39 +269,6 @@ export default function Home() {
   }, [brandShowcase]);
   const animatedBrandCards = useMemo(() => [...visibleBrandCards, ...visibleBrandCards], [visibleBrandCards]);
 
-  const heroBenefits = [
-    {
-      icon: ShieldCheck,
-      title: "Securite garantie",
-      description: "Vehicules controles et assures pour votre tranquillite.",
-    },
-    {
-      icon: CircleDollarSign,
-      title: "Prix transparents",
-      description: "Aucun frais cache, tout est clair des le depart.",
-    },
-    {
-      icon: Clock3,
-      title: "Reservation rapide",
-      description: "Reservez en quelques clics et gagnez du temps.",
-    },
-    {
-      icon: Headset,
-      title: "Support 7j/7",
-      description: "Notre equipe reste disponible a tout moment.",
-    },
-    {
-      icon: Fuel,
-      title: "Kilometrage illimite",
-      description: "Profitez de vos trajets sans contrainte superflue.",
-    },
-    {
-      icon: Users,
-      title: "Livraison disponible",
-      description: "A l aeroport ou a l adresse de votre choix.",
-    },
-  ];
-
   const handleSearch = () => {
     const params = new URLSearchParams();
 
@@ -433,21 +378,6 @@ export default function Home() {
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-              </div>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {heroBenefits.map((item) => {
-                  const Icon = item.icon;
-
-                  return (
-                    <HeroBenefit
-                      key={item.title}
-                      icon={Icon}
-                      title={item.title}
-                      description={item.description}
-                    />
-                  );
-                })}
               </div>
             </div>
 
