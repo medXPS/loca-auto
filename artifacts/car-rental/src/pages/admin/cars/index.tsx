@@ -78,6 +78,9 @@ export default function AdminCars() {
                   const brandMeta = (car as any).brandMeta;
                   const depositAmount = Number(car.depositAmount ?? 0);
                   const hasDepositAmount = Number.isFinite(depositAmount) && depositAmount > 0;
+                  const cautionLabel = depositAmount <= 100
+                    ? `${depositAmount}%`
+                    : formatPrice(depositAmount);
 
                   return (
                     <tr key={car.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
@@ -114,7 +117,7 @@ export default function AdminCars() {
                         <div>{formatPrice(car.dailyPrice)}</div>
                         {hasDepositAmount && (
                           <div className="mt-1 text-xs font-normal text-amber-700">
-                            Caution: {formatPrice(depositAmount)}
+                            Caution: {cautionLabel}
                           </div>
                         )}
                       </td>

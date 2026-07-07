@@ -497,12 +497,13 @@ export default function AdminNewCar() {
                   name="depositAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Caution remboursable (MAD)</FormLabel>
+                      <FormLabel>Caution (%)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           min={0}
+                          placeholder="Ex: 30"
                           value={field.value ?? ""}
                           onChange={(event) =>
                             field.onChange(
@@ -515,6 +516,10 @@ export default function AdminNewCar() {
                           }
                         />
                       </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        Saisissez un pourcentage, par exemple 30 pour 30% du
+                        prix total de location.
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}

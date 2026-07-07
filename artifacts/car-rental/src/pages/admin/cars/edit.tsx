@@ -325,7 +325,12 @@ export default function AdminEditCar() {
                   <FormItem><FormLabel>Prix journalier (MAD)</FormLabel><FormControl><Input type="number" step="0.01" value={field.value ?? ""} onChange={(event) => field.onChange(event.target.value === "" ? 0 : Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="depositAmount" render={({ field }) => (
-                  <FormItem><FormLabel>Caution remboursable (MAD)</FormLabel><FormControl><Input type="number" min={0} step="0.01" value={field.value ?? ""} onChange={(event) => field.onChange(event.target.value === "" ? 0 : Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <FormLabel>Caution (%)</FormLabel>
+                    <FormControl><Input type="number" min={0} step="0.01" placeholder="Ex: 30" value={field.value ?? ""} onChange={(event) => field.onChange(event.target.value === "" ? 0 : Number.isNaN(event.target.valueAsNumber) ? 0 : event.target.valueAsNumber)} /></FormControl>
+                    <p className="text-xs text-muted-foreground">Saisissez un pourcentage, par exemple 30 pour 30% du prix total de location.</p>
+                    <FormMessage />
+                  </FormItem>
                 )} />
 
                 <FormField control={form.control} name="status" render={({ field }) => (
