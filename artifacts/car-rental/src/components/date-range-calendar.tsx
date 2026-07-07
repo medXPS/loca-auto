@@ -73,7 +73,6 @@ export function DateRangeCalendar({
 }: DateRangeCalendarProps) {
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const lastClickedIsoRef = useRef<string | null>(null);
-  const swipeSurfaceRef = useRef<HTMLDivElement>(null);
   const swipeGestureRef = useRef<{
     pointerId: number;
     startX: number;
@@ -155,12 +154,6 @@ export function DateRangeCalendar({
     };
     suppressNextClickRef.current = false;
     lastSwipeAtRef.current = null;
-
-    try {
-      swipeSurfaceRef.current?.setPointerCapture(event.pointerId);
-    } catch {
-      // Some browsers can throw if capture is unsupported for the target node.
-    }
   };
 
   const handleSwipePointerMoveCapture = (
@@ -177,13 +170,6 @@ export function DateRangeCalendar({
 
     if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 12) {
       swipeGestureRef.current = null;
-
-      try {
-        swipeSurfaceRef.current?.releasePointerCapture(event.pointerId);
-      } catch {
-        // Ignore capture release failures.
-      }
-
       return;
     }
 
@@ -201,12 +187,6 @@ export function DateRangeCalendar({
   const clearSwipeGesture = (pointerId: number) => {
     if (swipeGestureRef.current?.pointerId === pointerId) {
       swipeGestureRef.current = null;
-    }
-
-    try {
-      swipeSurfaceRef.current?.releasePointerCapture(pointerId);
-    } catch {
-      // Ignore capture release failures.
     }
   };
 
@@ -378,7 +358,6 @@ export function DateRangeCalendar({
         </div>
 
         <div
-          ref={swipeSurfaceRef}
           onPointerDownCapture={handleSwipePointerDownCapture}
           onPointerMoveCapture={handleSwipePointerMoveCapture}
           onPointerUpCapture={handleSwipePointerUpCapture}
