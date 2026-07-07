@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 type ReservationSearchBarProps = {
   title?: string;
+  subtitle?: string;
   cities: string[];
   city: string;
   startDate: string;
@@ -22,6 +23,7 @@ type ReservationSearchBarProps = {
 
 export function ReservationSearchBar({
   title,
+  subtitle,
   cities,
   city,
   startDate,
@@ -49,27 +51,35 @@ export function ReservationSearchBar({
     >
       <div
         className={cn(
-          "overflow-hidden border border-white/12 bg-[linear-gradient(180deg,rgba(20,27,39,0.88),rgba(15,23,35,0.82))] shadow-[0_28px_80px_-36px_rgba(0,0,0,0.58)] backdrop-blur-xl",
+          "overflow-hidden border border-slate-200 bg-white shadow-[0_26px_70px_-34px_rgba(15,23,42,0.18)] backdrop-blur-xl",
           isCompact ? "rounded-[1.65rem]" : "rounded-[1.9rem]",
         )}
       >
         <div className={cn("grid gap-3", isCompact ? "p-3.5" : "p-4")}>
           {title && (
-            <div className="px-1 pt-1">
-              <p className="text-lg font-semibold uppercase tracking-[0.08em] text-white">{title}</p>
+            <div className="space-y-1 px-1 pt-1">
+              <p className="text-[1.02rem] font-extrabold tracking-tight text-slate-950 sm:text-[1.08rem]">
+                {title}
+              </p>
+              {subtitle && <p className="text-sm leading-6 text-slate-500">{subtitle}</p>}
             </div>
           )}
 
-          <div className={cn("border border-white/10 bg-white/8", isCompact ? "rounded-[1.15rem] px-3.5 py-3.5" : "rounded-2xl px-4 py-4")}>
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Ville de départ</p>
+          <div
+            className={cn(
+              "border border-slate-200 bg-slate-50/80",
+              isCompact ? "rounded-[1.15rem] px-3.5 py-3.5" : "rounded-2xl px-4 py-4",
+            )}
+          >
+            <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Ville de départ</p>
             <Select value={city || "all"} onValueChange={handleCityChange}>
               <SelectTrigger
                 className={cn(
-                  "h-auto border-0 bg-transparent px-0 py-1 text-left font-semibold text-white shadow-none focus:ring-0",
-                  isCompact ? "text-base" : "text-lg",
+                  "h-auto border-0 bg-transparent px-0 py-1 text-left font-semibold text-slate-950 shadow-none focus:ring-0",
+                  isCompact ? "text-[0.95rem]" : "text-[1.02rem]",
                 )}
               >
-                <MapPin className="mr-2 h-4 w-4 text-white/65" />
+                <MapPin className="mr-2 h-4 w-4 text-[#ff4d43]" />
                 <SelectValue placeholder="Casablanca" />
               </SelectTrigger>
               <SelectContent>
@@ -89,13 +99,13 @@ export function ReservationSearchBar({
                 <button
                   type="button"
                   className={cn(
-                    "border border-white/10 bg-white/8 text-left transition hover:bg-white/12",
+                    "border border-slate-200 bg-slate-50/80 text-left transition hover:bg-white",
                     isCompact ? "rounded-[1.15rem] px-3.5 py-3.5" : "rounded-2xl px-4 py-4",
                   )}
                 >
-                  <CalendarDays className="h-4 w-4 text-white/55" />
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Date de départ</p>
-                  <p className={cn("mt-1 font-semibold text-white", isCompact ? "text-[0.9rem]" : "text-sm")}>
+                  <CalendarDays className="h-4 w-4 text-[#ff4d43]" />
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Date de départ</p>
+                  <p className={cn("mt-1 font-semibold text-slate-950", isCompact ? "text-[0.9rem]" : "text-sm")}>
                     {startDate ? formatDisplayDate(startDate) : "Choisir"}
                   </p>
                 </button>
@@ -104,7 +114,7 @@ export function ReservationSearchBar({
                 align="start"
                 sideOffset={12}
                 className={cn(
-                  "overflow-hidden rounded-[1.75rem] border-border/70 bg-background p-0 shadow-[0_30px_80px_-40px_rgba(16,23,34,0.25)]",
+                  "overflow-hidden rounded-[1.75rem] border-slate-200 bg-background p-0 shadow-[0_30px_80px_-40px_rgba(16,23,34,0.25)]",
                   isCompact ? "w-[min(92vw,430px)]" : "w-[min(96vw,960px)]",
                 )}
               >
@@ -122,14 +132,14 @@ export function ReservationSearchBar({
             <button
               type="button"
               className={cn(
-                "border border-white/10 bg-white/8 text-left transition hover:bg-white/12",
+                "border border-slate-200 bg-slate-50/80 text-left transition hover:bg-white",
                 isCompact ? "rounded-[1.15rem] px-3.5 py-3.5" : "rounded-2xl px-4 py-4",
               )}
               onClick={() => setCalendarOpen(true)}
             >
-              <CalendarDays className="h-4 w-4 text-white/55" />
-              <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Date de retour</p>
-              <p className={cn("mt-1 font-semibold text-white", isCompact ? "text-[0.9rem]" : "text-sm")}>
+              <CalendarDays className="h-4 w-4 text-[#ff4d43]" />
+              <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Date de retour</p>
+              <p className={cn("mt-1 font-semibold text-slate-950", isCompact ? "text-[0.9rem]" : "text-sm")}>
                 {returnDate ? formatDisplayDate(returnDate) : "Choisir"}
               </p>
             </button>
