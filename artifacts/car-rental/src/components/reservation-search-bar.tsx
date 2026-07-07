@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CalendarDays, CarFront, MapPin, Plane, Search, Star } from "lucide-react";
+import { CalendarDays, CarFront, MapPin, Plane, Search } from "lucide-react";
 import { formatDisplayDate } from "@workspace/api-client-react/availability";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -20,13 +20,6 @@ type ReservationSearchBarProps = {
   className?: string;
   variant?: "default" | "compact";
 };
-
-const summaryAvatars = [
-  { initials: "AM", bg: "from-[#ff8b82] to-[#ff4d43]" },
-  { initials: "SK", bg: "from-[#3aa0ff] to-[#1371de]" },
-  { initials: "YR", bg: "from-[#f8c15d] to-[#ef8b2f]" },
-  { initials: "NA", bg: "from-[#2fd0b2] to-[#177f72]" },
-];
 
 export function ReservationSearchBar({
   title,
@@ -186,37 +179,6 @@ export function ReservationSearchBar({
             Annulation gratuite jusqu&apos;à 48h avant
           </p>
 
-          {!isCompact && (
-            <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50/80 px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex -space-x-2">
-                    {summaryAvatars.map((avatar) => (
-                      <div
-                        key={avatar.initials}
-                        className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br ${avatar.bg} text-[10px] font-extrabold text-white shadow-sm`}
-                      >
-                        {avatar.initials}
-                      </div>
-                    ))}
-                  </div>
-
-                  <p className="min-w-0 text-sm text-slate-700">
-                    <span className="font-semibold text-slate-950">+1200</span> clients satisfaits
-                  </p>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-sm font-semibold text-slate-950">4,8/5</span>
-                  <span className="flex items-center gap-0.5 text-amber-400" aria-hidden="true">
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <Star key={index} className="h-3.5 w-3.5 fill-current" />
-                    ))}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </form>

@@ -23,7 +23,6 @@ import {
   KeyRound,
   MapPin,
   Settings2,
-  ShieldCheck,
   Sparkles,
   Star,
   Users,
@@ -81,39 +80,6 @@ const steps = [
     icon: KeyRound,
     title: "Recuperez et profitez",
     description: "Recuperez votre voiture et profitez pleinement du trajet.",
-  },
-];
-
-const benefits = [
-  {
-    icon: ShieldCheck,
-    title: "Meilleurs prix garantis",
-    description: "Des tarifs competitifs sans frais caches.",
-  },
-  {
-    icon: Clock3,
-    title: "Annulation flexible",
-    description: "Modifiez ou annulez jusqu a 48h avant.",
-  },
-  {
-    icon: Headset,
-    title: "Assistance 7/7",
-    description: "Support client disponible a tout moment.",
-  },
-  {
-    icon: CarFront,
-    title: "Vehicules recents",
-    description: "Flotte moderne et parfaitement entretenue.",
-  },
-  {
-    icon: MapPin,
-    title: "Livraison partout",
-    description: "A l aeroport, hotel ou adresse de votre choix.",
-  },
-  {
-    icon: CreditCard,
-    title: "Paiement securise",
-    description: "Transactions 100% securisees en ligne.",
   },
 ];
 
@@ -502,7 +468,7 @@ export default function Home() {
         title="Location de voitures au Maroc"
         description="Trouvez votre vehicule en quelques clics. Comparez les prix, reservez rapidement et contactez l'agence sur WhatsApp."
         canonical="https://demo-locationauto.shonenx.shop/"
-        image="/hero-porsche-sunset.jpg"
+        image="/hero-marrakech-porsche.png"
         jsonLd={[
           {
             "@context": "https://schema.org",
@@ -531,7 +497,7 @@ export default function Home() {
       <section className="relative overflow-hidden bg-[#07101b]">
         <div className="absolute inset-0">
           <img
-            src="/hero-porsche-sunset.jpg"
+            src="/hero-marrakech-porsche.png"
             alt="Porsche blanc au coucher du soleil"
             className="h-full w-full object-cover object-[center_55%]"
           />
@@ -726,29 +692,6 @@ export default function Home() {
               hasArrow={index < steps.length - 1}
             />
           ))}
-        </div>
-      </section>
-
-      <section className="container mx-auto px-4 pb-14">
-        <SectionHeading
-          eyebrow="Pourquoi nous choisir"
-          title="Une expérience de location premium"
-          description="Une lecture plus rassurante des prix, des disponibilités et des conditions avant de réserver."
-        />
-
-        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-          {benefits.map((item) => {
-            const Icon = item.icon;
-
-            return (
-              <FeatureTile
-                key={item.title}
-                icon={Icon}
-                title={item.title}
-                description={item.description}
-              />
-            );
-          })}
         </div>
       </section>
 
