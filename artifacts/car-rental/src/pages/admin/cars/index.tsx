@@ -7,6 +7,7 @@ import { Plus, Search, MoreHorizontal, Pencil, Trash2, Car } from "lucide-react"
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
 import { StatusBadge } from "@/components/status-badge";
 import { formatPrice } from "@/lib/utils";
+import { formatAvailabilityDate } from "@/lib/car-availability";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -14,6 +15,26 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+function getAdminCarStatus(car: any) {
+  const blockType = car?.availability?.blockType;
+  const hasActiveBlock = Boolean(car?.availability?.hasActiveBlock);
+
+  if (!hasActiveBlock || !blockType) {
+    return car.status;
+  }
+
+  switch (blockType) {
+    case "TEMPORARY_HOLD":
+      return "TEMPORARILY_HELD";
+    case "RESERVED":
+    case "RENTED":
+    case "MAINTENANCE":
+      return blockType;
+    default:
+      return car.status;
+  }
+}
 
 export default function AdminCars() {
   const [search, setSearch] = useState("");
@@ -76,11 +97,18 @@ export default function AdminCars() {
                 data.cars.map((car) => {
                   const agency = (car as any).agency;
                   const brandMeta = (car as any).brandMeta;
+                  const availability = (car as any).availability;
+                  const displayStatus = getAdminCarStatus(car);
                   const depositAmount = Number(car.depositAmount ?? 0);
                   const hasDepositAmount = Number.isFinite(depositAmount) && depositAmount > 0;
                   const cautionLabel = depositAmount <= 100
                     ? `${depositAmount}%`
                     : formatPrice(depositAmount);
+                  const availabilityLabel = availability?.hasActiveBlock
+                    ? availability.availableFrom
+                      ? `Disponible à partir du ${formatAvailabilityDate(availability.availableFrom)}`
+                      : "Blocage actif"
+                    : null;
 
                   return (
                     <tr key={car.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
@@ -123,7 +151,12 @@ export default function AdminCars() {
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">{car.licensePlate || "-"}</td>
                       <td className="px-6 py-4">
-                        <StatusBadge status={car.status} type="car" />
+                        <div className="flex flex-col gap-1">
+                          <StatusBadge status={displayStatus} type="car" />
+                          {availabilityLabel && (
+                            <span className="text-xs text-muted-foreground">{availabilityLabel}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <DropdownMenu>
