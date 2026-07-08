@@ -31,6 +31,8 @@ type PublicRatingRow = {
 type CustomerRatingAggregate = {
   totalCarScore: number;
   totalServiceScore: number;
+  highestCarScore: number;
+  highestServiceScore: number;
   totalReviews: number;
   latestCommentRating: PublicRatingRow | null;
 };
@@ -153,12 +155,16 @@ async function fetchPublicRatingsOverview() {
     const current = customerAggregates.get(row.customer.id) ?? {
       totalCarScore: 0,
       totalServiceScore: 0,
+      highestCarScore: 0,
+      highestServiceScore: 0,
       totalReviews: 0,
       latestCommentRating: null,
     };
 
     current.totalCarScore += row.rating.score;
     current.totalServiceScore += serviceScore;
+    current.highestCarScore = Math.max(current.highestCarScore, row.rating.score);
+    current.highestServiceScore = Math.max(current.highestServiceScore, serviceScore);
     current.totalReviews += 1;
 
     if (!current.latestCommentRating && row.rating.comment?.trim()) {
@@ -192,16 +198,14 @@ async function fetchPublicRatingsOverview() {
     .slice(0, 6)
     .map((aggregate) => {
       const { rating, user, customer, car } = aggregate.latestCommentRating;
-      const averageCarScore = aggregate.totalCarScore / aggregate.totalReviews;
-      const averageServiceScore = aggregate.totalServiceScore / aggregate.totalReviews;
 
       return {
         id: rating.id,
         customerName: user.fullName,
         location: customer.city?.trim() || car.city?.trim() || "Maroc",
         carLabel: `${car.brand} ${car.model}`,
-        score: Math.round(averageCarScore * 100) / 100,
-        serviceScore: Math.round(averageServiceScore * 100) / 100,
+        score: aggregate.highestCarScore,
+        serviceScore: aggregate.highestServiceScore,
         comment: rating.comment?.trim() || "",
         createdAt: rating.createdAt,
       };
