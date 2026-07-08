@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getGetMeQueryKey,
   getGetMyCustomerProfileQueryKey,
+  customFetch,
   useGetMyCustomerProfile,
   useGetUploadUrl,
   useUpdateMe,
@@ -223,20 +224,16 @@ function DocumentSlot({
         data: { fileName: selectedFile.name, fileType: selectedFile.type, context: "documents" },
       });
 
-      const response = await fetch(presign.uploadUrl, {
+      const response = await customFetch<{ fileUrl: string }>(presign.uploadUrl, {
         method: "PUT",
         body: selectedFile,
         ...(selectedFile.type ? { headers: { "Content-Type": selectedFile.type } } : {}),
       });
 
-      if (!response.ok) {
-        throw new Error("upload_failed");
-      }
-
       await uploadDocument.mutateAsync({
         data: {
           type: docType,
-          fileUrl: presign.fileUrl,
+          fileUrl: response.fileUrl || presign.fileUrl,
         },
       });
 
@@ -355,20 +352,16 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
         data: { fileName: selectedFile.name, fileType: selectedFile.type, context: "documents" },
       });
 
-      const response = await fetch(presign.uploadUrl, {
+      const response = await customFetch<{ fileUrl: string }>(presign.uploadUrl, {
         method: "PUT",
         body: selectedFile,
         ...(selectedFile.type ? { headers: { "Content-Type": selectedFile.type } } : {}),
       });
 
-      if (!response.ok) {
-        throw new Error("upload_failed");
-      }
-
       await uploadDocument.mutateAsync({
         data: {
           type: "AUTRE",
-          fileUrl: presign.fileUrl,
+          fileUrl: response.fileUrl || presign.fileUrl,
         },
       });
 

@@ -1,6 +1,6 @@
 import { type ChangeEvent, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Upload } from "lucide-react";
-import { useGetUploadUrl, useUploadDocument } from "@workspace/api-client-react";
+import { customFetch, useGetUploadUrl, useUploadDocument } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -104,18 +104,15 @@ export function DocumentUploadField({
           data: { fileName: selectedFile.name, fileType: selectedFile.type, context: "documents" },
         });
 
-        const uploadResponse = await fetch(presignResult.uploadUrl, {
+        const uploadResponse = await customFetch<{ fileUrl: string }>(presignResult.uploadUrl, {
           method: "PUT",
           body: selectedFile,
           ...(selectedFile.type
             ? { headers: { "Content-Type": selectedFile.type } }
             : {}),
         });
-        if (!uploadResponse.ok) {
-          throw new Error("upload_failed");
-        }
 
-        fileUrl = presignResult.fileUrl;
+        fileUrl = uploadResponse.fileUrl || presignResult.fileUrl;
         documentType = docType;
       }
 
