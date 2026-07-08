@@ -488,22 +488,6 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/62">WhatsApp</p>
-                <p className="text-sm leading-7 text-white/70">
-                  Contact rapide pour vérifier la disponibilité d&apos;un véhicule et finaliser la réservation.
-                </p>
-                <Button
-                  asChild
-                  variant="outline"
-                  className="rounded-2xl border-white/12 bg-white/6 px-4 text-white hover:bg-white/10 hover:text-white"
-                >
-                  <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-4 w-4" />
-                    WhatsApp
-                  </a>
-                </Button>
-              </div>
             </div>
 
             <div className="border-t border-white/8 py-5">
@@ -554,19 +538,6 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     contact@locationautomaroc.ma
                   </a>
                 </div>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">WhatsApp</p>
-                <p className="text-sm leading-7 text-muted-foreground">
-                  Contact rapide pour vérifier la disponibilité d&apos;un véhicule et finaliser la réservation.
-                </p>
-                <Button asChild variant="outline" className="rounded-full border-border/70 bg-white px-4 py-2 text-sm font-medium">
-                  <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-4 w-4" />
-                    WhatsApp
-                  </a>
-                </Button>
               </div>
             </div>
 
