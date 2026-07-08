@@ -1049,7 +1049,7 @@ export default function CustomerProfile() {
 
                       {ratedEntries.length > recentReviews.length ? (
                         <Button asChild variant="ghost" className="w-full justify-center gap-2 rounded-full text-slate-600 hover:text-slate-950">
-                          <Link href="/dashboard/demandes">
+                          <Link href="/dashboard/avis">
                             Voir tous mes avis
                           </Link>
                         </Button>
