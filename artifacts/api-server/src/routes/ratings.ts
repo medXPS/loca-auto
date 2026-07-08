@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { db, schema } from "../lib/db";
 import { authMiddleware, requireRole } from "../lib/auth";
 
@@ -19,6 +19,20 @@ type SerializedRating = {
   comment: string | null;
   createdAt: Date;
   updatedAt: Date;
+};
+
+type PublicRatingRow = {
+  rating: typeof schema.carRatingsTable.$inferSelect;
+  user: typeof schema.usersTable.$inferSelect;
+  customer: typeof schema.customersTable.$inferSelect;
+  car: typeof schema.carsTable.$inferSelect;
+};
+
+type CustomerRatingAggregate = {
+  totalCarScore: number;
+  totalServiceScore: number;
+  totalReviews: number;
+  latestCommentRating: PublicRatingRow | null;
 };
 
 function parseScore(value: unknown) {
@@ -107,15 +121,6 @@ async function fetchEligibleRatingsForCustomer(customerId: number) {
 }
 
 async function fetchPublicRatingsOverview() {
-  const [summary] = await db
-    .select({
-      averageCarScore: sql<string | null>`round(avg(${schema.carRatingsTable.score})::numeric, 2)::text`,
-      averageServiceScore: sql<string | null>`round(avg(coalesce(${schema.carRatingsTable.serviceScore}, ${schema.carRatingsTable.score}))::numeric, 2)::text`,
-      totalReviews: sql<number>`count(*)::int`,
-      satisfiedClients: sql<number>`count(distinct ${schema.carRatingsTable.customerId})::int`,
-    })
-    .from(schema.carRatingsTable);
-
   const rows = await db
     .select({
       rating: schema.carRatingsTable,
@@ -130,27 +135,90 @@ async function fetchPublicRatingsOverview() {
     )
     .innerJoin(schema.usersTable, eq(schema.customersTable.userId, schema.usersTable.id))
     .innerJoin(schema.carsTable, eq(schema.carRatingsTable.carId, schema.carsTable.id))
-    .where(sql`btrim(coalesce(${schema.carRatingsTable.comment}, '')) <> ''`)
-    .orderBy(desc(schema.carRatingsTable.updatedAt), desc(schema.carRatingsTable.createdAt))
-    .limit(6);
+    .orderBy(
+      desc(schema.carRatingsTable.updatedAt),
+      desc(schema.carRatingsTable.createdAt),
+      desc(schema.carRatingsTable.id),
+    );
+
+  const customerAggregates = new Map<number, CustomerRatingAggregate>();
+  let totalCarScore = 0;
+  let totalServiceScore = 0;
+
+  for (const row of rows) {
+    const serviceScore = row.rating.serviceScore ?? row.rating.score;
+    totalCarScore += row.rating.score;
+    totalServiceScore += serviceScore;
+
+    const current = customerAggregates.get(row.customer.id) ?? {
+      totalCarScore: 0,
+      totalServiceScore: 0,
+      totalReviews: 0,
+      latestCommentRating: null,
+    };
+
+    current.totalCarScore += row.rating.score;
+    current.totalServiceScore += serviceScore;
+    current.totalReviews += 1;
+
+    if (!current.latestCommentRating && row.rating.comment?.trim()) {
+      current.latestCommentRating = row;
+    }
+
+    customerAggregates.set(row.customer.id, current);
+  }
+
+  const satisfiedClients = Array.from(customerAggregates.values()).filter((aggregate) => {
+    if (aggregate.totalReviews === 0) return false;
+    const averageServiceScore = aggregate.totalServiceScore / aggregate.totalReviews;
+    return Number.isFinite(averageServiceScore) && averageServiceScore >= 4;
+  }).length;
+
+  const testimonials = Array.from(customerAggregates.values())
+    .filter(
+      (aggregate): aggregate is CustomerRatingAggregate & { latestCommentRating: PublicRatingRow } =>
+        aggregate.latestCommentRating !== null,
+    )
+    .sort((left, right) => {
+      const leftRating = left.latestCommentRating.rating;
+      const rightRating = right.latestCommentRating.rating;
+
+      return (
+        rightRating.updatedAt.getTime() - leftRating.updatedAt.getTime() ||
+        rightRating.createdAt.getTime() - leftRating.createdAt.getTime() ||
+        rightRating.id - leftRating.id
+      );
+    })
+    .slice(0, 6)
+    .map((aggregate) => {
+      const { rating, user, customer, car } = aggregate.latestCommentRating;
+      const averageCarScore = aggregate.totalCarScore / aggregate.totalReviews;
+      const averageServiceScore = aggregate.totalServiceScore / aggregate.totalReviews;
+
+      return {
+        id: rating.id,
+        customerName: user.fullName,
+        location: customer.city?.trim() || car.city?.trim() || "Maroc",
+        carLabel: `${car.brand} ${car.model}`,
+        score: Math.round(averageCarScore * 100) / 100,
+        serviceScore: Math.round(averageServiceScore * 100) / 100,
+        comment: rating.comment?.trim() || "",
+        createdAt: rating.createdAt,
+      };
+    });
+
+  const averageCarScore = rows.length > 0 ? Math.round((totalCarScore / rows.length) * 100) / 100 : null;
+  const averageServiceScore =
+    rows.length > 0 ? Math.round((totalServiceScore / rows.length) * 100) / 100 : null;
 
   return {
     summary: {
-      averageCarScore: summary?.averageCarScore ? Number(summary.averageCarScore) : null,
-      averageServiceScore: summary?.averageServiceScore ? Number(summary.averageServiceScore) : null,
-      totalReviews: summary?.totalReviews ?? 0,
-      satisfiedClients: summary?.satisfiedClients ?? 0,
+      averageCarScore,
+      averageServiceScore,
+      totalReviews: rows.length,
+      satisfiedClients,
     },
-    testimonials: rows.map(({ rating, user, customer, car }) => ({
-      id: rating.id,
-      customerName: user.fullName,
-      location: customer.city?.trim() || car.city?.trim() || "Maroc",
-      carLabel: `${car.brand} ${car.model}`,
-      score: rating.score,
-      serviceScore: rating.serviceScore ?? rating.score,
-      comment: rating.comment?.trim() || "",
-      createdAt: rating.createdAt,
-    })),
+    testimonials,
   };
 }
 
