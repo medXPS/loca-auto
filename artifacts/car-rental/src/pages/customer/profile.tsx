@@ -104,6 +104,20 @@ function renderStars(score: number) {
   ));
 }
 
+function renderRatingPill(label: string, score: number, tone: "neutral" | "accent" = "neutral") {
+  const toneClasses =
+    tone === "accent"
+      ? "border-[#ff4d43]/15 bg-[#ff4d43]/10 text-[#ff4d43]"
+      : "border-slate-200 bg-slate-50 text-slate-600";
+
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold", toneClasses)}>
+      <span>{label} {score.toFixed(1)}</span>
+      <Star className="h-3.5 w-3.5 shrink-0 fill-current" />
+    </span>
+  );
+}
+
 function HeroStatCard({
   icon: Icon,
   label,
@@ -367,12 +381,8 @@ function ReviewDialog({
                 Du {entry.startDate} au {entry.returnDate}
               </p>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px] font-semibold">
-                  Voiture {rating.score}/5
-                </Badge>
-                <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px] font-semibold">
-                  Service {rating.serviceScore ?? rating.score}/5
-                </Badge>
+                {renderRatingPill("Voiture", rating.score)}
+                {renderRatingPill("Service", rating.serviceScore ?? rating.score, "accent")}
               </div>
             </div>
           </div>
@@ -420,26 +430,14 @@ function ReviewCard({ entry }: { entry: EligibleRatingRecord & { existingRating:
         )}
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-slate-950">{carName}</p>
-              <p className="mt-1 text-xs text-slate-500">
-                {formatDate(rating.updatedAt || rating.createdAt || entry.createdAt)}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-0.5 text-amber-400">
-              {renderStars(rating.score)}
-            </div>
-          </div>
+          <p className="truncate text-sm font-semibold text-slate-950">{carName}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            {formatDate(rating.updatedAt || rating.createdAt || entry.createdAt)}
+          </p>
 
           <div className="mt-2 flex flex-wrap gap-2">
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-              Voiture {rating.score}/5
-            </span>
-            <span className="rounded-full border border-[#ff4d43]/15 bg-[#ff4d43]/10 px-2.5 py-1 text-[11px] font-semibold text-[#ff4d43]">
-              Service {serviceScore}/5
-            </span>
+            {renderRatingPill("Voiture", rating.score)}
+            {renderRatingPill("Service", serviceScore, "accent")}
           </div>
 
           <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -1002,7 +1000,7 @@ export default function CustomerProfile() {
                     <Star className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Mes avis</CardTitle>
+                    <CardTitle className="text-lg">Avis client</CardTitle>
                     <CardDescription>
                       Une seule fiche par reservation: note voiture, note service et commentaire, modifiables a tout moment.
                     </CardDescription>

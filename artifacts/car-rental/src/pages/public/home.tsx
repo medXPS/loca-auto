@@ -57,7 +57,7 @@ const heroStats = [
   { value: "+1200", label: "Clients satisfaits" },
   { value: "+350", label: "Vehicules disponibles" },
   { value: "20+", label: "Villes couvertes" },
-  { value: "4.8/5", label: "Avis client" },
+  { value: "4.8", label: "Avis client" },
 ];
 
 const steps = [
@@ -326,6 +326,28 @@ function getInitials(name: string) {
     .join("") || "AA";
 }
 
+function RatingPill({
+  label,
+  score,
+  accent = false,
+}: {
+  label: string;
+  score: number;
+  accent?: boolean;
+}) {
+  const toneClasses = accent
+    ? "border-[#ff4d43]/15 bg-[#ff4d43]/10 text-[#ff4d43]"
+    : "border-slate-200 bg-slate-50 text-slate-600";
+  const iconClasses = accent ? "text-[#ff4d43]" : "text-amber-400";
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${toneClasses}`}>
+      <span>{label} {score.toFixed(1)}</span>
+      <Star className={`h-3.5 w-3.5 shrink-0 fill-current ${iconClasses}`} />
+    </span>
+  );
+}
+
 function TestimonialCard({
   customerName,
   location,
@@ -353,16 +375,12 @@ function TestimonialCard({
           <p className="truncate text-sm font-semibold text-slate-950">{customerName}</p>
           <p className="text-xs text-slate-500">{location}</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-              Voiture {score}/5
-            </span>
-            <span className="rounded-full border border-[#ff4d43]/15 bg-[#ff4d43]/10 px-2.5 py-1 text-[11px] font-semibold text-[#ff4d43]">
-              Service {serviceScore}/5
-            </span>
+            <RatingPill label="Voiture" score={score} />
+            <RatingPill label="Service" score={serviceScore} accent />
           </div>
         </div>
       </div>
-      <p className="mt-4 text-sm leading-7 text-slate-600">{comment}</p>
+      <p className="mt-4 text-sm leading-7 text-slate-600">{comment?.trim() || "Pas de commentaire"}</p>
       <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
         {carLabel}
       </p>
@@ -475,7 +493,7 @@ export default function Home() {
   const featuredShowcase = useMemo(() => (featuredCars?.cars ?? []).slice(0, 3), [featuredCars]);
   const recentTestimonials = publicRatings?.testimonials ?? [];
   const heroRatingValue = publicRatings?.summary.averageServiceScore;
-  const heroRatingLabel = heroRatingValue != null ? `${heroRatingValue.toFixed(2)}/5` : "Aucun avis";
+  const heroRatingLabel = heroRatingValue != null ? heroRatingValue.toFixed(2) : "Aucun avis";
   const heroClientsLabel = publicRatings ? `+${publicRatings.summary.satisfiedClients}` : "...";
   const heroCarsLabel = featuredCars?.total != null ? `+${featuredCars.total}` : "...";
   const heroCitiesLabel = `${cities.length}+`;
