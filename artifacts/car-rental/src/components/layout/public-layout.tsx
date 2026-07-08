@@ -2,12 +2,22 @@ import { useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SiteLogo } from "@/components/site-logo";
 import { getListNotificationsQueryKey, useListNotifications } from "@workspace/api-client-react";
 import {
   ArrowRight,
   CarFront,
   Bell,
+  ChevronDown,
   Facebook,
   House,
   Instagram,
@@ -38,6 +48,18 @@ function getDashboardHref(role?: string) {
   return "/dashboard";
 }
 
+function getInitials(name?: string | null) {
+  return (
+    name
+      ?.trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("") || "U"
+  );
+}
+
 const navLinks: NavItem[] = [
   { href: "/", label: "Accueil", icon: House },
   { href: "/voitures", label: "Véhicules", icon: CarFront },
@@ -55,7 +77,7 @@ const socialLinks = [
 
 export function PublicLayout({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, logout } = useAuth();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const dashboardHref = useMemo(() => getDashboardHref(user?.role), [user?.role]);
@@ -68,6 +90,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
     },
   });
   const unreadNotifications = (notificationsQuery.data ?? []).filter((notification) => !notification.read).length;
+  const unreadNotificationsLabel = unreadNotifications > 99 ? "99+" : `${unreadNotifications}`;
   const isCarDetailPage = /^\/voitures\/\d+/.test(location);
   const isHomePage = location === "/";
 
@@ -78,6 +101,11 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
   const handleLogout = () => {
     logout();
+    setIsMenuOpen(false);
+  };
+
+  const handleGoTo = (href: string) => {
+    setLocation(href);
     setIsMenuOpen(false);
   };
 
@@ -146,51 +174,77 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
             {isAuthenticated ? (
               <>
-                {isCustomer && (
-                <Button
-                  asChild
-                  variant="outline"
-                  className={cn(
-                    "relative rounded-2xl px-4",
-                    isHomePage
+                {isCustomer ? (
+                  <Button
+                    asChild
+                    variant="outline"
+                    className={cn(
+                      "relative rounded-2xl px-4",
+                      isHomePage
                         ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                         : "border-border/70 bg-white",
                     )}
                   >
-                    <Link href="/dashboard/notifications">
+                    <Link href="/dashboard/notifications" aria-label="Notifications">
                       <Bell className="h-4 w-4" />
                       Notifications
                       {unreadNotifications > 0 ? (
-                        <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-destructive" />
+                        <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+                          {unreadNotificationsLabel}
+                        </span>
                       ) : null}
                     </Link>
                   </Button>
-                )}
+                ) : null}
 
-                <Button
-                  asChild
-                  variant="outline"
-                  className={cn(
-                    "rounded-2xl px-4",
-                    isHomePage
-                      ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                      : "border-border/70 bg-white",
-                  )}
-                >
-                  <Link href={dashboardHref}>Mon espace</Link>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "h-11 rounded-full border-slate-200 bg-white px-1.5 text-slate-700 hover:bg-slate-50 hover:text-slate-900",
+                        !isHomePage && "border-border/70",
+                      )}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-slate-900 text-xs font-semibold text-white">
+                          {getInitials(user?.fullName ?? user?.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <ChevronDown className="h-4 w-4 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
 
-                <Button
-                  type="button"
-                  className={cn(
-                    "rounded-2xl px-4 text-white",
-                    isHomePage ? "bg-[#ff4d43] hover:bg-[#f03d32]" : "bg-primary text-primary-foreground",
-                  )}
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-4 w-4" />
-                  Déconnexion
-                </Button>
+                  <DropdownMenuContent align="end" className="w-64 rounded-[1.35rem] border-slate-200 p-2 shadow-xl">
+                    <DropdownMenuLabel className="space-y-1 px-2 py-2">
+                      <p className="text-sm font-semibold text-slate-950">{user?.fullName || "Mon compte"}</p>
+                      <p className="text-xs text-slate-500">{user?.email}</p>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => handleGoTo(dashboardHref)} className="rounded-2xl px-3 py-2">
+                      Mon espace
+                    </DropdownMenuItem>
+                    {isCustomer ? (
+                      <DropdownMenuItem onSelect={() => handleGoTo("/dashboard/profil")} className="rounded-2xl px-3 py-2">
+                        Mon profil
+                      </DropdownMenuItem>
+                    ) : null}
+                    {isCustomer ? (
+                      <DropdownMenuItem onSelect={() => handleGoTo("/dashboard/notifications")} className="rounded-2xl px-3 py-2">
+                        Notifications
+                      </DropdownMenuItem>
+                    ) : null}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => handleLogout()}
+                      className="rounded-2xl px-3 py-2 text-red-600 focus:text-red-600"
+                    >
+                      Déconnexion
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
               </>
             ) : (
               <Button

@@ -1,34 +1,52 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getGetMeQueryKey,
   getGetMyCustomerProfileQueryKey,
   useGetMyCustomerProfile,
+  useGetUploadUrl,
   useUpdateMe,
   useUpdateMyCustomerProfile,
+  useUploadDocument,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, FileText, ShieldCheck, Star, UserCircle2 } from "lucide-react";
-import { DocumentUploadField } from "@/components/document-upload-field";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { RatingEditor } from "@/components/rating-editor";
-import { fetchEligibleRatings } from "@/lib/fleet-catalog";
-import { getStatusLabel } from "@/lib/utils";
+import { fetchEligibleRatings, type EligibleRatingRecord } from "@/lib/fleet-catalog";
+import { cn, getStatusLabel } from "@/lib/utils";
+import {
+  CalendarDays,
+  CheckCircle2,
+  CloudUpload,
+  Download,
+  FileText,
+  IdCard,
+  LockKeyhole,
+  Mail,
+  MapPin,
+  PenLine,
+  Phone,
+  ShieldCheck,
+  Star,
+  UserCircle2,
+} from "lucide-react";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, { message: "Nom requis" }),
-  phone: z.string().min(10, { message: "Téléphone requis" }),
+  phone: z.string().min(10, { message: "Telephone requis" }),
   cin: z.string().optional(),
   passportNumber: z.string().optional(),
   drivingLicenseNumber: z.string().optional(),
@@ -38,9 +56,407 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
+type CustomerDocument = {
+  id: number;
+  fileUrl: string;
+  type?: string | null;
+  status?: string | null;
+  uploadedAt?: string | Date | null;
+};
+
 function formatFileLabel(fileUrl: string) {
   const fileName = fileUrl.split("/").pop();
   return fileName && fileName.trim() ? fileName : fileUrl;
+}
+
+function formatDate(value?: string | Date | null) {
+  if (!value) return "Non renseigne";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "Non renseigne";
+  return date.toLocaleDateString("fr-MA");
+}
+
+function getInitials(name?: string | null) {
+  return (
+    name
+      ?.trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("") || "U"
+  );
+}
+
+function average(values: number[]) {
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function renderStars(score: number) {
+  const filled = Math.round(score);
+
+  return Array.from({ length: 5 }).map((_, index) => (
+    <Star
+      key={index}
+      className={cn("h-3.5 w-3.5", index < filled ? "fill-current text-amber-400" : "text-slate-300")}
+    />
+  ));
+}
+
+function HeroStatCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  tone: "emerald" | "sky" | "rose";
+}) {
+  const toneClasses = {
+    emerald: "border-emerald-200 bg-emerald-50 text-emerald-600",
+    sky: "border-sky-200 bg-sky-50 text-sky-600",
+    rose: "border-rose-200 bg-rose-50 text-rose-600",
+  };
+
+  return (
+    <div className="rounded-[1.3rem] border border-slate-200 bg-white p-4 shadow-[0_16px_40px_-28px_rgba(15,23,42,0.2)]">
+      <div className="flex items-center gap-3">
+        <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl", toneClasses[tone])}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">{label}</p>
+          <p className="mt-1 text-base font-semibold text-slate-950">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileRow({
+  icon: Icon,
+  label,
+  value,
+  secondary,
+  action,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  secondary?: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-4 py-4">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-slate-500">
+        <Icon className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-slate-400">{label}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <p className="text-sm font-semibold text-slate-950">{value}</p>
+          {secondary ? <span className="text-xs text-slate-500">{secondary}</span> : null}
+        </div>
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
+  );
+}
+
+function DocumentSlot({
+  label,
+  helperText,
+  icon: Icon,
+  accentClassName,
+  existingDocument,
+  onUploaded,
+  docType,
+}: {
+  label: string;
+  helperText: string;
+  icon: ComponentType<{ className?: string }>;
+  accentClassName: string;
+  existingDocument?: CustomerDocument | null;
+  onUploaded: () => void;
+  docType: "CIN" | "PASSPORT" | "PERMIS_CONDUIRE" | "AUTRE";
+}) {
+  const { toast } = useToast();
+  const getUploadUrl = useGetUploadUrl();
+  const uploadDocument = useUploadDocument();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const existingName = existingDocument ? formatFileLabel(existingDocument.fileUrl) : null;
+  const updatedAt = existingDocument?.uploadedAt ? formatDate(existingDocument.uploadedAt) : null;
+
+  const pickFile = () => {
+    inputRef.current?.click();
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || isUploading) return;
+
+    setIsUploading(true);
+
+    try {
+      const presign = await getUploadUrl.mutateAsync({
+        data: { fileName: selectedFile.name, fileType: selectedFile.type, context: "documents" },
+      });
+
+      const response = await fetch(presign.uploadUrl, {
+        method: "PUT",
+        body: selectedFile,
+        ...(selectedFile.type ? { headers: { "Content-Type": selectedFile.type } } : {}),
+      });
+
+      if (!response.ok) {
+        throw new Error("upload_failed");
+      }
+
+      await uploadDocument.mutateAsync({
+        data: {
+          type: docType,
+          fileUrl: presign.fileUrl,
+        },
+      });
+
+      setSelectedFile(null);
+      if (inputRef.current) inputRef.current.value = "";
+      onUploaded();
+      toast({ title: `${label} televerse avec succes` });
+    } catch {
+      toast({
+        title: "Erreur de televersement",
+        description: "Reessayez ou contactez le support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.16)]">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl", accentClassName)}>
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-semibold text-slate-950">{label}</p>
+              {existingDocument ? (
+                <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]">
+                  {existingDocument.status ? getStatusLabel(existingDocument.status, "document") : "Actif"}
+                </Badge>
+              ) : null}
+            </div>
+            <p className="mt-1 text-xs text-slate-500">
+              {existingName ? existingName : helperText}
+            </p>
+            {updatedAt ? <p className="mt-1 text-[11px] text-slate-400">Ajoute le {updatedAt}</p> : null}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {existingDocument ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-full border border-slate-200 text-slate-500 hover:text-slate-900"
+              onClick={() => window.open(existingDocument.fileUrl, "_blank", "noopener,noreferrer")}
+              aria-label={`Telecharger ${label}`}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+          ) : null}
+
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-full"
+            onClick={pickFile}
+            disabled={isUploading}
+          >
+            {existingDocument ? "Remplacer" : "Parcourir"}
+          </Button>
+
+          {selectedFile ? (
+            <Button
+              type="button"
+              className="rounded-full bg-[#ff4d43] text-white hover:bg-[#f03d32]"
+              onClick={() => void handleUpload()}
+              disabled={isUploading}
+            >
+              {isUploading ? "Televersement..." : "Televerser"}
+            </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {selectedFile ? (
+        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <CloudUpload className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 truncate">{selectedFile.name}</span>
+        </div>
+      ) : null}
+
+      <input ref={inputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={(event) => {
+        const file = event.target.files?.[0] ?? null;
+        event.target.value = "";
+        setSelectedFile(file);
+      }} />
+    </div>
+  );
+}
+
+function ReviewDialog({
+  entry,
+  onSaved,
+}: {
+  entry: EligibleRatingRecord & { existingRating: NonNullable<EligibleRatingRecord["existingRating"]> };
+  onSaved?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rating = entry.existingRating;
+  const carName = entry.car ? `${entry.car.brand} ${entry.car.model}` : `Reservation #${entry.requestId}`;
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 rounded-full border border-slate-200 text-slate-500 hover:text-slate-900"
+          aria-label={`Modifier l'avis pour ${carName}`}
+        >
+          <PenLine className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle className="text-2xl">{carName}</DialogTitle>
+          <DialogDescription>
+            Reservation #{entry.requestId} - avis modifiable a tout moment.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
+          <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-slate-50">
+            {entry.car?.mainImageUrl ? (
+              <img
+                src={entry.car.mainImageUrl}
+                alt={carName}
+                className="h-48 w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-48 items-center justify-center bg-slate-100 text-slate-400">
+                <FileText className="h-10 w-10" />
+              </div>
+            )}
+            <div className="space-y-2 p-4">
+              <p className="text-sm font-semibold text-slate-950">{carName}</p>
+              <p className="text-xs text-slate-500">
+                Du {entry.startDate} au {entry.returnDate}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px] font-semibold">
+                  Voiture {rating.score}/5
+                </Badge>
+                <Badge variant="secondary" className="rounded-full px-2.5 py-1 text-[11px] font-semibold">
+                  Service {rating.serviceScore ?? rating.score}/5
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <RatingEditor
+              rentalRequestId={entry.requestId}
+              defaultCarScore={rating.score}
+              defaultServiceScore={rating.serviceScore ?? rating.score}
+              defaultComment={rating.comment}
+              onSaved={() => {
+                setOpen(false);
+                onSaved?.();
+              }}
+            />
+
+            <Button asChild variant="outline" className="w-full rounded-full">
+              <Link href={`/dashboard/demandes/${entry.requestId}`}>Voir la reservation</Link>
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ReviewCard({ entry }: { entry: EligibleRatingRecord & { existingRating: NonNullable<EligibleRatingRecord["existingRating"]> } }) {
+  const rating = entry.existingRating;
+  const carName = entry.car ? `${entry.car.brand} ${entry.car.model}` : `Reservation #${entry.requestId}`;
+  const serviceScore = rating.serviceScore ?? rating.score;
+
+  return (
+    <article className="rounded-[1.35rem] border border-slate-200 bg-white p-3 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.16)]">
+      <div className="flex items-start gap-3">
+        {entry.car?.mainImageUrl ? (
+          <img
+            src={entry.car.mainImageUrl}
+            alt={carName}
+            className="h-14 w-14 shrink-0 rounded-2xl object-cover"
+          />
+        ) : (
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+            <FileText className="h-5 w-5" />
+          </div>
+        )}
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-950">{carName}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {formatDate(rating.updatedAt || rating.createdAt || entry.createdAt)}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-0.5 text-amber-400">
+              {renderStars(rating.score)}
+            </div>
+          </div>
+
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+              Voiture {rating.score}/5
+            </span>
+            <span className="rounded-full border border-[#ff4d43]/15 bg-[#ff4d43]/10 px-2.5 py-1 text-[11px] font-semibold text-[#ff4d43]">
+              Service {serviceScore}/5
+            </span>
+          </div>
+
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            "{rating.comment?.trim() || "Pas de commentaire"}"
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <Button asChild variant="ghost" className="h-8 px-0 text-sm font-semibold text-[#2f7de1] hover:bg-transparent hover:text-[#2469c2]">
+          <Link href={`/dashboard/demandes/${entry.requestId}`}>Voir le detail</Link>
+        </Button>
+
+        <ReviewDialog entry={entry} />
+      </div>
+    </article>
+  );
 }
 
 export default function CustomerProfile() {
@@ -50,6 +466,7 @@ export default function CustomerProfile() {
   const updateProfile = useUpdateMyCustomerProfile();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(Boolean(user?.mfaEnabled));
   const { data: eligibleRatings = [] } = useQuery({
     queryKey: ["eligible-ratings"],
@@ -89,10 +506,17 @@ export default function CustomerProfile() {
     setMfaEnabled(Boolean(profile.user.mfaEnabled));
   }, [profile?.user?.mfaEnabled]);
 
-  const profileDocs = (profile?.documents ?? []).filter((doc) => doc.rentalRequestId == null);
-  const cinDoc = profileDocs.find((doc) => doc.type === "CIN");
-  const passportDoc = profileDocs.find((doc) => doc.type === "PASSPORT");
-  const drivingDoc = profileDocs.find((doc) => doc.type === "PERMIS_CONDUIRE");
+  const profileDocs = useMemo(
+    () => (profile?.documents ?? []).filter((doc) => doc.rentalRequestId == null) as CustomerDocument[],
+    [profile?.documents],
+  );
+  const findDocument = (type: string) =>
+    profileDocs.find((doc) => doc.type === type) ?? null;
+
+  const cinDoc = findDocument("CIN");
+  const passportDoc = findDocument("PASSPORT");
+  const drivingDoc = findDocument("PERMIS_CONDUIRE");
+  const addressDoc = findDocument("AUTRE");
   const profileComplete = Boolean((profile?.cin || profile?.passportNumber || cinDoc || passportDoc) && (profile?.drivingLicenseNumber || drivingDoc));
 
   const refreshIdentity = () => {
@@ -120,6 +544,7 @@ export default function CustomerProfile() {
       });
 
       toast({ title: "Profil mis a jour avec succes" });
+      setEditProfileOpen(false);
       refreshIdentity();
     } catch (error: any) {
       toast({
@@ -139,8 +564,8 @@ export default function CustomerProfile() {
   const handleMfaToggle = async (enabled: boolean) => {
     if (!user?.emailVerifiedAt) {
       toast({
-        title: "Vérification requise",
-        description: "Veuillez vérifier votre adresse e-mail avant de gérer le MFA.",
+        title: "Verification requise",
+        description: "Veuillez verifier votre adresse e-mail avant de gerer le MFA.",
       });
       return;
     }
@@ -152,7 +577,7 @@ export default function CustomerProfile() {
       await updateMe.mutateAsync({
         data: { mfaEnabled: enabled },
       });
-      toast({ title: enabled ? "MFA active" : "MFA desactive" });
+      toast({ title: enabled ? "MFA activee" : "MFA desactivee" });
       refreshIdentity();
     } catch (error: any) {
       setMfaEnabled(previousValue);
@@ -164,6 +589,48 @@ export default function CustomerProfile() {
     }
   };
 
+  const ratedEntries = useMemo(
+    () =>
+      eligibleRatings
+        .filter((item): item is EligibleRatingRecord & { existingRating: NonNullable<EligibleRatingRecord["existingRating"]> } =>
+          Boolean(item.existingRating),
+        )
+        .sort((left, right) => {
+          const leftValue = new Date(left.existingRating!.updatedAt || left.existingRating!.createdAt || left.createdAt).getTime();
+          const rightValue = new Date(right.existingRating!.updatedAt || right.existingRating!.createdAt || right.createdAt).getTime();
+          return rightValue - leftValue;
+        }),
+    [eligibleRatings],
+  );
+
+  const pendingEntries = useMemo(
+    () => eligibleRatings.filter((item) => !item.existingRating),
+    [eligibleRatings],
+  );
+
+  const reviewStats = useMemo(() => {
+    const carScores = ratedEntries.map((item) => item.existingRating.score);
+    const serviceScores = ratedEntries.map((item) => item.existingRating.serviceScore ?? item.existingRating.score);
+    const carAverage = average(carScores);
+    const serviceAverage = average(serviceScores);
+    const overallAverage = average([carAverage, serviceAverage]);
+
+    return {
+      total: ratedEntries.length,
+      carAverage,
+      serviceAverage,
+      overallAverage,
+    };
+  }, [ratedEntries]);
+
+  const reviewBreakdown = [
+    { label: "Qualite des vehicules", value: reviewStats.carAverage },
+    { label: "Service client", value: reviewStats.serviceAverage },
+    { label: "Rapport qualite/prix", value: reviewStats.overallAverage },
+  ];
+
+  const recentReviews = ratedEntries.slice(0, 3);
+
   if (isLoading) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -173,327 +640,495 @@ export default function CustomerProfile() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 px-4 py-8">
-      <div className="flex flex-col gap-4 rounded-[1.75rem] border border-primary/10 bg-gradient-to-br from-primary/8 via-background to-secondary/10 p-6 shadow-[0_24px_70px_-45px_hsl(var(--primary)/0.55)] sm:p-8">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
-            <Badge variant="secondary" className="w-fit gap-2 rounded-full px-3 py-1">
-              <UserCircle2 className="h-3.5 w-3.5" />
-              Mon espace client
-            </Badge>
-            <div>
-              <h1 className="text-3xl font-serif font-bold tracking-tight sm:text-4xl">Mon profil</h1>
-              <p className="mt-2 max-w-2xl text-muted-foreground">
-                Mettez a jour vos coordonnees, enregistrez votre CIN et votre permis, puis remplacez
-                vos documents quand vous voulez.
+    <div className="bg-[radial-gradient(circle_at_top_right,rgba(255,77,67,0.06),transparent_24%),linear-gradient(180deg,#f7f8fc_0%,#eef2f8_100%)]">
+      <div className="mx-auto max-w-[96rem] space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <section className="overflow-hidden rounded-[2.15rem] border border-slate-200 bg-white/96 shadow-[0_24px_70px_-40px_rgba(15,23,42,0.18)]">
+          <div className="grid gap-8 px-6 py-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8 lg:py-10">
+            <div className="space-y-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">Mon espace client</p>
+              <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+                Mon profil
+              </h1>
+              <p className="max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                Gere vos informations personnelles, vos documents et la securite de votre compte.
               </p>
             </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <HeroStatCard
+                icon={CheckCircle2}
+                label="Compte"
+                value={user?.emailVerifiedAt ? "Verifie" : "A verifier"}
+                tone="emerald"
+              />
+              <HeroStatCard
+                icon={FileText}
+                label="Dossier"
+                value={profileComplete ? "Complet" : "A completer"}
+                tone="rose"
+              />
+              <HeroStatCard
+                icon={ShieldCheck}
+                label="Securite"
+                value={mfaEnabled ? "MFA activee" : "MFA desactivee"}
+                tone="sky"
+              />
+            </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-primary/10 bg-background/80 px-4 py-3 shadow-sm">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Compte</div>
-              <div className="mt-1 flex items-center gap-2 text-sm font-medium">
-                <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                {user?.emailVerifiedAt ? "Email vérifié" : "Email à vérifier"}
+        </section>
+
+        <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+          <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+            <CardHeader className="border-b border-slate-200 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ff4d43]/10 text-[#ff4d43]">
+                  <UserCircle2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Informations personnelles</CardTitle>
+                  <CardDescription>Vos coordonnees, votre identite et votre adresse.</CardDescription>
+                </div>
               </div>
-            </div>
-            <div className="rounded-2xl border border-primary/10 bg-background/80 px-4 py-3 shadow-sm">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Dossier</div>
-              <div className="mt-1 flex items-center gap-2 text-sm font-medium">
-                <CheckCircle2 className={`h-4 w-4 ${profileComplete ? "text-emerald-500" : "text-amber-500"}`} />
-                {profileComplete ? "Complet" : "A completer"}
+            </CardHeader>
+
+            <CardContent className="pt-2">
+              <div className="divide-y divide-slate-200">
+                <ProfileRow
+                  icon={UserCircle2}
+                  label="Nom complet"
+                  value={profile?.user?.fullName || "Non renseigne"}
+                />
+                <ProfileRow
+                  icon={Phone}
+                  label="Telephone"
+                  value={profile?.user?.phone || "Non renseigne"}
+                />
+                <ProfileRow
+                  icon={Mail}
+                  label="Email"
+                  value={profile?.user?.email || "Non renseigne"}
+                  secondary={user?.emailVerifiedAt ? "Verifie" : "A verifier"}
+                  action={
+                    user?.emailVerifiedAt ? (
+                      <Badge className="rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
+                        Verifie
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="rounded-full">
+                        A verifier
+                      </Badge>
+                    )
+                  }
+                />
+                <ProfileRow
+                  icon={CalendarDays}
+                  label="Membre depuis"
+                  value={formatDate(profile?.user?.createdAt)}
+                />
+                <ProfileRow
+                  icon={IdCard}
+                  label="CIN"
+                  value={profile?.cin || "Non renseigne"}
+                />
+                <ProfileRow
+                  icon={IdCard}
+                  label="Permis de conduire"
+                  value={profile?.drivingLicenseNumber || "Non renseigne"}
+                />
+                <ProfileRow
+                  icon={MapPin}
+                  label="Adresse"
+                  value={profile?.address || "Non renseigne"}
+                  secondary={profile?.city ? `, ${profile.city}` : ""}
+                />
               </div>
-            </div>
-            <div className="rounded-2xl border border-primary/10 bg-background/80 px-4 py-3 shadow-sm">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Sécurité</div>
-              <div className="mt-1 flex items-center gap-2 text-sm font-medium">
-                <ShieldCheck className={`h-4 w-4 ${mfaEnabled ? "text-emerald-500" : "text-slate-400"}`} />
-                {user?.emailVerifiedAt ? (mfaEnabled ? "MFA activée" : "MFA désactivée") : "Après vérification"}
+
+              <div className="pt-4">
+                <Dialog open={editProfileOpen} onOpenChange={setEditProfileOpen}>
+                  <DialogTrigger asChild>
+                    <Button type="button" variant="outline" className="w-full rounded-full">
+                      <PenLine className="h-4 w-4" />
+                      Modifier mes informations
+                    </Button>
+                  </DialogTrigger>
+
+                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+                    <DialogHeader>
+                      <DialogTitle className="text-2xl">Modifier mes informations</DialogTitle>
+                      <DialogDescription>
+                        Mettez a jour votre identite et vos coordonnees personnelles.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                          <FormField
+                            control={form.control}
+                            name="fullName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Nom complet</FormLabel>
+                                <FormControl>
+                                  <Input className="rounded-2xl bg-white" placeholder="Mohammed Alami" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Telephone</FormLabel>
+                                <FormControl>
+                                  <Input className="rounded-2xl bg-white" placeholder="+212 6..." {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="cin"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>CIN</FormLabel>
+                                <FormControl>
+                                  <Input className="rounded-2xl bg-white" placeholder="AB123456" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="passportNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Passeport</FormLabel>
+                                <FormControl>
+                                  <Input className="rounded-2xl bg-white" placeholder="Optionnel" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="drivingLicenseNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Permis de conduire</FormLabel>
+                                <FormControl>
+                                  <Input className="rounded-2xl bg-white" placeholder="12/34567" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Adresse</FormLabel>
+                                <FormControl>
+                                  <Input className="rounded-2xl bg-white" placeholder="Adresse complete" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="city"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Ville</FormLabel>
+                                <FormControl>
+                                  <Input className="rounded-2xl bg-white" placeholder="Casablanca" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="flex justify-end pt-2">
+                          <Button type="submit" disabled={isSaving} className="rounded-full px-6">
+                            {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+
+          <div className="space-y-6">
+            <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+              <CardHeader className="border-b border-slate-200 pb-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ff4d43]/10 text-[#ff4d43]">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Mes documents</CardTitle>
+                    <CardDescription>Televersez et gerez vos documents en toute simplicite.</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-4 pt-5">
+                <DocumentSlot
+                  label="Carte Nationale d'Identite (CN)"
+                  helperText="AB123456"
+                  icon={IdCard}
+                  accentClassName="bg-violet-50 text-violet-600"
+                  existingDocument={cinDoc}
+                  onUploaded={refreshProfile}
+                  docType="CIN"
+                />
+
+                <DocumentSlot
+                  label="Permis de conduire"
+                  helperText="12/34567"
+                  icon={IdCard}
+                  accentClassName="bg-emerald-50 text-emerald-600"
+                  existingDocument={drivingDoc}
+                  onUploaded={refreshProfile}
+                  docType="PERMIS_CONDUIRE"
+                />
+
+                <DocumentSlot
+                  label="Passeport (Optionnel)"
+                  helperText="P12345678"
+                  icon={FileText}
+                  accentClassName="bg-orange-50 text-orange-500"
+                  existingDocument={passportDoc}
+                  onUploaded={refreshProfile}
+                  docType="PASSPORT"
+                />
+
+                <DocumentSlot
+                  label="Justificatif de domicile"
+                  helperText="Facture CIE - Janvier 2026"
+                  icon={MapPin}
+                  accentClassName="bg-sky-50 text-sky-600"
+                  existingDocument={addressDoc}
+                  onUploaded={refreshProfile}
+                  docType="AUTRE"
+                />
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+              <CardHeader className="border-b border-slate-200 pb-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ff4d43]/10 text-[#ff4d43]">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Securite du compte</CardTitle>
+                    <CardDescription>Gardez le controle sur votre acces et vos identifiants.</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-3 pt-5">
+                <div className="rounded-[1.2rem] border border-slate-200 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-500">
+                        <LockKeyhole className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-slate-400">Mot de passe</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">••••••••••••</p>
+                      </div>
+                    </div>
+                    <Button type="button" variant="outline" className="rounded-full">
+                      Changer
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-[1.2rem] border border-slate-200 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-500">
+                        <ShieldCheck className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-slate-400">Authentification a deux facteurs (MFA)</p>
+                        <p className="mt-1 text-sm text-slate-600">Active pour plus de securite</p>
+                      </div>
+                    </div>
+                    <Switch checked={mfaEnabled} onCheckedChange={handleMfaToggle} disabled={!user?.emailVerifiedAt || isSaving} />
+                  </div>
+                </div>
+
+                <div className="rounded-[1.2rem] border border-slate-200 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-500">
+                        <CalendarDays className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-slate-400">Derniere location</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">
+                          {((profile as any)?.summary?.lastRentalAt ?? null)
+                            ? formatDate((profile as any).summary.lastRentalAt)
+                            : "Aucune"}
+                        </p>
+                      </div>
+                    </div>
+                    <Button asChild variant="outline" className="rounded-full">
+                      <Link href="/dashboard/demandes">Voir</Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+              <CardHeader className="border-b border-slate-200 pb-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ff4d43]/10 text-[#ff4d43]">
+                    <Star className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Mes avis</CardTitle>
+                    <CardDescription>
+                      Une seule fiche par reservation: note voiture, note service et commentaire, modifiables a tout moment.
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-5 pt-5">
+                {ratedEntries.length > 0 ? (
+                  <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+                    <div className="rounded-[1.4rem] border border-slate-200 bg-slate-50/70 p-5">
+                      <div className="text-center">
+                        <p className="text-4xl font-semibold tracking-tight text-slate-950">
+                          {reviewStats.overallAverage.toFixed(1)}
+                        </p>
+                        <div className="mt-3 flex items-center justify-center gap-1 text-amber-400">
+                          {renderStars(reviewStats.overallAverage)}
+                        </div>
+                        <p className="mt-2 text-sm text-slate-500">Base sur {reviewStats.total} avis</p>
+                      </div>
+
+                      <div className="mt-5 space-y-3">
+                        {reviewBreakdown.map((item) => (
+                          <div key={item.label} className="space-y-1">
+                            <div className="flex items-center justify-between gap-3 text-sm">
+                              <span className="text-slate-500">{item.label}</span>
+                              <span className="font-semibold text-slate-900">{item.value.toFixed(1)}</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-slate-200">
+                              <div
+                                className="h-2 rounded-full bg-gradient-to-r from-[#ffb347] to-[#ff7c3d]"
+                                style={{ width: `${Math.min(100, Math.max(0, (item.value / 5) * 100))}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {recentReviews.map((entry) => (
+                        <ReviewCard key={entry.requestId} entry={entry} />
+                      ))}
+
+                      {ratedEntries.length > recentReviews.length ? (
+                        <Button asChild variant="ghost" className="w-full justify-center gap-2 rounded-full text-slate-600 hover:text-slate-950">
+                          <Link href="/dashboard/demandes">
+                            Voir tous mes avis
+                          </Link>
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                    Aucun avis client publie pour le moment.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <Card className="border-border/60 shadow-[0_18px_45px_-28px_hsl(var(--primary)/0.45)]">
-          <CardHeader className="border-b bg-muted/20">
-            <CardTitle>Informations personnelles</CardTitle>
-            <CardDescription>Ces informations sont reprises dans vos reservations et votre dossier client.</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="fullName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nom complet</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Mohammed Alami" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Téléphone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+212 6..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input value={user?.email || ""} disabled className="bg-muted" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Role</Label>
-                    <Input value="Client" disabled className="bg-muted" />
-                  </div>
+        {pendingEntries.length > 0 ? (
+          <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+            <CardHeader className="border-b border-slate-200 pb-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ff4d43]/10 text-[#ff4d43]">
+                  <Star className="h-5 w-5" />
                 </div>
-
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="cin"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CIN</FormLabel>
-                        <FormControl>
-                          <Input placeholder="AB123456" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="passportNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Passport</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Optionnel" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="drivingLicenseNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Permis de conduire</FormLabel>
-                        <FormControl>
-                          <Input placeholder="12/34567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="space-y-2">
-                    <Label>Conseil</Label>
-                    <div className="rounded-2xl border border-dashed border-primary/15 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
-                      Complétez la CIN et le permis pour pré-remplir vos futures réservations.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Adresse</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Adresse complete" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Ville</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Casablanca" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="flex justify-end border-t pt-4">
-                  <Button type="submit" disabled={isSaving}>
-                    {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/60 shadow-[0_18px_45px_-28px_hsl(var(--primary)/0.35)]">
-          <CardHeader className="border-b bg-muted/20">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Mes documents
-            </CardTitle>
-            <CardDescription>Vous pouvez téléverser puis remplacer vos fichiers sans perdre votre dossier.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-6">
-            <DocumentUploadField
-              label="CIN"
-              docType="CIN"
-              existingDocument={cinDoc}
-              onUploaded={refreshProfile}
-              helperText="Ajoutez une copie de votre carte d'identite nationale."
-            />
-
-            <DocumentUploadField
-              label="Passeport"
-              docType="PASSPORT"
-              existingDocument={passportDoc}
-              onUploaded={refreshProfile}
-              helperText="Ajoutez votre passeport si vous preferez ce document."
-            />
-
-            <DocumentUploadField
-              label="Permis de conduire"
-              docType="PERMIS_CONDUIRE"
-              existingDocument={drivingDoc}
-              onUploaded={refreshProfile}
-              helperText="Ajoutez votre permis pour accélérer la réservation."
-            />
-
-            <div className="rounded-2xl border border-primary/10 bg-primary/5 p-4">
-              <div className="mb-3 text-sm font-medium">Documents charges</div>
-              {profileDocs.length > 0 ? (
-                <ul className="space-y-2">
-                  {profileDocs.map((doc) => (
-                    <li key={doc.id} className="flex items-center justify-between gap-3 rounded-xl border border-background/70 bg-background/80 px-3 py-2 text-sm shadow-sm">
-                      <div className="min-w-0">
-                        <div className="font-medium">
-                          {doc.type === "CIN" ? "CIN" : doc.type === "PASSPORT" ? "Passeport" : "Permis de conduire"}
-                        </div>
-                        <div className="truncate text-xs text-muted-foreground">{formatFileLabel(doc.fileUrl)}</div>
-                      </div>
-                      <Badge variant="outline">{getStatusLabel(doc.status, "document")}</Badge>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">Aucun document televerse pour le moment.</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="border-border/60 shadow-[0_18px_45px_-28px_hsl(var(--primary)/0.35)]">
-        <CardHeader className="border-b bg-muted/20">
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            Sécurité du compte
-          </CardTitle>
-          <CardDescription>Activez ou désactivez la vérification MFA après la première validation de votre e-mail.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4 pt-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="max-w-2xl space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={mfaEnabled ? "secondary" : "outline"}>{mfaEnabled ? "MFA activée" : "MFA désactivée"}</Badge>
-              {!user?.emailVerifiedAt && <Badge variant="outline">Vérification e-mail requise</Badge>}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {user?.emailVerifiedAt
-                ? "Quand cette option est activée, une seconde vérification sera demandée à chaque connexion."
-                : "La gestion du MFA sera disponible après la première vérification de votre adresse e-mail."}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 rounded-2xl border border-primary/10 bg-background px-4 py-3 shadow-sm">
-            <div className="text-right">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Bascule</div>
-              <div className="mt-1 text-sm font-medium">{mfaEnabled ? "Active" : "Désactivé"}</div>
-            </div>
-            <Switch checked={mfaEnabled} onCheckedChange={handleMfaToggle} disabled={!user?.emailVerifiedAt || isSaving} />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/60 shadow-[0_18px_45px_-28px_hsl(var(--primary)/0.25)]">
-        <CardHeader className="border-b bg-muted/20">
-          <CardTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-primary" />
-            Mes avis
-          </CardTitle>
-          <CardDescription>
-            Une seule fiche par reservation: note voiture, note service et commentaire, modifiables a tout moment.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-6">
-          {eligibleRatings.length > 0 ? (
-            eligibleRatings.map((item) => (
-              <div key={item.requestId} className="rounded-[1.5rem] border border-border/70 bg-background p-4 shadow-sm">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex flex-col gap-4 sm:flex-row">
-                    {item.car?.mainImageUrl ? (
-                      <img
-                        src={item.car.mainImageUrl}
-                        alt={`${item.car.brand} ${item.car.model}`}
-                        className="h-40 w-full rounded-2xl object-cover sm:h-24 sm:w-32"
-                      />
-                    ) : (
-                      <div className="flex h-40 w-full items-center justify-center rounded-2xl border bg-muted/20 text-sm text-muted-foreground sm:h-24 sm:w-32">
-                        Sans image
-                      </div>
-                    )}
-                    <div>
-                      <div className="text-lg font-semibold">
-                        {item.car ? `${item.car.brand} ${item.car.model}` : `Reservation #${item.requestId}`}
-                      </div>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Du {item.startDate} au {item.returnDate}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {item.existingRating ? "Avis déjà publié, vous pouvez le mettre à jour." : "Partagez votre retour après cette location."}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="w-full lg:min-w-[320px] lg:max-w-xl lg:flex-1">
-                    <RatingEditor
-                      rentalRequestId={item.requestId}
-                      defaultCarScore={item.existingRating?.score}
-                      defaultServiceScore={item.existingRating?.serviceScore ?? item.existingRating?.score}
-                      defaultComment={item.existingRating?.comment}
-                    />
-                  </div>
+                <div>
+                  <CardTitle className="text-lg">Locations a noter</CardTitle>
+                  <CardDescription>
+                    Une note voiture et une note service par reservation, modifiables apres publication.
+                  </CardDescription>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="rounded-2xl border border-dashed border-primary/20 bg-primary/5 px-4 py-6 text-sm text-muted-foreground">
-              Aucune location terminée à noter pour le moment.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardHeader>
+
+            <CardContent className="space-y-4 pt-5">
+              {pendingEntries.map((item) => {
+                const carName = item.car ? `${item.car.brand} ${item.car.model}` : `Reservation #${item.requestId}`;
+
+                return (
+                  <div key={item.requestId} className="rounded-[1.4rem] border border-slate-200 bg-slate-50/60 p-4">
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                      <div className="flex flex-col gap-4 sm:flex-row">
+                        {item.car?.mainImageUrl ? (
+                          <img
+                            src={item.car.mainImageUrl}
+                            alt={carName}
+                            className="h-32 w-full rounded-2xl object-cover sm:h-24 sm:w-36"
+                          />
+                        ) : (
+                          <div className="flex h-32 w-full items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white text-sm text-slate-500 sm:h-24 sm:w-36">
+                            Sans image
+                          </div>
+                        )}
+
+                        <div>
+                          <div className="text-lg font-semibold text-slate-950">{carName}</div>
+                          <p className="mt-1 text-sm text-slate-500">
+                            Du {item.startDate} au {item.returnDate}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Partagez votre retour apres cette location.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="w-full xl:min-w-[320px] xl:max-w-xl xl:flex-1">
+                        <RatingEditor
+                          rentalRequestId={item.requestId}
+                          defaultCarScore={item.existingRating?.score}
+                          defaultServiceScore={item.existingRating?.serviceScore ?? item.existingRating?.score}
+                          defaultComment={item.existingRating?.comment}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        ) : null}
+      </div>
     </div>
   );
 }
