@@ -294,6 +294,10 @@ function RatingStars({ value }: { value: number }) {
   );
 }
 
+function formatRatingScore(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
 export default function CarDetail() {
   const [location, setLocation] = useLocation();
   const [match, params] = useRoute("/voitures/:id");
@@ -456,7 +460,7 @@ export default function CarDetail() {
   const ratingSummary = car ? (car as any).ratingSummary : null;
   const ratingValue = ratingSummary?.count
     ? Math.round(Number(ratingSummary.average) * 2) / 2
-    : 4.5;
+    : 5;
   const carStatus = car ? (car as any).rawStatus || car.status : "";
   const availability = car ? ((car as any).availability ?? null) : null;
   const hasFutureBlock = Boolean(
@@ -723,7 +727,7 @@ export default function CarDetail() {
               <RatingStars value={ratingValue} />
               <div className="flex items-end gap-2">
                 <span className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                  {ratingValue.toFixed(1)}
+                  {formatRatingScore(ratingValue)}
                 </span>
                 <span className="pb-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/45">
                   /5
@@ -1127,7 +1131,7 @@ export default function CarDetail() {
         </aside>
       </div>
 
-      <section className="mt-10 grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="mt-10 grid gap-6">
         <Card className="overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]">
           <CardContent className="space-y-5 p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1169,23 +1173,6 @@ export default function CarDetail() {
           </CardContent>
         </Card>
 
-        <Card className="h-fit overflow-hidden rounded-[1.8rem] border border-border/70 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.18)]">
-          <CardContent className="space-y-4 p-5 sm:p-6">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Adresse
-              </p>
-              <p className="mt-2 text-xl font-semibold text-foreground">
-                {car.city || "Casablanca"}
-              </p>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                Vérifiez l'emplacement exact de l'agence sur la carte avant de
-                confirmer votre réservation.
-              </p>
-            </div>
-
-          </CardContent>
-        </Card>
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-white/96 px-3 py-3 shadow-[0_-12px_36px_-24px_rgba(16,23,34,0.24)] backdrop-blur md:hidden">
