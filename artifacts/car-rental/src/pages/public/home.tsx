@@ -57,7 +57,7 @@ const heroStats = [
   { value: "+1200", label: "Clients satisfaits" },
   { value: "+350", label: "Vehicules disponibles" },
   { value: "20+", label: "Villes couvertes" },
-  { value: "4.8/5", label: "Note moyenne" },
+  { value: "4.8/5", label: "Avis client" },
 ];
 
 const steps = [
@@ -484,7 +484,7 @@ export default function Home() {
     { value: heroClientsLabel, label: "Clients satisfaits" },
     { value: heroCarsLabel, label: "Vehicules disponibles" },
     { value: heroCitiesLabel, label: "Villes couvertes" },
-    { value: heroRatingLabel, label: "Note moyenne" },
+    { value: heroRatingLabel, label: "Avis client" },
   ];
 
   const handleSearch = () => {
