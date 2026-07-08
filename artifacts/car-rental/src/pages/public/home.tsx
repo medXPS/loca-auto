@@ -5,7 +5,7 @@ import { Car, useListCars } from "@workspace/api-client-react";
 import { ReservationSearchBar } from "@/components/reservation-search-bar";
 import { Seo } from "@/components/seo";
 import { Button } from "@/components/ui/button";
-import { fetchBrands } from "@/lib/fleet-catalog";
+import { fetchBrands, fetchPublicRatings } from "@/lib/fleet-catalog";
 import { getAvailabilityCopy, formatAvailabilityDate } from "@/lib/car-availability";
 import { CATEGORY_TRANSLATIONS, FUEL_TRANSLATIONS, formatPrice } from "@/lib/utils";
 import {
@@ -316,17 +316,33 @@ function StepCard({
   );
 }
 
+function getInitials(name: string) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "AA";
+}
+
 function TestimonialCard({
-  initials,
-  name,
+  customerName,
   location,
-  text,
+  carLabel,
+  score,
+  serviceScore,
+  comment,
 }: {
-  initials: string;
-  name: string;
+  customerName: string;
   location: string;
-  text: string;
+  carLabel: string;
+  score: number;
+  serviceScore: number;
+  comment: string;
 }) {
+  const initials = getInitials(customerName);
+
   return (
     <article className="w-[300px] flex-none rounded-[1.45rem] border border-slate-200 bg-white p-5 shadow-[0_18px_42px_-28px_rgba(15,23,42,0.16)] sm:w-[330px]">
       <div className="flex items-start gap-3">
@@ -334,16 +350,22 @@ function TestimonialCard({
           {initials}
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-950">{name}</p>
+          <p className="truncate text-sm font-semibold text-slate-950">{customerName}</p>
           <p className="text-xs text-slate-500">{location}</p>
-          <div className="mt-1 flex items-center gap-1 text-amber-400" aria-hidden="true">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <Star key={index} className="h-3.5 w-3.5 fill-current" />
-            ))}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+              Voiture {score}/5
+            </span>
+            <span className="rounded-full border border-[#ff4d43]/15 bg-[#ff4d43]/10 px-2.5 py-1 text-[11px] font-semibold text-[#ff4d43]">
+              Service {serviceScore}/5
+            </span>
           </div>
         </div>
       </div>
-      <p className="mt-4 text-sm leading-7 text-slate-600">{text}</p>
+      <p className="mt-4 text-sm leading-7 text-slate-600">{comment}</p>
+      <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+        {carLabel}
+      </p>
     </article>
   );
 }
@@ -386,6 +408,11 @@ export default function Home() {
   const { data: brands = [] } = useQuery({
     queryKey: ["brands"],
     queryFn: fetchBrands,
+  });
+  const { data: publicRatings } = useQuery({
+    queryKey: ["public-ratings"],
+    queryFn: fetchPublicRatings,
+    staleTime: 60_000,
   });
 
   const cities = useMemo(() => {
@@ -446,6 +473,19 @@ export default function Home() {
   }, [brandShowcase]);
 
   const featuredShowcase = useMemo(() => (featuredCars?.cars ?? []).slice(0, 3), [featuredCars]);
+  const recentTestimonials = publicRatings?.testimonials ?? [];
+  const heroRatingValue = publicRatings?.summary.averageServiceScore;
+  const heroRatingLabel = heroRatingValue != null ? `${heroRatingValue.toFixed(2)}/5` : "Aucun avis";
+  const heroClientsLabel = publicRatings ? `+${publicRatings.summary.satisfiedClients}` : "...";
+  const heroCarsLabel = featuredCars?.total != null ? `+${featuredCars.total}` : "...";
+  const heroCitiesLabel = `${cities.length}+`;
+  const heroAvatars = recentTestimonials.slice(0, 4);
+  const heroStats = [
+    { value: heroClientsLabel, label: "Clients satisfaits" },
+    { value: heroCarsLabel, label: "Vehicules disponibles" },
+    { value: heroCitiesLabel, label: "Villes couvertes" },
+    { value: heroRatingLabel, label: "Note moyenne" },
+  ];
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -514,42 +554,51 @@ export default function Home() {
 
               <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-[0.94] tracking-tight text-balance text-white sm:text-5xl md:text-6xl lg:text-[4.8rem]">
                 Louez la voiture
-                <span className="block">idéale pour découvrir</span>
+                <span className="block">idÃ©ale pour dÃ©couvrir</span>
                 <span className="block font-serif text-[#ff6f66]">le Maroc</span>
               </h1>
 
               <p className="mt-6 max-w-xl text-sm leading-7 text-white/72 sm:text-base">
-                Des voitures sélectionnées avec soin, un service premium et des prix transparents.
-                Réservez en quelques clics.
+                Des voitures sÃ©lectionnÃ©es avec soin, un service premium et des prix transparents.
+                RÃ©servez en quelques clics.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-5">
-                <div className="flex -space-x-3">
-                  {[
-                    { initials: "AM", bg: "from-[#ff756a] to-[#ff4d43]" },
-                    { initials: "SK", bg: "from-[#1f9cf0] to-[#0f6ddf]" },
-                    { initials: "YR", bg: "from-[#f7b955] to-[#ec7a2f]" },
-                    { initials: "NA", bg: "from-[#2fc7a1] to-[#188a7b]" },
-                  ].map((person) => (
-                    <div
-                      key={person.initials}
-                      className={`flex h-12 w-12 items-center justify-center rounded-full border-2 border-white/10 bg-gradient-to-br ${person.bg} text-xs font-extrabold text-white shadow-lg`}
-                    >
-                      {person.initials}
-                    </div>
-                  ))}
-                </div>
+                {heroAvatars.length > 0 && (
+                  <div className="flex -space-x-3">
+                    {heroAvatars.map((review, index) => {
+                      const bgVariants = [
+                        "from-[#ff756a] to-[#ff4d43]",
+                        "from-[#1f9cf0] to-[#0f6ddf]",
+                        "from-[#f7b955] to-[#ec7a2f]",
+                        "from-[#2fc7a1] to-[#188a7b]",
+                      ];
+
+                      return (
+                        <div
+                          key={review.id}
+                          className={`flex h-12 w-12 items-center justify-center rounded-full border-2 border-white/10 bg-gradient-to-br ${bgVariants[index % bgVariants.length]} text-xs font-extrabold text-white shadow-lg`}
+                          title={review.customerName}
+                        >
+                          {getInitials(review.customerName)}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 <div>
                   <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                    <span>4.8/5</span>
+                    <span>{heroRatingLabel}</span>
                     <span className="flex items-center gap-1 text-[#ffcc66]">
                       {Array.from({ length: 5 }).map((_, index) => (
                         <Star key={index} className="h-4 w-4 fill-current" />
                       ))}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-white/58">+1200 clients satisfaits</p>
+                  <p className="mt-1 text-sm text-white/58">
+                    {publicRatings ? `${heroClientsLabel} clients satisfaits` : "Les premiers avis arrivent"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -557,7 +606,7 @@ export default function Home() {
             <div className="w-full max-w-[450px] justify-self-end">
               <ReservationSearchBar
                 title="Trouvez votre voiture"
-                subtitle="Réservez votre voiture au meilleur prix"
+                subtitle="RÃ©servez votre voiture au meilleur prix"
                 cities={cities}
                 city={city}
                 startDate={startDate}
@@ -664,9 +713,9 @@ export default function Home() {
 
       <section className="container mx-auto px-4 pb-14">
         <SectionHeading
-          eyebrow="Comment ça marche"
-          title="Louez en 4 étapes simples"
-          description="Le parcours reste fluide et direct, du choix des dates jusqu à la remise des clés."
+          eyebrow="Comment Ã§a marche"
+          title="Louez en 4 Ã©tapes simples"
+          description="Le parcours reste fluide et direct, du choix des dates jusqu Ã  la remise des clÃ©s."
         />
 
         <div className="mt-8 grid gap-4 xl:grid-cols-4">
@@ -687,43 +736,53 @@ export default function Home() {
           <SectionHeading
             eyebrow="Ils nous font confiance"
             title="Ce que disent nos clients"
-            description="Des retours simples et directs qui confirment l expérience de réservation."
+            description="Des retours simples et directs qui confirment l experience de reservation."
           />
 
-          <div className="hidden items-center gap-2 sm:flex">
-            <button
-              type="button"
-              onClick={() => scrollTrack(testimonialsTrackRef, -1)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
-              aria-label="Avis précédents"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollTrack(testimonialsTrackRef, 1)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
-              aria-label="Avis suivants"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+          {recentTestimonials.length > 1 && (
+            <div className="hidden items-center gap-2 sm:flex">
+              <button
+                type="button"
+                onClick={() => scrollTrack(testimonialsTrackRef, -1)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
+                aria-label="Avis precedents"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollTrack(testimonialsTrackRef, 1)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
+                aria-label="Avis suivants"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
 
-        <div
-          ref={testimonialsTrackRef}
-          className="mt-8 flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {testimonials.map((item) => (
-            <TestimonialCard
-              key={item.name}
-              initials={item.initials}
-              name={item.name}
-              location={item.location}
-              text={item.text}
-            />
-          ))}
-        </div>
+        {recentTestimonials.length > 0 ? (
+          <div
+            ref={testimonialsTrackRef}
+            className="mt-8 flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {recentTestimonials.map((item) => (
+              <TestimonialCard
+                key={item.id}
+                customerName={item.customerName}
+                location={item.location}
+                carLabel={item.carLabel}
+                score={item.score}
+                serviceScore={item.serviceScore}
+                comment={item.comment}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-8 rounded-[1.45rem] border border-dashed border-slate-200 bg-white px-5 py-8 text-sm text-slate-500">
+            Aucun avis client publie pour le moment.
+          </div>
+        )}
       </section>
     </div>
   );

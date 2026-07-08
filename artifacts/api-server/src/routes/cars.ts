@@ -213,6 +213,7 @@ async function getCarRatings(carId: number) {
     id: rating.id,
     rentalRequestId: rating.rentalRequestId,
     score: rating.score,
+    serviceScore: rating.serviceScore ?? rating.score,
     comment: rating.comment,
     createdAt: rating.createdAt,
     customerName: user.fullName,

@@ -48,6 +48,15 @@ async function main() {
         add column if not exists visual_state text;
     `);
 
+    await client.query(`
+      alter table if exists car_ratings
+        add column if not exists service_score integer;
+
+      update car_ratings
+      set service_score = score
+      where service_score is null;
+    `);
+
     const tableCheck = await client.query(`
       select to_regclass('public.users') as users_table;
     `);

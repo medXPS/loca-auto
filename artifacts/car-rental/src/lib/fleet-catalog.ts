@@ -39,8 +39,34 @@ export type EligibleRatingRecord = {
   existingRating?: {
     id: number;
     score: number;
+    serviceScore?: number | null;
     comment?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
   } | null;
+};
+
+export type PublicRatingsSummary = {
+  averageCarScore: number | null;
+  averageServiceScore: number | null;
+  totalReviews: number;
+  satisfiedClients: number;
+};
+
+export type PublicRatingsTestimonial = {
+  id: number;
+  customerName: string;
+  location: string;
+  carLabel: string;
+  score: number;
+  serviceScore: number;
+  comment: string;
+  createdAt: string;
+};
+
+export type PublicRatingsOverview = {
+  summary: PublicRatingsSummary;
+  testimonials: PublicRatingsTestimonial[];
 };
 
 export async function fetchBrands() {
@@ -93,7 +119,16 @@ export async function fetchEligibleRatings() {
   return customFetch<EligibleRatingRecord[]>("/api/ratings/me/eligible");
 }
 
-export async function submitRating(data: { rentalRequestId: number; score: number; comment?: string }) {
+export async function fetchPublicRatings() {
+  return customFetch<PublicRatingsOverview>("/api/ratings/public");
+}
+
+export async function submitRating(data: {
+  rentalRequestId: number;
+  score: number;
+  serviceScore: number;
+  comment?: string;
+}) {
   return customFetch("/api/ratings", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

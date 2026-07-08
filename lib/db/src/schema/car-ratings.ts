@@ -11,6 +11,7 @@ export const carRatingsTable = pgTable("car_ratings", {
   customerId: integer("customer_id").notNull().references(() => customersTable.id, { onDelete: "cascade" }),
   rentalRequestId: integer("rental_request_id").notNull().references(() => rentalRequestsTable.id, { onDelete: "cascade" }).unique(),
   score: integer("score").notNull(),
+  serviceScore: integer("service_score"),
   comment: text("comment"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

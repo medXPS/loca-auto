@@ -442,7 +442,9 @@ export default function CustomerProfile() {
             <Star className="h-5 w-5 text-primary" />
             Mes avis
           </CardTitle>
-          <CardDescription>Seuls les clients ayant termine une location peuvent laisser une note ou la modifier.</CardDescription>
+          <CardDescription>
+            Une seule fiche par reservation: note voiture, note service et commentaire, modifiables a tout moment.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
           {eligibleRatings.length > 0 ? (
@@ -477,7 +479,8 @@ export default function CustomerProfile() {
                   <div className="w-full lg:min-w-[320px] lg:max-w-xl lg:flex-1">
                     <RatingEditor
                       rentalRequestId={item.requestId}
-                      defaultScore={item.existingRating?.score}
+                      defaultCarScore={item.existingRating?.score}
+                      defaultServiceScore={item.existingRating?.serviceScore ?? item.existingRating?.score}
                       defaultComment={item.existingRating?.comment}
                     />
                   </div>
