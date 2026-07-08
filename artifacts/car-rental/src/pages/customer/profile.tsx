@@ -32,11 +32,13 @@ import {
   CheckCircle2,
   CloudUpload,
   Download,
+  ArrowRight,
   FileText,
   IdCard,
   LockKeyhole,
   Mail,
   MapPin,
+  MoreVertical,
   PenLine,
   Phone,
   ShieldCheck,
@@ -254,29 +256,30 @@ function DocumentSlot({
   };
 
   return (
-    <div className="rounded-[1.35rem] border border-slate-200 bg-white p-4 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.16)]">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
+    <div className="rounded-[1.2rem] border border-slate-200 bg-white p-4 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.16)]">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
           <div className={cn("flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl", accentClassName)}>
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-semibold text-slate-950">{label}</p>
+              <p className="truncate text-sm font-semibold text-slate-950">{label}</p>
               {existingDocument ? (
-                <Badge variant="secondary" className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]">
+                <Badge
+                  variant="secondary"
+                  className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                >
                   {existingDocument.status ? getStatusLabel(existingDocument.status, "document") : "Actif"}
                 </Badge>
               ) : null}
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              {existingName ? existingName : helperText}
-            </p>
-            {updatedAt ? <p className="mt-1 text-[11px] text-slate-400">Ajoute le {updatedAt}</p> : null}
+            <p className="mt-1 text-xs text-slate-500">{existingName ? existingName : helperText}</p>
+            {updatedAt ? <p className="mt-1 text-[11px] text-slate-400">Ajouté le {updatedAt}</p> : null}
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {existingDocument ? (
             <Button
               type="button"
@@ -292,14 +295,116 @@ function DocumentSlot({
 
           <Button
             type="button"
-            variant="outline"
-            className="rounded-full"
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 rounded-full border border-slate-200 text-slate-500 hover:text-slate-900"
             onClick={pickFile}
             disabled={isUploading}
+            aria-label={existingDocument ? `Remplacer ${label}` : `Ajouter ${label}`}
           >
-            {existingDocument ? "Remplacer" : "Parcourir"}
+            <MoreVertical className="h-4 w-4" />
           </Button>
+        </div>
+      </div>
 
+      {selectedFile ? (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <div className="flex min-w-0 items-center gap-2">
+            <CloudUpload className="h-4 w-4 shrink-0" />
+            <span className="min-w-0 truncate">{selectedFile.name}</span>
+          </div>
+          <Button
+            type="button"
+            className="rounded-full bg-[#ff4d43] text-white hover:bg-[#f03d32]"
+            onClick={() => void handleUpload()}
+            disabled={isUploading}
+          >
+            {isUploading ? "Televersement..." : "Televerser"}
+          </Button>
+        </div>
+      ) : null}
+
+      <input ref={inputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={(event) => {
+        const file = event.target.files?.[0] ?? null;
+        event.target.value = "";
+        setSelectedFile(file);
+      }} />
+    </div>
+  );
+}
+
+function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
+  const { toast } = useToast();
+  const getUploadUrl = useGetUploadUrl();
+  const uploadDocument = useUploadDocument();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const pickFile = () => {
+    inputRef.current?.click();
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || isUploading) return;
+
+    setIsUploading(true);
+
+    try {
+      const presign = await getUploadUrl.mutateAsync({
+        data: { fileName: selectedFile.name, fileType: selectedFile.type, context: "documents" },
+      });
+
+      const response = await fetch(presign.uploadUrl, {
+        method: "PUT",
+        body: selectedFile,
+        ...(selectedFile.type ? { headers: { "Content-Type": selectedFile.type } } : {}),
+      });
+
+      if (!response.ok) {
+        throw new Error("upload_failed");
+      }
+
+      await uploadDocument.mutateAsync({
+        data: {
+          type: "AUTRE",
+          fileUrl: presign.fileUrl,
+        },
+      });
+
+      setSelectedFile(null);
+      if (inputRef.current) inputRef.current.value = "";
+      onUploaded();
+      toast({ title: "Document televerse avec succes" });
+    } catch {
+      toast({
+        title: "Erreur de televersement",
+        description: "Reessayez ou contactez le support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="rounded-[1.35rem] border border-dashed border-slate-200 bg-slate-50/70 p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
+            <CloudUpload className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-950">Glissez &amp; deposez vos fichiers ici</p>
+            <p className="mt-1 text-xs text-slate-500">PDF, JPG ou PNG - Max 5 Mo</p>
+            {selectedFile ? <p className="mt-1 text-[11px] text-slate-400">{selectedFile.name}</p> : null}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" className="rounded-full" onClick={pickFile} disabled={isUploading}>
+            Parcourir
+          </Button>
           {selectedFile ? (
             <Button
               type="button"
@@ -312,13 +417,6 @@ function DocumentSlot({
           ) : null}
         </div>
       </div>
-
-      {selectedFile ? (
-        <div className="mt-3 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          <CloudUpload className="h-4 w-4 shrink-0" />
-          <span className="min-w-0 truncate">{selectedFile.name}</span>
-        </div>
-      ) : null}
 
       <input ref={inputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={(event) => {
         const file = event.target.files?.[0] ?? null;
@@ -412,10 +510,9 @@ function ReviewDialog({
 function ReviewCard({ entry }: { entry: EligibleRatingRecord & { existingRating: NonNullable<EligibleRatingRecord["existingRating"]> } }) {
   const rating = entry.existingRating;
   const carName = entry.car ? `${entry.car.brand} ${entry.car.model}` : `Reservation #${entry.requestId}`;
-  const serviceScore = rating.serviceScore ?? rating.score;
 
   return (
-    <article className="rounded-[1.35rem] border border-slate-200 bg-white p-3 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.16)]">
+    <article className="rounded-[1.2rem] border border-slate-200 bg-white p-3 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.12)]">
       <div className="flex items-start gap-3">
         {entry.car?.mainImageUrl ? (
           <img
@@ -430,28 +527,24 @@ function ReviewCard({ entry }: { entry: EligibleRatingRecord & { existingRating:
         )}
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-950">{carName}</p>
-          <p className="mt-1 text-xs text-slate-500">
-            {formatDate(rating.updatedAt || rating.createdAt || entry.createdAt)}
-          </p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-950">{carName}</p>
+              <div className="mt-1 flex items-center gap-1 text-amber-400">
+                {renderStars(rating.score)}
+                <span className="ml-1 text-xs font-semibold text-slate-600">{Math.round(rating.score)}/5</span>
+              </div>
+            </div>
 
-          <div className="mt-2 flex flex-wrap gap-2">
-            {renderRatingPill("Voiture", rating.score)}
-            {renderRatingPill("Service", serviceScore, "accent")}
+            <Button asChild variant="ghost" className="h-8 px-0 text-sm font-semibold text-[#2f7de1] hover:bg-transparent hover:text-[#2469c2]">
+              <Link href={`/dashboard/demandes/${entry.requestId}`}>Voir le détail</Link>
+            </Button>
           </div>
 
           <p className="mt-2 text-sm leading-6 text-slate-600">
             "{rating.comment?.trim() || "Pas de commentaire"}"
           </p>
         </div>
-      </div>
-
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <Button asChild variant="ghost" className="h-8 px-0 text-sm font-semibold text-[#2f7de1] hover:bg-transparent hover:text-[#2469c2]">
-          <Link href={`/dashboard/demandes/${entry.requestId}`}>Voir le detail</Link>
-        </Button>
-
-        <ReviewDialog entry={entry} />
       </div>
     </article>
   );
@@ -622,9 +715,9 @@ export default function CustomerProfile() {
   }, [ratedEntries]);
 
   const reviewBreakdown = [
-    { label: "Qualite des vehicules", value: reviewStats.carAverage },
+    { label: "Qualité des véhicules", value: reviewStats.carAverage },
     { label: "Service client", value: reviewStats.serviceAverage },
-    { label: "Rapport qualite/prix", value: reviewStats.overallAverage },
+    { label: "Rapport qualité/prix", value: reviewStats.overallAverage },
   ];
 
   const recentReviews = ratedEntries.slice(0, 3);
@@ -639,43 +732,42 @@ export default function CustomerProfile() {
 
   return (
     <div className="bg-[radial-gradient(circle_at_top_right,rgba(255,77,67,0.06),transparent_24%),linear-gradient(180deg,#f7f8fc_0%,#eef2f8_100%)]">
-      <div className="mx-auto max-w-[96rem] space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        <section className="overflow-hidden rounded-[2.15rem] border border-slate-200 bg-white/96 shadow-[0_24px_70px_-40px_rgba(15,23,42,0.18)]">
-          <div className="grid gap-8 px-6 py-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-8 lg:py-10">
+      <div className="mx-auto max-w-[1220px] space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+        <section className="overflow-hidden rounded-[2.15rem] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(247,249,253,0.98)_100%)] shadow-[0_24px_70px_-40px_rgba(15,23,42,0.18)]">
+          <div className="grid gap-8 px-6 py-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-8 lg:py-10">
             <div className="space-y-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">Mon espace client</p>
               <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
                 Mon profil
               </h1>
               <p className="max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
-                Gere vos informations personnelles, vos documents et la securite de votre compte.
+                Gérez vos informations personnelles, vos documents et la sécurité de votre compte.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <HeroStatCard
                 icon={CheckCircle2}
-                label="Compte"
-                value={user?.emailVerifiedAt ? "Verifie" : "A verifier"}
+                label="COMPTE"
+                value={user?.emailVerifiedAt ? "Vérifié" : "À vérifier"}
                 tone="emerald"
               />
               <HeroStatCard
                 icon={FileText}
-                label="Dossier"
-                value={profileComplete ? "Complet" : "A completer"}
+                label="DOSSIER"
+                value={profileComplete ? "Complet" : "À compléter"}
                 tone="rose"
               />
               <HeroStatCard
                 icon={ShieldCheck}
-                label="Securite"
-                value={mfaEnabled ? "MFA activee" : "MFA desactivee"}
+                label="SÉCURITÉ"
+                value={mfaEnabled ? "MFA activée" : "MFA désactivée"}
                 tone="sky"
               />
             </div>
           </div>
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
+        <div className="grid gap-6 lg:grid-cols-2">
           <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
             <CardHeader className="border-b border-slate-200 pb-5">
               <div className="flex items-center gap-3">
@@ -684,7 +776,7 @@ export default function CustomerProfile() {
                 </div>
                 <div>
                   <CardTitle className="text-lg">Informations personnelles</CardTitle>
-                  <CardDescription>Vos coordonnees, votre identite et votre adresse.</CardDescription>
+                  <CardDescription>Vos informations personnelles, vos documents et votre adresse.</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -720,8 +812,8 @@ export default function CustomerProfile() {
                 />
                 <ProfileRow
                   icon={CalendarDays}
-                  label="Membre depuis"
-                  value={formatDate(profile?.user?.createdAt)}
+                  label="Date de naissance"
+                  value="Non renseignée"
                 />
                 <ProfileRow
                   icon={IdCard}
@@ -867,7 +959,6 @@ export default function CustomerProfile() {
             </CardContent>
           </Card>
 
-          <div className="space-y-6">
             <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
               <CardHeader className="border-b border-slate-200 pb-5">
                 <div className="flex items-center gap-3">
@@ -876,7 +967,7 @@ export default function CustomerProfile() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">Mes documents</CardTitle>
-                    <CardDescription>Televersez et gerez vos documents en toute simplicite.</CardDescription>
+                    <CardDescription>Téléchargez et gérez vos documents en toute simplicité.</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -931,8 +1022,8 @@ export default function CustomerProfile() {
                     <ShieldCheck className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Securite du compte</CardTitle>
-                    <CardDescription>Gardez le controle sur votre acces et vos identifiants.</CardDescription>
+                    <CardTitle className="text-lg">Sécurité du compte</CardTitle>
+                    <CardDescription>Gardez le contrôle sur votre accès et vos identifiants.</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -977,16 +1068,22 @@ export default function CustomerProfile() {
                         <CalendarDays className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-slate-400">Derniere location</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-950">
-                          {((profile as any)?.summary?.lastRentalAt ?? null)
-                            ? formatDate((profile as any).summary.lastRentalAt)
-                            : "Aucune"}
-                        </p>
+                        <p className="text-xs font-medium text-slate-400">Sessions actives</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">1 session active</p>
                       </div>
                     </div>
-                    <Button asChild variant="outline" className="rounded-full">
-                      <Link href="/dashboard/demandes">Voir</Link>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-full"
+                      onClick={() =>
+                        toast({
+                          title: "Sessions actives",
+                          description: "La gestion détaillée des sessions sera bientôt disponible.",
+                        })
+                      }
+                    >
+                      Voir
                     </Button>
                   </div>
                 </div>
@@ -1000,9 +1097,9 @@ export default function CustomerProfile() {
                     <Star className="h-5 w-5" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Avis client</CardTitle>
+                    <CardTitle className="text-lg">Mes avis</CardTitle>
                     <CardDescription>
-                      Une seule fiche par reservation: note voiture, note service et commentaire, modifiables a tout moment.
+                      Une seule fiche par réservation: note voiture, note service et commentaire, modifiables à tout moment.
                     </CardDescription>
                   </div>
                 </div>
@@ -1061,71 +1158,8 @@ export default function CustomerProfile() {
                 )}
               </CardContent>
             </Card>
-          </div>
         </div>
 
-        {pendingEntries.length > 0 ? (
-          <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
-            <CardHeader className="border-b border-slate-200 pb-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ff4d43]/10 text-[#ff4d43]">
-                  <Star className="h-5 w-5" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Locations a noter</CardTitle>
-                  <CardDescription>
-                    Une note voiture et une note service par reservation, modifiables apres publication.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4 pt-5">
-              {pendingEntries.map((item) => {
-                const carName = item.car ? `${item.car.brand} ${item.car.model}` : `Reservation #${item.requestId}`;
-
-                return (
-                  <div key={item.requestId} className="rounded-[1.4rem] border border-slate-200 bg-slate-50/60 p-4">
-                    <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-                      <div className="flex flex-col gap-4 sm:flex-row">
-                        {item.car?.mainImageUrl ? (
-                          <img
-                            src={item.car.mainImageUrl}
-                            alt={carName}
-                            className="h-32 w-full rounded-2xl object-cover sm:h-24 sm:w-36"
-                          />
-                        ) : (
-                          <div className="flex h-32 w-full items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white text-sm text-slate-500 sm:h-24 sm:w-36">
-                            Sans image
-                          </div>
-                        )}
-
-                        <div>
-                          <div className="text-lg font-semibold text-slate-950">{carName}</div>
-                          <p className="mt-1 text-sm text-slate-500">
-                            Du {item.startDate} au {item.returnDate}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-500">
-                            Partagez votre retour apres cette location.
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="w-full xl:min-w-[320px] xl:max-w-xl xl:flex-1">
-                        <RatingEditor
-                          rentalRequestId={item.requestId}
-                          defaultCarScore={item.existingRating?.score}
-                          defaultServiceScore={item.existingRating?.serviceScore ?? item.existingRating?.score}
-                          defaultComment={item.existingRating?.comment}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        ) : null}
       </div>
     </div>
   );
