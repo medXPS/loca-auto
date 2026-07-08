@@ -156,22 +156,6 @@ export function PublicLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="hidden items-center gap-3 lg:flex">
-            <Button
-              asChild
-              variant="outline"
-              className={cn(
-                "rounded-2xl px-4",
-                isHomePage
-                  ? "border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                  : "border-border/70 bg-white",
-              )}
-              >
-                <a href="https://wa.me/212600000000" target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
-                </a>
-              </Button>
-
             {isAuthenticated ? (
               <>
                 {isCustomer ? (
