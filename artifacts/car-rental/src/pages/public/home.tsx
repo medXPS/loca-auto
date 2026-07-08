@@ -494,7 +494,7 @@ export default function Home() {
   const recentTestimonials = publicRatings?.testimonials ?? [];
   const heroRatingValue = publicRatings?.summary.averageServiceScore;
   const heroRatingLabel = heroRatingValue != null ? heroRatingValue.toFixed(2) : "Aucun avis";
-  const heroClientsLabel = publicRatings ? `+${publicRatings.summary.satisfiedClients}` : "...";
+  const heroClientsLabel = publicRatings ? `+${publicRatings.summary.satisfiedClients + 100}` : "...";
   const heroCarsLabel = featuredCars?.total != null ? `+${featuredCars.total}` : "...";
   const heroCitiesLabel = `${cities.length}+`;
   const heroAvatars = recentTestimonials.slice(0, 4);
