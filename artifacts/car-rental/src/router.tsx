@@ -41,6 +41,7 @@ import AdminNotifications from "@/pages/admin/notifications";
 import AgentDashboard from "@/pages/agent/dashboard";
 
 import CustomerDashboard from "@/pages/customer/dashboard";
+import CustomerNotifications from "@/pages/customer/notifications";
 import CustomerRequests from "@/pages/customer/requests/index";
 import CustomerRequestDetail from "@/pages/customer/requests/detail";
 import CustomerProfile from "@/pages/customer/profile";
@@ -118,6 +119,8 @@ export default function AppRouter() {
       <Route path="/agent/notifications" component={() => <AdminRoute component={AdminNotifications} allowedRoles={["AGENT"]} />} />
 
       {/* Customer Routes */}
+      <Route path="/dashboard/notifications/" component={() => <CustomerRoute component={CustomerNotifications} />} />
+      <Route path="/dashboard/notifications" component={() => <CustomerRoute component={CustomerNotifications} />} />
       <Route path="/dashboard" component={() => <CustomerRoute component={CustomerDashboard} />} />
       <Route path="/dashboard/demandes/:id" component={() => <CustomerRoute component={CustomerRequestDetail} />} />
       <Route path="/dashboard/demandes" component={() => <CustomerRoute component={CustomerRequests} />} />
