@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { createDatabase } from "./lib/database.js";
+import { ensureDemoFleet } from "./lib/demo-fleet.js";
 import { ensureSuperAdmin, getDefaultSuperAdmin } from "./lib/super-admin.js";
 
 const { db, pool, schema } = createDatabase();
@@ -22,6 +23,7 @@ function shouldResetDatabase() {
 async function resetDatabase() {
   await db.execute(sql`
     truncate table
+      ${schema.carRatingsTable},
       ${schema.carAvailabilityBlocksTable},
       ${schema.carImagesTable},
       ${schema.carExpensesTable},
@@ -32,6 +34,8 @@ async function resetDatabase() {
       ${schema.companySettingsTable},
       ${schema.rentalRequestsTable},
       ${schema.carsTable},
+      ${schema.carBrandsTable},
+      ${schema.agenciesTable},
       ${schema.agentsTable},
       ${schema.customersTable},
       ${schema.usersTable}
@@ -44,7 +48,7 @@ async function seed() {
 
   try {
     if (shouldReset) {
-      console.log("Resetting database to admin-only state...");
+      console.log("Resetting database, then seeding admin and demo fleet...");
       await resetDatabase();
     } else {
       console.log("Seeding database without deleting existing data...");
@@ -52,8 +56,13 @@ async function seed() {
 
     const admin = await ensureSuperAdmin({ db, schema }, getDefaultSuperAdmin());
 
+    const demoFleet = await ensureDemoFleet({ db, schema });
+    console.log(
+      `Demo fleet ready: ${demoFleet.expected} cars ensured (${demoFleet.inserted} inserted this run).`,
+    );
+
     if (shouldReset) {
-      console.log("Done. Only the admin account remains.");
+      console.log("Done. Only the admin account and demo fleet remain.");
     } else {
       console.log("Done. Existing data was preserved.");
     }
