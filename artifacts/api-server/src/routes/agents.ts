@@ -148,40 +148,74 @@ router.get("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
 router.patch("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
   try {
     const { fullName, phone, status } = req.body;
-    const [agent] = await db
-      .select()
-      .from(schema.agentsTable)
-      .where(eq(schema.agentsTable.id, parseInt(String(req.params.id), 10)))
-      .limit(1);
-    if (!agent) {
-      res.status(404).json({ error: "Agent non trouve" });
+    const agentId = parseInt(String(req.params.id), 10);
+    if (Number.isNaN(agentId)) {
+      res.status(400).json({ error: "Identifiant agent invalide" });
       return;
     }
 
-    if (fullName || phone) {
-      await db
-        .update(schema.usersTable)
-        .set({ ...(fullName && { fullName }), ...(phone && { phone }) })
-        .where(eq(schema.usersTable.id, agent.userId));
+    if (status && !["ACTIVE", "INACTIVE"].includes(String(status))) {
+      res.status(400).json({ error: "Statut agent invalide" });
+      return;
     }
 
-    if (status) {
-      await db
-        .update(schema.agentsTable)
-        .set({ status })
-        .where(eq(schema.agentsTable.id, agent.id));
-    }
-
-    const [row] = await db
+    const [existingRow] = await db
       .select({ agent: schema.agentsTable, user: schema.usersTable })
       .from(schema.agentsTable)
       .leftJoin(
         schema.usersTable,
         eq(schema.agentsTable.userId, schema.usersTable.id),
       )
-      .where(eq(schema.agentsTable.id, agent.id))
+      .where(eq(schema.agentsTable.id, agentId))
       .limit(1);
-    res.json(formatAgent(row!.agent, row!.user!));
+    if (!existingRow || !existingRow.user) {
+      res.status(404).json({ error: "Agent non trouve" });
+      return;
+    }
+
+    const currentUser = existingRow.user;
+    const currentAgent = existingRow.agent;
+
+    await db.transaction(async (tx) => {
+      if (fullName || phone || status) {
+        await tx
+          .update(schema.usersTable)
+          .set({
+            ...(fullName && { fullName }),
+            ...(phone && { phone }),
+            ...(status && { status }),
+          })
+          .where(eq(schema.usersTable.id, currentUser.id));
+      }
+
+      if (status) {
+        await tx
+          .update(schema.agentsTable)
+          .set({ status })
+          .where(eq(schema.agentsTable.id, currentAgent.id));
+      }
+    });
+
+    const [updatedRow] = await db
+      .select({ agent: schema.agentsTable, user: schema.usersTable })
+      .from(schema.agentsTable)
+      .leftJoin(
+        schema.usersTable,
+        eq(schema.agentsTable.userId, schema.usersTable.id),
+      )
+      .where(eq(schema.agentsTable.id, agentId))
+      .limit(1);
+    if (!updatedRow || !updatedRow.user) {
+      res.status(404).json({ error: "Agent non trouve" });
+      return;
+    }
+    await logAudit(req, {
+      userId: req.user!.userId,
+      action: "UPDATE_AGENT",
+      entityType: "agent",
+      entityId: agentId,
+    });
+    res.json(formatAgent(updatedRow.agent, updatedRow.user));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Erreur serveur" });
@@ -195,14 +229,44 @@ router.delete(
   requireRole("ADMIN"),
   async (req, res) => {
     try {
-      await db
-        .delete(schema.agentsTable)
-        .where(eq(schema.agentsTable.id, parseInt(String(req.params.id), 10)));
+      const agentId = parseInt(String(req.params.id), 10);
+      if (Number.isNaN(agentId)) {
+        res.status(400).json({ error: "Identifiant agent invalide" });
+        return;
+      }
+
+      const [row] = await db
+        .select({ agent: schema.agentsTable, user: schema.usersTable })
+        .from(schema.agentsTable)
+        .leftJoin(
+          schema.usersTable,
+          eq(schema.agentsTable.userId, schema.usersTable.id),
+        )
+        .where(eq(schema.agentsTable.id, agentId))
+        .limit(1);
+
+      if (!row) {
+        res.status(404).json({ error: "Agent non trouve" });
+        return;
+      }
+
+      await db.transaction(async (tx) => {
+        if (row.user) {
+          await tx
+            .update(schema.usersTable)
+            .set({ status: "INACTIVE" })
+            .where(eq(schema.usersTable.id, row.user.id));
+        }
+
+        await tx
+          .delete(schema.agentsTable)
+          .where(eq(schema.agentsTable.id, row.agent.id));
+      });
       await logAudit(req, {
         userId: req.user!.userId,
         action: "DELETE_AGENT",
         entityType: "agent",
-        entityId: parseInt(String(req.params.id), 10),
+        entityId: agentId,
       });
       res.status(204).send();
     } catch (err) {

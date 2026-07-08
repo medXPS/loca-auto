@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { createDatabase } from "./lib/database.js";
+import { ensureDemoCustomers } from "./lib/demo-customers.js";
 import { ensureDemoFleet } from "./lib/demo-fleet.js";
 import { ensureSuperAdmin, getDefaultSuperAdmin } from "./lib/super-admin.js";
 
@@ -56,13 +57,18 @@ async function seed() {
 
     const admin = await ensureSuperAdmin({ db, schema }, getDefaultSuperAdmin());
 
+    const demoCustomers = await ensureDemoCustomers({ db, schema });
+    console.log(
+      `Demo customers ready: ${demoCustomers.expected} accounts ensured (${demoCustomers.inserted} inserted this run).`,
+    );
+
     const demoFleet = await ensureDemoFleet({ db, schema });
     console.log(
       `Demo fleet ready: ${demoFleet.expected} cars ensured (${demoFleet.inserted} inserted this run).`,
     );
 
     if (shouldReset) {
-      console.log("Done. Only the admin account and demo fleet remain.");
+      console.log("Done. Demo admin, customers, and fleet are ready.");
     } else {
       console.log("Done. Existing data was preserved.");
     }

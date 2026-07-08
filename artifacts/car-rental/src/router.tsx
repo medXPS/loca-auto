@@ -29,6 +29,7 @@ import AdminCustomers from "@/pages/admin/customers/index";
 import AdminCustomerDetail from "@/pages/admin/customers/detail";
 import AdminAgents from "@/pages/admin/agents/index";
 import AdminNewAgent from "@/pages/admin/agents/new";
+import AdminEditAgent from "@/pages/admin/agents/edit";
 import AdminExpenses from "@/pages/admin/expenses/index";
 import AdminAgencies from "@/pages/admin/agencies";
 import AdminBlog from "@/pages/admin/blog/index";
@@ -93,6 +94,7 @@ export default function AppRouter() {
       <Route path="/admin/clients/:id" component={() => <AdminRoute component={AdminCustomerDetail} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/clients" component={() => <AdminRoute component={AdminCustomers} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/agents/nouveau" component={() => <AdminRoute component={AdminNewAgent} allowedRoles={["ADMIN"]} />} />
+      <Route path="/admin/agents/:id" component={() => <AdminRoute component={AdminEditAgent} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/agents" component={() => <AdminRoute component={AdminAgents} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/charges" component={() => <AdminRoute component={AdminExpenses} allowedRoles={["ADMIN"]} />} />
       <Route path="/admin/agences" component={() => <AdminRoute component={AdminAgencies} allowedRoles={["ADMIN"]} />} />
