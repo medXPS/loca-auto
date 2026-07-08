@@ -77,7 +77,38 @@ router.patch("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
 
     res.json(formatBrand(brand));
   } catch (err: any) {
-    res.status(400).json({ error: err?.message || "Impossible de mettre a jour la marque" });
+    res.status(400).json({ error: err?.message || "Impossible de mettre à jour la marque" });
+  }
+});
+
+router.delete("/:id", authMiddleware, requireRole("ADMIN"), async (req, res) => {
+  try {
+    const id = parseInt(String(req.params.id), 10);
+    const [brand] = await db
+      .select()
+      .from(schema.carBrandsTable)
+      .where(eq(schema.carBrandsTable.id, id))
+      .limit(1);
+
+    if (!brand) {
+      res.status(404).json({ error: "Marque introuvable" });
+      return;
+    }
+
+    const { countsByBrandId, countsByName } = await getBrandCarCounts();
+    const carsCount = countsByBrandId.get(brand.id) ?? countsByName.get(brand.name.trim().toLowerCase()) ?? 0;
+
+    if (carsCount > 0) {
+      res.status(409).json({
+        error: `Impossible de supprimer cette marque: elle est utilisée par ${carsCount} véhicule(s).`,
+      });
+      return;
+    }
+
+    await db.delete(schema.carBrandsTable).where(eq(schema.carBrandsTable.id, brand.id));
+    res.status(204).send();
+  } catch (err: any) {
+    res.status(400).json({ error: err?.message || "Impossible de supprimer la marque" });
   }
 });
 

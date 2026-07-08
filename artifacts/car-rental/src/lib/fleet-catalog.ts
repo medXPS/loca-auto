@@ -93,6 +93,12 @@ export async function saveBrand(data: Partial<BrandRecord> & { name: string }) {
   });
 }
 
+export async function deleteBrand(id: number) {
+  return customFetch<void>(`/api/brands/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export async function saveAgency(data: Partial<AgencyRecord> & { name: string; city: string }) {
   if (data.id) {
     return customFetch<AgencyRecord>(`/api/agencies/${data.id}`, {
