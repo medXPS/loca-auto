@@ -34,7 +34,7 @@ const router = Router();
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "En attente",
   DOCUMENT_SUBMISSION_WINDOW: "Documents requis",
-  PENDING_CALL_CONFIRMATION: "Documents recus",
+  PENDING_CALL_CONFIRMATION: "Documents reçus",
   EXTENDED_PAYMENT_DEADLINE: "Delai prolonge",
   PAID: "Payee",
   ACTIVE_RENTAL: "En cours de location",
@@ -1536,7 +1536,7 @@ router.patch(
         .where(eq(schema.rentalRequestsTable.id, requestId))
         .limit(1);
       if (!existing) {
-        res.status(404).json({ error: "Demande non trouvÃ©e" });
+        res.status(404).json({ error: "Demande non trouvée" });
         return;
       }
 
@@ -1770,7 +1770,7 @@ router.patch(
         )
         .limit(1);
       if (!existing) {
-        res.status(404).json({ error: "Demande non trouvee" });
+        res.status(404).json({ error: "Demande non trouvée" });
         return;
       }
       if (

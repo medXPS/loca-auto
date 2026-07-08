@@ -29,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const agentSchema = z.object({
   fullName: z.string().trim().min(2, "Nom requis"),
-  phone: z.string().trim().min(10, "Telephone requis"),
+  phone: z.string().trim().min(10, "Téléphone requis"),
   status: z.enum(["ACTIVE", "INACTIVE"]),
 });
 
@@ -81,7 +81,7 @@ export default function AdminEditAgent() {
       { id: agent.id, data: values },
       {
         onSuccess: () => {
-          toast({ title: "Agent mis a jour" });
+          toast({ title: "Agent mis à jour" });
           queryClient.invalidateQueries({ queryKey: getListAgentsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetAgentQueryKey(agent.id) });
           setLocation("/admin/agents");
@@ -110,7 +110,7 @@ export default function AdminEditAgent() {
       <div className="mx-auto max-w-3xl space-y-4 p-6 text-center">
         <p className="text-muted-foreground">Agent introuvable.</p>
         <Button asChild variant="outline">
-          <Link href="/admin/agents">Retour a la liste</Link>
+          <Link href="/admin/agents">Retour à la liste</Link>
         </Button>
       </div>
     );
@@ -134,7 +134,7 @@ export default function AdminEditAgent() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            Mettez a jour le nom, le telephone et le statut du compte.
+            Mettez à jour le nom, le téléphone et le statut du compte.
           </p>
         </div>
       </div>
@@ -190,7 +190,7 @@ export default function AdminEditAgent() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Telephone</FormLabel>
+                      <FormLabel>Téléphone</FormLabel>
                       <FormControl>
                         <Input placeholder="+212 6..." {...field} />
                       </FormControl>
@@ -227,7 +227,7 @@ export default function AdminEditAgent() {
                   <Link href="/admin/agents">Annuler</Link>
                 </Button>
                 <Button type="submit" disabled={updateAgent.isPending}>
-                  {updateAgent.isPending ? "Mise a jour..." : "Enregistrer les modifications"}
+                  {updateAgent.isPending ? "Mise à jour..." : "Enregistrer les modifications"}
                 </Button>
               </div>
             </form>

@@ -70,7 +70,7 @@ function AgentCard({ agent }: { agent: AgentCardModel }) {
       { id: agent.id },
       {
         onSuccess: () => {
-          toast({ title: "Agent supprime" });
+          toast({ title: "Agent supprimé" });
           queryClient.invalidateQueries({ queryKey: getListAgentsQueryKey() });
         },
         onError: (error: any) => {
@@ -112,7 +112,7 @@ function AgentCard({ agent }: { agent: AgentCardModel }) {
 
       <div className="mt-5 flex items-center justify-between gap-3 border-t pt-4">
         <p className="text-xs text-muted-foreground">
-          Cree le {formatDateLabel(agent.createdAt)}
+          Créé le {formatDateLabel(agent.createdAt)}
         </p>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -139,7 +139,7 @@ function AgentCard({ agent }: { agent: AgentCardModel }) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Supprimer cet agent ?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Ce compte sera desactive et ne pourra plus se connecter.
+                  Ce compte sera désactivé et ne pourra plus se connecter.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -193,9 +193,9 @@ export default function AdminAgents() {
                 <EmptyMedia variant="icon">
                   <Users />
                 </EmptyMedia>
-                <EmptyTitle>Aucun agent trouve</EmptyTitle>
+                <EmptyTitle>Aucun agent trouvé</EmptyTitle>
                 <EmptyDescription>
-                  Ajoutez un agent pour lui donner acces au tableau de bord.
+                  Ajoutez un agent pour lui donner accès au tableau de bord.
                 </EmptyDescription>
               </EmptyHeader>
               <Button asChild size="sm" className="gap-2">

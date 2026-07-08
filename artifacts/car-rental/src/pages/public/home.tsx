@@ -34,28 +34,28 @@ const heroPerks = [
   {
     icon: CircleDollarSign,
     title: "Prix transparents",
-    description: "Aucun frais cache, tout est clair des le depart.",
+    description: "Aucun frais caché, tout est clair dès le départ.",
   },
   {
     icon: Clock3,
     title: "Annulation flexible",
-    description: "Reservez l esprit libre avec une marge de securite.",
+    description: "Réservez l'esprit libre avec une marge de sécurité.",
   },
   {
     icon: Headset,
     title: "Support 7j/7",
-    description: "Une equipe disponible pour vous guider a chaque etape.",
+    description: "Une équipe disponible pour vous guider à chaque étape.",
   },
   {
     icon: CarFront,
     title: "Livraison disponible",
-    description: "A l aeroport ou a domicile selon votre besoin.",
+    description: "À l'aéroport ou à domicile selon votre besoin.",
   },
 ];
 
 const heroStats = [
   { value: "+1200", label: "Clients satisfaits" },
-  { value: "+350", label: "Vehicules disponibles" },
+  { value: "+350", label: "Véhicules disponibles" },
   { value: "20+", label: "Villes couvertes" },
   { value: "4.8", label: "Avis client" },
 ];
@@ -64,22 +64,22 @@ const steps = [
   {
     icon: CalendarDays,
     title: "Choisissez vos dates",
-    description: "Selectionnez la ville, les dates et le lieu de prise en charge.",
+    description: "Sélectionnez la ville, les dates et le lieu de prise en charge.",
   },
   {
     icon: CarFront,
     title: "Choisissez votre voiture",
-    description: "Comparez et reservez le vehicule qui vous convient.",
+    description: "Comparez et réservez le véhicule qui vous convient.",
   },
   {
     icon: CreditCard,
-    title: "Reservez en ligne",
-    description: "Paiement securise et confirmation immediate.",
+    title: "Réservez en ligne",
+    description: "Paiement sécurisé et confirmation immédiate.",
   },
   {
     icon: KeyRound,
-    title: "Recuperez et profitez",
-    description: "Recuperez votre voiture et profitez pleinement du trajet.",
+    title: "Récupérez et profitez",
+    description: "Récupérez votre voiture et profitez pleinement du trajet.",
   },
 ];
 
@@ -88,19 +88,19 @@ const testimonials = [
     initials: "SL",
     name: "Sophie L.",
     location: "Paris, France",
-    text: "Service impeccable. Voiture propre, recente et equipe tres professionnelle. Je recommande a 100%.",
+    text: "Service impeccable. Voiture propre, récente et équipe très professionnelle. Je recommande à 100 %.",
   },
   {
     initials: "YA",
     name: "Youssef A.",
     location: "Marrakech, Maroc",
-    text: "Excellent rapport qualite-prix. Livraison a l aeroport ponctuelle et sans aucun souci.",
+    text: "Excellent rapport qualité-prix. Livraison à l'aéroport ponctuelle et sans aucun souci.",
   },
   {
     initials: "ED",
     name: "Emma D.",
     location: "Lyon, France",
-    text: "Reservation facile et rapide a la fin. La voiture etait parfaite pour notre road trip au Maroc.",
+    text: "Réservation facile et rapide du début à la fin. La voiture était parfaite pour notre road trip au Maroc.",
   },
 ];
 
@@ -265,7 +265,7 @@ function FeaturedCarCard({ car }: { car: Car }) {
           </div>
 
           <div className="shrink-0 rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-right">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">A partir de</p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">À partir de</p>
             <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
               {formatPrice(car.dailyPrice)}
             </p>
@@ -284,7 +284,7 @@ function FeaturedCarCard({ car }: { car: Car }) {
           className="h-12 w-full rounded-full bg-[#ff4d43] text-white shadow-[0_18px_30px_-18px_rgba(255,77,67,0.68)] hover:bg-[#f03d32]"
         >
           <Link href={reserveHref}>
-            Reserver maintenant
+            Réserver maintenant
             <ArrowRight className="h-4 w-4" />
           </Link>
         </Button>
@@ -500,7 +500,7 @@ export default function Home() {
   const heroAvatars = recentTestimonials.slice(0, 4);
   const heroStats = [
     { value: heroClientsLabel, label: "Clients satisfaits" },
-    { value: heroCarsLabel, label: "Vehicules disponibles" },
+    { value: heroCarsLabel, label: "Véhicules disponibles" },
     { value: heroCitiesLabel, label: "Villes couvertes" },
     { value: heroRatingLabel, label: "Avis client" },
   ];
@@ -523,7 +523,7 @@ export default function Home() {
     <div className="bg-[#f5f7fb]">
       <Seo
         title="Location de voitures au Maroc"
-        description="Trouvez votre vehicule en quelques clics. Comparez les prix, reservez rapidement et contactez l'agence sur WhatsApp."
+        description="Trouvez votre véhicule en quelques clics. Comparez les prix, réservez rapidement et contactez l'agence sur WhatsApp."
         canonical="https://demo-locationauto.shonenx.shop/"
         image="/hero-marrakech-porsche.png"
         jsonLd={[
@@ -572,13 +572,13 @@ export default function Home() {
 
               <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-[0.94] tracking-tight text-balance text-white sm:text-5xl md:text-6xl lg:text-[4.8rem]">
                 Louez la voiture
-                <span className="block">idÃ©ale pour dÃ©couvrir</span>
+                <span className="block">idéale pour découvrir</span>
                 <span className="block font-serif text-[#ff6f66]">le Maroc</span>
               </h1>
 
               <p className="mt-6 max-w-xl text-sm leading-7 text-white/72 sm:text-base">
-                Des voitures sÃ©lectionnÃ©es avec soin, un service premium et des prix transparents.
-                RÃ©servez en quelques clics.
+                Des voitures sélectionnées avec soin, un service premium et des prix transparents.
+                Réservez en quelques clics.
               </p>
 
               <div className="mt-8 flex flex-wrap items-center gap-5">
@@ -624,7 +624,7 @@ export default function Home() {
             <div className="w-full max-w-[450px] justify-self-end">
               <ReservationSearchBar
                 title="Trouvez votre voiture"
-                subtitle="RÃ©servez votre voiture au meilleur prix"
+                subtitle="Réservez votre voiture au meilleur prix"
                 cities={cities}
                 city={city}
                 startDate={startDate}
@@ -691,9 +691,9 @@ export default function Home() {
       <section className="container mx-auto px-4 pb-14 pt-16 md:pb-16 md:pt-18">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <SectionHeading
-            eyebrow="Selection populaire"
-            title="Nos voitures les plus demandees"
-            description="Une presentation premium, fidele au design partage, avec un acces direct vers la fiche vehicule et la reservation."
+            eyebrow="Sélection populaire"
+            title="Nos voitures les plus demandées"
+            description="Une présentation premium, fidèle au design partagé, avec un accès direct vers la fiche véhicule et la réservation."
           />
 
           <Link
@@ -731,9 +731,9 @@ export default function Home() {
 
       <section className="container mx-auto px-4 pb-14">
         <SectionHeading
-          eyebrow="Comment Ã§a marche"
-          title="Louez en 4 Ã©tapes simples"
-          description="Le parcours reste fluide et direct, du choix des dates jusqu Ã  la remise des clÃ©s."
+          eyebrow="Comment ça marche"
+          title="Louez en 4 étapes simples"
+          description="Le parcours reste fluide et direct, du choix des dates jusqu'à la remise des clés."
         />
 
         <div className="mt-8 grid gap-4 xl:grid-cols-4">
@@ -754,7 +754,7 @@ export default function Home() {
           <SectionHeading
             eyebrow="Ils nous font confiance"
             title="Ce que disent nos clients"
-            description="Des retours simples et directs qui confirment l experience de reservation."
+            description="Des retours simples et directs qui confirment l'expérience de réservation."
           />
 
           {recentTestimonials.length > 1 && (
@@ -763,7 +763,7 @@ export default function Home() {
                 type="button"
                 onClick={() => scrollTrack(testimonialsTrackRef, -1)}
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-900"
-                aria-label="Avis precedents"
+                aria-label="Avis précédents"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -798,7 +798,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="mt-8 rounded-[1.45rem] border border-dashed border-slate-200 bg-white px-5 py-8 text-sm text-slate-500">
-            Aucun avis client publie pour le moment.
+            Aucun avis client publié pour le moment.
           </div>
         )}
       </section>

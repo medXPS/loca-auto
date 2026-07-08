@@ -45,16 +45,19 @@ export default function AdminNewAgent() {
   });
 
   const onSubmit = (data: AgentFormValues) => {
-    createAgent.mutate({ data }, {
-      onSuccess: () => {
-        toast({ title: "Agent créé avec succès" });
-        queryClient.invalidateQueries({ queryKey: getListAgentsQueryKey() });
-        setLocation("/admin/agents");
+    createAgent.mutate(
+      { data },
+      {
+        onSuccess: () => {
+          toast({ title: "Agent créé avec succès" });
+          queryClient.invalidateQueries({ queryKey: getListAgentsQueryKey() });
+          setLocation("/admin/agents");
+        },
+        onError: (error: any) => {
+          toast({ title: "Erreur", description: error.message, variant: "destructive" });
+        },
       },
-      onError: (error: any) => {
-        toast({ title: "Erreur", description: error.message, variant: "destructive" });
-      }
-    });
+    );
   };
 
   return (
@@ -75,26 +78,68 @@ export default function AdminNewAgent() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField control={form.control} name="fullName" render={({ field }) => (
-                <FormItem><FormLabel>Nom complet</FormLabel><FormControl><Input placeholder="Ex: Hassan Agent" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField control={form.control} name="email" render={({ field }) => (
-                  <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="agent@location.ma" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="phone" render={({ field }) => (
-                  <FormItem><FormLabel>Téléphone</FormLabel><FormControl><Input placeholder="+212 6..." {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nom complet</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Hassan Agent" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="agent@location.ma" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Téléphone</FormLabel>
+                      <FormControl>
+                        <Input placeholder="+212 6..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              <FormField control={form.control} name="password" render={({ field }) => (
-                <FormItem><FormLabel>Mot de passe temporaire</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
-              )} />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mot de passe temporaire</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <div className="flex justify-end gap-4 border-t pt-6">
                 <Link href="/admin/agents">
-                  <Button variant="outline" type="button">Annuler</Button>
+                  <Button variant="outline" type="button">
+                    Annuler
+                  </Button>
                 </Link>
                 <Button type="submit" disabled={createAgent.isPending}>
                   {createAgent.isPending ? "Création..." : "Créer l'agent"}

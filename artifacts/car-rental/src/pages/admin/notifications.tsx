@@ -25,6 +25,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 function getBasePath(location: string) {
+  if (location.startsWith("/dashboard")) return "/dashboard";
   return location.startsWith("/agent") ? "/agent" : "/admin";
 }
 
@@ -176,7 +177,7 @@ export default function AdminNotificationsPage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-primary">
               <Bell className="h-3.5 w-3.5" />
-              Flux operationnel
+              Flux opérationnel
             </div>
 
             <h1 className="mt-5 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
@@ -184,7 +185,7 @@ export default function AdminNotificationsPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-base leading-8 text-muted-foreground">
-              Les alertes utiles pour les retours, departs, paiements et documents.
+              Les alertes utiles pour les retours, départs, paiements et documents.
             </p>
 
             <div className="mt-5 flex flex-wrap gap-2">
@@ -193,7 +194,11 @@ export default function AdminNotificationsPage() {
                 Non lues: {unreadCount}
               </Badge>
               <Badge variant="secondary">
-                {basePath === "/agent" ? "Espace agent" : "Espace admin"}
+                {basePath === "/dashboard"
+                  ? "Espace client"
+                  : basePath === "/agent"
+                    ? "Espace agent"
+                    : "Espace admin"}
               </Badge>
             </div>
           </div>
@@ -211,7 +216,7 @@ export default function AdminNotificationsPage() {
               ) : (
                 <RefreshCcw className="h-4 w-4" />
               )}
-              Rafraichir
+              Rafraîchir
             </Button>
 
             <Button
@@ -225,7 +230,7 @@ export default function AdminNotificationsPage() {
               ) : (
                 <CheckCheck className="h-4 w-4" />
               )}
-              Tout marquer comme lue
+              Tout marquer comme lu
             </Button>
           </div>
         </div>
@@ -233,9 +238,9 @@ export default function AdminNotificationsPage() {
 
       <Card className="border-border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle className="text-foreground">Dernieres notifications</CardTitle>
+          <CardTitle className="text-foreground">Dernières notifications</CardTitle>
           <CardDescription>
-            Les notifications les plus recentes apparaissent en premier, avec les alertes non lues en haut.
+            Les notifications les plus récentes apparaissent en premier, avec les alertes non lues en haut.
           </CardDescription>
         </CardHeader>
 
@@ -268,7 +273,7 @@ export default function AdminNotificationsPage() {
                 Aucune notification
               </h2>
               <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-                Les alertes operationales apparaitront ici des qu&apos;une reservation, un retour,
+                Les alertes opérationnelles apparaîtront ici dès qu&apos;une réservation, un retour,
                 un paiement ou un document demandera votre attention.
               </p>
             </div>
