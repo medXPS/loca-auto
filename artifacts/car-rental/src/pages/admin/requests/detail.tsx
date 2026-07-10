@@ -351,7 +351,7 @@ export default function AdminRequestDetail() {
                           ? "Validé"
                           : document.status === "REJECTED"
                             ? "Refusé"
-                            : "En attente"}
+                            : "En attente de validation"}
                       </Badge>
                       <DocumentDownloadButton
                         fileUrl={document.fileUrl}

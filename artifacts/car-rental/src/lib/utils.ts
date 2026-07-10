@@ -81,7 +81,7 @@ export const RENTAL_STATUS_TRANSLATIONS: Record<string, string> = {
 };
 
 export const DOCUMENT_STATUS_TRANSLATIONS: Record<string, string> = {
-  PENDING: "En attente",
+  PENDING: "En attente de validation",
   RCVD: "Reçu",
   RECEIVED: "Reçu",
   SENT: "Envoyé",

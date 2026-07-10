@@ -1030,7 +1030,10 @@ export default function CustomerProfile() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">Mes documents</CardTitle>
-                    <CardDescription>Téléversez un document. La version la plus récente est conservée pour chaque type.</CardDescription>
+                    <CardDescription>
+                      Téléversez un document. La version la plus récente est conservée pour chaque type et reste en attente de
+                      validation jusqu’à l’envoi d’une demande de réservation.
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
