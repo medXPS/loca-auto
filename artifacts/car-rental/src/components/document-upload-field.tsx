@@ -129,7 +129,7 @@ export function DocumentUploadField({
       if (inputRef.current) {
         inputRef.current.value = "";
       }
-      toast({ title: selectedFile ? `${label} téléversé avec succès` : `${label} soumis avec succes` });
+      toast({ title: selectedFile ? `${label} téléversé avec succès` : `${label} soumis avec succès` });
       onUploaded();
     } catch {
       setProgress("error");
@@ -180,7 +180,7 @@ export function DocumentUploadField({
           {isUploading ? (
             <>
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-              Televersement...
+              Téléversement...
             </>
           ) : existingDocument ? (
             <>

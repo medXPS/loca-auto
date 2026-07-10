@@ -39,17 +39,17 @@ import {
   LockKeyhole,
   Mail,
   MapPin,
-  MoreVertical,
   PenLine,
   Phone,
   ShieldCheck,
   Star,
+  Upload,
   UserCircle2,
 } from "lucide-react";
 
 const profileSchema = z.object({
   fullName: z.string().min(2, { message: "Nom requis" }),
-  phone: z.string().min(10, { message: "Telephone requis" }),
+  phone: z.string().min(10, { message: "Téléphone requis" }),
   cin: z.string().optional(),
   passportNumber: z.string().optional(),
   drivingLicenseNumber: z.string().optional(),
@@ -67,16 +67,38 @@ type CustomerDocument = {
   uploadedAt?: string | Date | null;
 };
 
+const documentTypeLabels: Record<string, string> = {
+  CIN: "Carte nationale d'identité",
+  PASSPORT: "Passeport",
+  PERMIS_CONDUIRE: "Permis de conduire",
+  AUTRE: "Autre document",
+};
+
 function formatFileLabel(fileUrl: string) {
   const fileName = fileUrl.split("/").pop();
   return fileName && fileName.trim() ? fileName : fileUrl;
 }
 
 function formatDate(value?: string | Date | null) {
-  if (!value) return "Non renseigne";
+  if (!value) return "Non renseigné";
   const date = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return "Non renseigne";
+  if (Number.isNaN(date.getTime())) return "Non renseigné";
   return date.toLocaleDateString("fr-MA");
+}
+
+function parseDateValue(value?: string | Date | null) {
+  if (!value) return 0;
+  const date = typeof value === "string" ? new Date(value) : value;
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+}
+
+function getDocumentTypeLabel(type?: string | null) {
+  if (!type) return "Document";
+  return documentTypeLabels[type] || type;
+}
+
+function sortDocumentsByRecency(left: CustomerDocument, right: CustomerDocument) {
+  return parseDateValue(right.uploadedAt) - parseDateValue(left.uploadedAt) || right.id - left.id;
 }
 
 function getInitials(name?: string | null) {
@@ -240,11 +262,11 @@ function DocumentSlot({
       setSelectedFile(null);
       if (inputRef.current) inputRef.current.value = "";
       onUploaded();
-      toast({ title: `${label} televerse avec succes` });
+      toast({ title: `${label} téléversé avec succès` });
     } catch {
       toast({
-        title: "Erreur de televersement",
-        description: "Reessayez ou contactez le support.",
+        title: "Erreur de téléversement",
+        description: "Réessayez ou contactez le support.",
         variant: "destructive",
       });
     } finally {
@@ -272,39 +294,38 @@ function DocumentSlot({
               ) : null}
             </div>
             <p className="mt-1 text-xs text-slate-500">{existingName ? existingName : helperText}</p>
-            {updatedAt ? <p className="mt-1 text-[11px] text-slate-400">Ajouté le {updatedAt}</p> : null}
+            {updatedAt ? <p className="mt-1 text-[11px] text-slate-400">Mis à jour le {updatedAt}</p> : null}
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           {existingDocument ? (
             <DocumentDownloadButton
               fileUrl={existingDocument.fileUrl}
               filename={existingName || undefined}
               type="button"
-              variant="ghost"
-              size="icon"
-              className="h-10 w-10 rounded-full border border-slate-200 text-slate-500 hover:text-slate-900"
-              aria-label={`Telecharger ${label}`}
+              variant="outline"
+              size="sm"
+              className="rounded-full border-slate-200 bg-white text-slate-700"
             />
           ) : null}
 
           <Button
             type="button"
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 rounded-full border border-slate-200 text-slate-500 hover:text-slate-900"
+            variant={existingDocument ? "outline" : "default"}
+            size="sm"
+            className={cn("rounded-full", !existingDocument && "bg-[#ff4d43] text-white hover:bg-[#f03d32]")}
             onClick={pickFile}
             disabled={isUploading}
-            aria-label={existingDocument ? `Remplacer ${label}` : `Ajouter ${label}`}
           >
-            <MoreVertical className="h-4 w-4" />
+            <Upload className="h-4 w-4" />
+            {existingDocument ? "Remplacer" : "Téléverser"}
           </Button>
         </div>
       </div>
 
       {selectedFile ? (
-        <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-2">
             <CloudUpload className="h-4 w-4 shrink-0" />
             <span className="min-w-0 truncate">{selectedFile.name}</span>
@@ -315,7 +336,7 @@ function DocumentSlot({
             onClick={() => void handleUpload()}
             disabled={isUploading}
           >
-            {isUploading ? "Televersement..." : "Televerser"}
+            {isUploading ? "Téléversement..." : "Envoyer le fichier"}
           </Button>
         </div>
       ) : null}
@@ -367,11 +388,11 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
       setSelectedFile(null);
       if (inputRef.current) inputRef.current.value = "";
       onUploaded();
-      toast({ title: "Document televerse avec succes" });
+      toast({ title: "Document téléversé avec succès" });
     } catch {
       toast({
-        title: "Erreur de televersement",
-        description: "Reessayez ou contactez le support.",
+        title: "Erreur de téléversement",
+        description: "Réessayez ou contactez le support.",
         variant: "destructive",
       });
     } finally {
@@ -387,8 +408,8 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
             <CloudUpload className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-950">Glissez &amp; deposez vos fichiers ici</p>
-            <p className="mt-1 text-xs text-slate-500">PDF, JPG ou PNG - Max 5 Mo</p>
+            <p className="text-sm font-semibold text-slate-950">Glissez et déposez vos fichiers ici</p>
+            <p className="mt-1 text-xs text-slate-500">PDF, JPG ou PNG - 5 Mo maximum</p>
             {selectedFile ? <p className="mt-1 text-[11px] text-slate-400">{selectedFile.name}</p> : null}
           </div>
         </div>
@@ -404,7 +425,7 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
               onClick={() => void handleUpload()}
               disabled={isUploading}
             >
-              {isUploading ? "Televersement..." : "Televerser"}
+              {isUploading ? "Téléversement..." : "Téléverser"}
             </Button>
           ) : null}
         </div>
@@ -428,7 +449,7 @@ function ReviewDialog({
 }) {
   const [open, setOpen] = useState(false);
   const rating = entry.existingRating;
-  const carName = entry.car ? `${entry.car.brand} ${entry.car.model}` : `Reservation #${entry.requestId}`;
+  const carName = entry.car ? `${entry.car.brand} ${entry.car.model}` : `Réservation #${entry.requestId}`;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -448,7 +469,7 @@ function ReviewDialog({
         <DialogHeader>
           <DialogTitle className="text-2xl">{carName}</DialogTitle>
           <DialogDescription>
-            Reservation #{entry.requestId} - avis modifiable a tout moment.
+            Réservation #{entry.requestId} - avis modifiable à tout moment.
           </DialogDescription>
         </DialogHeader>
 
@@ -490,7 +511,7 @@ function ReviewDialog({
             />
 
             <Button asChild variant="outline" className="w-full rounded-full">
-              <Link href={`/dashboard/demandes/${entry.requestId}`}>Voir la reservation</Link>
+              <Link href={`/dashboard/demandes/${entry.requestId}`}>Voir la réservation</Link>
             </Button>
           </div>
         </div>
@@ -501,7 +522,7 @@ function ReviewDialog({
 
 function ReviewCard({ entry }: { entry: EligibleRatingRecord & { existingRating: NonNullable<EligibleRatingRecord["existingRating"]> } }) {
   const rating = entry.existingRating;
-  const carName = entry.car ? `${entry.car.brand} ${entry.car.model}` : `Reservation #${entry.requestId}`;
+  const carName = entry.car ? `${entry.car.brand} ${entry.car.model}` : `Réservation #${entry.requestId}`;
 
   return (
     <article className="rounded-[1.2rem] border border-slate-200 bg-white p-3 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.12)]">
@@ -590,16 +611,28 @@ export default function CustomerProfile() {
   }, [profile?.user?.mfaEnabled]);
 
   const profileDocs = useMemo(
-    () => (profile?.documents ?? []).filter((doc) => doc.rentalRequestId == null) as CustomerDocument[],
+    () =>
+      ((profile?.documents ?? [])
+        .filter((doc) => doc.rentalRequestId == null)
+        .sort(sortDocumentsByRecency) as CustomerDocument[]),
     [profile?.documents],
   );
-  const findDocument = (type: string) =>
-    profileDocs.find((doc) => doc.type === type) ?? null;
+  const documentsByType = useMemo(() => {
+    const map = new Map<string, CustomerDocument>();
 
-  const cinDoc = findDocument("CIN");
-  const passportDoc = findDocument("PASSPORT");
-  const drivingDoc = findDocument("PERMIS_CONDUIRE");
-  const addressDoc = findDocument("AUTRE");
+    for (const document of profileDocs) {
+      if (document.type && !map.has(document.type)) {
+        map.set(document.type, document);
+      }
+    }
+
+    return map;
+  }, [profileDocs]);
+
+  const cinDoc = documentsByType.get("CIN") ?? null;
+  const passportDoc = documentsByType.get("PASSPORT") ?? null;
+  const drivingDoc = documentsByType.get("PERMIS_CONDUIRE") ?? null;
+  const addressDoc = documentsByType.get("AUTRE") ?? null;
   const profileComplete = Boolean((profile?.cin || profile?.passportNumber || cinDoc || passportDoc) && (profile?.drivingLicenseNumber || drivingDoc));
 
   const refreshIdentity = () => {
@@ -626,13 +659,13 @@ export default function CustomerProfile() {
         },
       });
 
-      toast({ title: "Profil mis a jour avec succes" });
+      toast({ title: "Profil mis à jour avec succès" });
       setEditProfileOpen(false);
       refreshIdentity();
     } catch (error: any) {
       toast({
         title: "Erreur",
-        description: error?.message || "Impossible de mettre a jour votre profil",
+        description: error?.message || "Impossible de mettre à jour votre profil",
         variant: "destructive",
       });
     }
@@ -642,13 +675,14 @@ export default function CustomerProfile() {
 
   const refreshProfile = () => {
     queryClient.invalidateQueries({ queryKey: getGetMyCustomerProfileQueryKey() });
+    void queryClient.refetchQueries({ queryKey: getGetMyCustomerProfileQueryKey(), type: "active" });
   };
 
   const handleMfaToggle = async (enabled: boolean) => {
     if (!user?.emailVerifiedAt) {
       toast({
-        title: "Verification requise",
-        description: "Veuillez verifier votre adresse e-mail avant de gerer le MFA.",
+        title: "Vérification requise",
+        description: "Veuillez vérifier votre adresse e-mail avant de gérer le MFA.",
       });
       return;
     }
@@ -660,13 +694,13 @@ export default function CustomerProfile() {
       await updateMe.mutateAsync({
         data: { mfaEnabled: enabled },
       });
-      toast({ title: enabled ? "MFA activee" : "MFA desactivee" });
+      toast({ title: enabled ? "MFA activée" : "MFA désactivée" });
       refreshIdentity();
     } catch (error: any) {
       setMfaEnabled(previousValue);
       toast({
         title: "Erreur",
-        description: error?.message || "Impossible de mettre a jour le MFA",
+        description: error?.message || "Impossible de mettre à jour le MFA",
         variant: "destructive",
       });
     }
@@ -778,26 +812,26 @@ export default function CustomerProfile() {
                 <ProfileRow
                   icon={UserCircle2}
                   label="Nom complet"
-                  value={profile?.user?.fullName || "Non renseigne"}
+                  value={profile?.user?.fullName || "Non renseigné"}
                 />
                 <ProfileRow
                   icon={Phone}
-                  label="Telephone"
-                  value={profile?.user?.phone || "Non renseigne"}
+                  label="Téléphone"
+                  value={profile?.user?.phone || "Non renseigné"}
                 />
                 <ProfileRow
                   icon={Mail}
                   label="Email"
-                  value={profile?.user?.email || "Non renseigne"}
-                  secondary={user?.emailVerifiedAt ? "Verifie" : "A verifier"}
+                  value={profile?.user?.email || "Non renseigné"}
+                  secondary={user?.emailVerifiedAt ? "Vérifié" : "À vérifier"}
                   action={
                     user?.emailVerifiedAt ? (
                       <Badge className="rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-50">
-                        Verifie
+                        Vérifié
                       </Badge>
                     ) : (
                       <Badge variant="outline" className="rounded-full">
-                        A verifier
+                        À vérifier
                       </Badge>
                     )
                   }
@@ -810,18 +844,18 @@ export default function CustomerProfile() {
                 <ProfileRow
                   icon={IdCard}
                   label="CIN"
-                  value={profile?.cin || "Non renseigne"}
+                  value={profile?.cin || "Non renseigné"}
                 />
                 <ProfileRow
                   icon={IdCard}
                   label="Permis de conduire"
-                  value={profile?.drivingLicenseNumber || "Non renseigne"}
+                  value={profile?.drivingLicenseNumber || "Non renseigné"}
                 />
                 <ProfileRow
                   icon={MapPin}
                   label="Adresse"
-                  value={profile?.address || "Non renseigne"}
-                  secondary={profile?.city ? `, ${profile.city}` : ""}
+                  value={profile?.address || "Non renseigné"}
+                  secondary={profile?.city || undefined}
                 />
               </div>
 
@@ -838,7 +872,7 @@ export default function CustomerProfile() {
                     <DialogHeader>
                       <DialogTitle className="text-2xl">Modifier mes informations</DialogTitle>
                       <DialogDescription>
-                        Mettez a jour votre identite et vos coordonnees personnelles.
+                        Mettez à jour votre identité et vos coordonnées personnelles.
                       </DialogDescription>
                     </DialogHeader>
 
@@ -863,7 +897,7 @@ export default function CustomerProfile() {
                             name="phone"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Telephone</FormLabel>
+                                <FormLabel>Téléphone</FormLabel>
                                 <FormControl>
                                   <Input className="rounded-2xl bg-white" placeholder="+212 6..." {...field} />
                                 </FormControl>
@@ -889,12 +923,12 @@ export default function CustomerProfile() {
                             name="passportNumber"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Passeport</FormLabel>
-                                <FormControl>
-                                  <Input className="rounded-2xl bg-white" placeholder="Optionnel" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
+                              <FormLabel>Passeport</FormLabel>
+                              <FormControl>
+                                  <Input className="rounded-2xl bg-white" placeholder="Facultatif" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
                             )}
                           />
                           <FormField
@@ -917,7 +951,7 @@ export default function CustomerProfile() {
                               <FormItem>
                                 <FormLabel>Adresse</FormLabel>
                                 <FormControl>
-                                  <Input className="rounded-2xl bg-white" placeholder="Adresse complete" {...field} />
+                                  <Input className="rounded-2xl bg-white" placeholder="Adresse complète" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -966,7 +1000,7 @@ export default function CustomerProfile() {
 
               <CardContent className="space-y-4 pt-5">
                 <DocumentSlot
-                  label="Carte Nationale d'Identite (CN)"
+                  label="Carte nationale d'identité (CIN)"
                   helperText="AB123456"
                   icon={IdCard}
                   accentClassName="bg-violet-50 text-violet-600"
@@ -986,7 +1020,7 @@ export default function CustomerProfile() {
                 />
 
                 <DocumentSlot
-                  label="Passeport (Optionnel)"
+                  label="Passeport (facultatif)"
                   helperText="P12345678"
                   icon={FileText}
                   accentClassName="bg-orange-50 text-orange-500"
@@ -1004,6 +1038,65 @@ export default function CustomerProfile() {
                   onUploaded={refreshProfile}
                   docType="AUTRE"
                 />
+
+                <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50/80 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">Derniers téléversements</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Les fichiers les plus récents apparaissent en premier.
+                      </p>
+                    </div>
+                    <span className="text-xs text-slate-400">
+                      {profileDocs.length} fichier{profileDocs.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {profileDocs.length > 0 ? (
+                      profileDocs.slice(0, 4).map((document) => (
+                        <div
+                          key={document.id}
+                          className="flex flex-col gap-3 rounded-2xl border border-white bg-white px-4 py-3 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.14)] sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="text-sm font-semibold text-slate-950">
+                                {getDocumentTypeLabel(document.type)}
+                              </p>
+                              <Badge
+                                variant="secondary"
+                                className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                              >
+                                {document.status ? getStatusLabel(document.status, "document") : "Actif"}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 truncate text-sm text-slate-600">
+                              {formatFileLabel(document.fileUrl)}
+                            </p>
+                            <p className="mt-1 text-[11px] text-slate-400">
+                              Téléversé le {formatDate(document.uploadedAt)}
+                            </p>
+                          </div>
+
+                          <DocumentDownloadButton
+                            fileUrl={document.fileUrl}
+                            filename={formatFileLabel(document.fileUrl)}
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full border-slate-200 bg-white text-slate-700"
+                          >
+                            Télécharger
+                          </DocumentDownloadButton>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
+                        Aucun document n’a encore été téléversé.
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -1045,8 +1138,8 @@ export default function CustomerProfile() {
                         <ShieldCheck className="h-4 w-4" />
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-slate-400">Authentification a deux facteurs (MFA)</p>
-                        <p className="mt-1 text-sm text-slate-600">Active pour plus de securite</p>
+                        <p className="text-xs font-medium text-slate-400">Authentification à deux facteurs (MFA)</p>
+                        <p className="mt-1 text-sm text-slate-600">Activée pour plus de sécurité</p>
                       </div>
                     </div>
                     <Switch checked={mfaEnabled} onCheckedChange={handleMfaToggle} disabled={!user?.emailVerifiedAt || isSaving} />
@@ -1108,7 +1201,7 @@ export default function CustomerProfile() {
                         <div className="mt-3 flex items-center justify-center gap-1 text-amber-400">
                           {renderStars(reviewStats.overallAverage)}
                         </div>
-                        <p className="mt-2 text-sm text-slate-500">Base sur {reviewStats.total} avis</p>
+                        <p className="mt-2 text-sm text-slate-500">Basé sur {reviewStats.total} avis</p>
                       </div>
 
                       <div className="mt-5 space-y-3">
@@ -1145,7 +1238,7 @@ export default function CustomerProfile() {
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-                    Aucun avis client publie pour le moment.
+                    Aucun avis client publié pour le moment.
                   </div>
                 )}
               </CardContent>

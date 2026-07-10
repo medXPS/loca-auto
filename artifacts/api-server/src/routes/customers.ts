@@ -158,7 +158,7 @@ router.get("/me/profile", authMiddleware, async (req, res) => {
       .where(eq(schema.customersTable.userId, req.user!.userId))
       .limit(1);
     if (!customer) {
-      res.status(404).json({ error: "Profil non trouve" });
+      res.status(404).json({ error: "Profil non trouvé" });
       return;
     }
 
@@ -179,7 +179,7 @@ router.patch("/me/profile", authMiddleware, async (req, res) => {
       .where(eq(schema.customersTable.userId, req.user!.userId))
       .limit(1);
     if (!customer) {
-      res.status(404).json({ error: "Profil non trouve" });
+      res.status(404).json({ error: "Profil non trouvé" });
       return;
     }
 
@@ -216,7 +216,7 @@ router.get("/:id", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, re
   try {
     const result = await fetchCustomerDetail(parseInt(String(req.params.id), 10));
     if (!result) {
-      res.status(404).json({ error: "Client non trouve" });
+      res.status(404).json({ error: "Client non trouvé" });
       return;
     }
     res.json(result);
@@ -233,7 +233,7 @@ router.patch("/:id", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, 
     const customerId = parseInt(String(req.params.id), 10);
     const [customer] = await db.select().from(schema.customersTable).where(eq(schema.customersTable.id, customerId)).limit(1);
     if (!customer) {
-      res.status(404).json({ error: "Client non trouve" });
+      res.status(404).json({ error: "Client non trouvé" });
       return;
     }
 
@@ -257,7 +257,7 @@ router.patch("/:id", authMiddleware, requireRole("ADMIN", "AGENT"), async (req, 
 
     const result = await fetchCustomerDetail(customerId);
     if (!result) {
-      res.status(404).json({ error: "Client non trouve" });
+      res.status(404).json({ error: "Client non trouvé" });
       return;
     }
     res.json(result);
