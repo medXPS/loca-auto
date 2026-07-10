@@ -1,4 +1,4 @@
-import { useMemo, useState, type ComponentType, type ReactNode } from "react";
+﻿import { useMemo, useState, type ComponentType, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -62,8 +62,8 @@ function getInitials(name?: string | null) {
 
 const navLinks: NavItem[] = [
   { href: "/", label: "Accueil", icon: House },
-  { href: "/voitures", label: "Véhicules", icon: CarFront },
-  { href: "/a-propos", label: "À propos", icon: Sparkles },
+  { href: "/voitures", label: "VÃ©hicules", icon: CarFront },
+  { href: "/a-propos", label: "Ã€ propos", icon: Sparkles },
   { href: "/blog", label: "Blog", icon: Newspaper },
   { href: "/contact", label: "Contact", icon: Phone },
 ];
@@ -224,7 +224,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                       onSelect={() => handleLogout()}
                       className="rounded-2xl px-3 py-2 text-red-600 focus:text-red-600"
                     >
-                      Déconnexion
+                      DÃ©connexion
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -375,7 +375,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                       onClick={handleLogout}
                     >
                       <LogOut className="h-4 w-4" />
-                      Déconnexion
+                      DÃ©connexion
                     </Button>
                   </>
                 ) : (
@@ -411,7 +411,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <div className="space-y-5">
                 <SiteLogo tone="light" />
                 <p className="max-w-md text-sm leading-7 text-white/70">
-                  Entreprise de location de voitures au Maroc, pensée pour comparer les offres, lire les prix et réserver rapidement.
+                  Entreprise de location de voitures au Maroc, pensÃ©e pour comparer les offres, lire les prix et rÃ©server rapidement.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   {socialLinks.map((item) => {
@@ -440,7 +440,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     Accueil
                   </Link>
                   <Link href="/voitures" className="transition-colors hover:text-white">
-                    Véhicules
+                    VÃ©hicules
                   </Link>
                   <Link href="/blog" className="transition-colors hover:text-white">
                     Blog
@@ -448,8 +448,14 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                   <Link href="/contact" className="transition-colors hover:text-white">
                     Contact
                   </Link>
-                  <Link href="/mentions-legales" className="transition-colors hover:text-white">
+                                    <Link href="/mentions-legales" className="transition-colors hover:text-white">
                     Mentions légales
+                  </Link>
+                  <Link href="/confidentialite" className="transition-colors hover:text-white">
+                    Confidentialité
+                  </Link>
+                  <Link href="/conditions-utilisation" className="transition-colors hover:text-white">
+                    Conditions d'utilisation
                   </Link>
                 </div>
               </div>
@@ -476,7 +482,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
             <div className="border-t border-white/8 py-5">
               <div className="container mx-auto px-4 text-center text-xs text-white/50">
-                © {new Date().getFullYear()} Location Auto Maroc. Tous droits réservés.
+                Â© {new Date().getFullYear()} Location Auto Maroc. Tous droits rÃ©servÃ©s.
               </div>
             </div>
           </>
@@ -486,7 +492,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <div className="space-y-4">
                 <SiteLogo />
                 <p className="max-w-md text-sm leading-7 text-muted-foreground">
-                  Entreprise de location de voitures au Maroc, pensée pour comparer les offres, lire les prix et réserver rapidement.
+                  Entreprise de location de voitures au Maroc, pensÃ©e pour comparer les offres, lire les prix et rÃ©server rapidement.
                 </p>
               </div>
 
@@ -497,7 +503,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                     Accueil
                   </Link>
                   <Link href="/voitures" className="transition-colors hover:text-primary">
-                    Véhicules
+                    VÃ©hicules
                   </Link>
                   <Link href="/blog" className="transition-colors hover:text-primary">
                     Blog
@@ -505,8 +511,14 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                   <Link href="/contact" className="transition-colors hover:text-primary">
                     Contact
                   </Link>
-                  <Link href="/mentions-legales" className="transition-colors hover:text-primary">
+                                    <Link href="/mentions-legales" className="transition-colors hover:text-primary">
                     Mentions légales
+                  </Link>
+                  <Link href="/confidentialite" className="transition-colors hover:text-primary">
+                    Confidentialité
+                  </Link>
+                  <Link href="/conditions-utilisation" className="transition-colors hover:text-primary">
+                    Conditions d'utilisation
                   </Link>
                 </div>
               </div>
@@ -527,7 +539,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
 
             <div className="border-t border-border/70 py-4">
               <div className="container mx-auto px-4 text-center text-xs text-muted-foreground">
-                © {new Date().getFullYear()} Location Auto Maroc. Tous droits réservés.
+                Â© {new Date().getFullYear()} Location Auto Maroc. Tous droits rÃ©servÃ©s.
               </div>
             </div>
           </>
@@ -563,3 +575,4 @@ export function PublicLayout({ children }: { children: ReactNode }) {
     </div>
   );
 }
+

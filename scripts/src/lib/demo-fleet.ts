@@ -630,6 +630,38 @@ const demoFleet: DemoCarSeed[] = [
   },
 ];
 
+const brandAssets: Record<string, { websiteUrl: string; logoUrl: string }> = {
+  toyota: { websiteUrl: "https://www.toyota.com", logoUrl: "https://logo.clearbit.com/toyota.com" },
+  renault: { websiteUrl: "https://www.renault.com", logoUrl: "https://logo.clearbit.com/renault.com" },
+  peugeot: { websiteUrl: "https://www.peugeot.com", logoUrl: "https://logo.clearbit.com/peugeot.com" },
+  dacia: { websiteUrl: "https://www.dacia.com", logoUrl: "https://logo.clearbit.com/dacia.com" },
+  hyundai: { websiteUrl: "https://www.hyundai.com", logoUrl: "https://logo.clearbit.com/hyundai.com" },
+  kia: { websiteUrl: "https://www.kia.com", logoUrl: "https://logo.clearbit.com/kia.com" },
+  volkswagen: { websiteUrl: "https://www.volkswagen.com", logoUrl: "https://logo.clearbit.com/volkswagen.com" },
+  bmw: { websiteUrl: "https://www.bmw.com", logoUrl: "https://logo.clearbit.com/bmw.com" },
+  "mercedes-benz": {
+    websiteUrl: "https://www.mercedes-benz.com",
+    logoUrl: "https://logo.clearbit.com/mercedes-benz.com",
+  },
+  nissan: { websiteUrl: "https://www.nissan-global.com", logoUrl: "https://logo.clearbit.com/nissan-global.com" },
+  honda: { websiteUrl: "https://www.honda.com", logoUrl: "https://logo.clearbit.com/honda.com" },
+  mazda: { websiteUrl: "https://www.mazda.com", logoUrl: "https://logo.clearbit.com/mazda.com" },
+  skoda: { websiteUrl: "https://www.skoda-auto.com", logoUrl: "https://logo.clearbit.com/skoda-auto.com" },
+  ford: { websiteUrl: "https://www.ford.com", logoUrl: "https://logo.clearbit.com/ford.com" },
+  audi: { websiteUrl: "https://www.audi.com", logoUrl: "https://logo.clearbit.com/audi.com" },
+  lexus: { websiteUrl: "https://www.lexus.com", logoUrl: "https://logo.clearbit.com/lexus.com" },
+  seat: { websiteUrl: "https://www.seat.com", logoUrl: "https://logo.clearbit.com/seat.com" },
+  "land rover": { websiteUrl: "https://www.landrover.com", logoUrl: "https://logo.clearbit.com/landrover.com" },
+  suzuki: { websiteUrl: "https://www.suzuki.co.jp", logoUrl: "https://logo.clearbit.com/suzuki.co.jp" },
+  opel: { websiteUrl: "https://www.opel.com", logoUrl: "https://logo.clearbit.com/opel.com" },
+  cupra: { websiteUrl: "https://www.cupraofficial.com", logoUrl: "https://logo.clearbit.com/cupraofficial.com" },
+  fiat: { websiteUrl: "https://www.fiat.com", logoUrl: "https://logo.clearbit.com/fiat.com" },
+};
+
+function getBrandAsset(brandName: string) {
+  return brandAssets[brandName.trim().toLowerCase()] ?? null;
+}
+
 async function getOrCreateBrands(context: Pick<DatabaseContext, "db" | "schema">, brandNames: string[]) {
   const brandRows = await context.db
     .select()
@@ -637,12 +669,38 @@ async function getOrCreateBrands(context: Pick<DatabaseContext, "db" | "schema">
     .where(inArray(context.schema.carBrandsTable.name, brandNames));
 
   const brandByName = new Map(brandRows.map((brand) => [brand.name.toLowerCase(), brand]));
+
+  for (const brand of brandRows) {
+    const asset = getBrandAsset(brand.name);
+    if (!asset) continue;
+
+    if (!brand.logoUrl || !brand.websiteUrl) {
+      const [updated] = await context.db
+        .update(context.schema.carBrandsTable)
+        .set({
+          logoUrl: brand.logoUrl || asset.logoUrl,
+          websiteUrl: brand.websiteUrl || asset.websiteUrl,
+        })
+        .where(inArray(context.schema.carBrandsTable.id, [brand.id]))
+        .returning();
+
+      if (updated) {
+        brandByName.set(updated.name.toLowerCase(), updated);
+      }
+    }
+  }
+
   const missingBrandNames = brandNames.filter((name) => !brandByName.has(name.toLowerCase()));
 
   for (const brandName of missingBrandNames) {
+    const asset = getBrandAsset(brandName);
     const [created] = await context.db
       .insert(context.schema.carBrandsTable)
-      .values({ name: brandName })
+      .values({
+        name: brandName,
+        websiteUrl: asset?.websiteUrl,
+        logoUrl: asset?.logoUrl,
+      })
       .returning();
     brandByName.set(brandName.toLowerCase(), created);
   }

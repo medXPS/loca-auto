@@ -7,7 +7,7 @@ import { ArrowRight, CalendarDays, Newspaper, Sparkles } from "lucide-react";
 import { Seo } from "@/components/seo";
 
 export default function Blog() {
-  const { data, isLoading } = useListBlogPosts({ limit: 12 });
+  const { data, isLoading, isError } = useListBlogPosts({ limit: 12 });
   const posts = (data?.posts ?? []) as Array<{
     id: number;
     title: string;
@@ -54,6 +54,13 @@ export default function Blog() {
               </div>
             </div>
           ))
+        ) : isError ? (
+          <div className="col-span-full rounded-[1.5rem] border border-destructive/20 bg-destructive/5 px-6 py-16 text-center">
+            <h2 className="text-xl font-semibold text-destructive">Impossible de charger le blog pour le moment.</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Rafraichissez la page ou revenez plus tard. Si le probleme persiste, la source des articles n'est peut-etre pas encore prete.
+            </p>
+          </div>
         ) : posts.length > 0 ? (
           posts.map((post) => (
             <Link key={post.id} href={`/blog/${post.slug}`} className="group h-full">

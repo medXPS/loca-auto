@@ -15,6 +15,7 @@ import Contact from "@/pages/public/contact";
 import Faq from "@/pages/public/faq";
 import Legal from "@/pages/public/legal";
 import Privacy from "@/pages/public/privacy";
+import Terms from "@/pages/public/terms";
 import Login from "@/pages/auth/login";
 import Register from "@/pages/auth/register";
 
@@ -143,6 +144,8 @@ export default function AppRouter() {
       <Route path="/faq" component={() => <PublicLayout><Faq /></PublicLayout>} />
       <Route path="/mentions-legales" component={() => <PublicLayout><Legal /></PublicLayout>} />
       <Route path="/confidentialite" component={() => <PublicLayout><Privacy /></PublicLayout>} />
+      <Route path="/conditions-utilisation" component={() => <PublicLayout><Terms /></PublicLayout>} />
+      <Route path="/cgu" component={() => <PublicLayout><Terms /></PublicLayout>} />
       <Route path="/connexion" component={() => <PublicLayout><Login /></PublicLayout>} />
       <Route path="/inscription" component={() => <PublicLayout><Register /></PublicLayout>} />
 

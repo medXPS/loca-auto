@@ -57,6 +57,9 @@ export default function BlogDetail() {
     );
   }
 
+  const canonicalUrl =
+    typeof window === "undefined" ? `/blog/${post.slug}` : `${window.location.origin}/blog/${post.slug}`;
+
   return (
     <article className="container mx-auto px-4 py-12">
       <Seo
@@ -74,7 +77,7 @@ export default function BlogDetail() {
           datePublished: post.createdAt,
           mainEntityOfPage: {
             "@type": "WebPage",
-            "@id": `${window.location.origin}/blog/${post.slug}`,
+            "@id": canonicalUrl,
           },
         }}
       />

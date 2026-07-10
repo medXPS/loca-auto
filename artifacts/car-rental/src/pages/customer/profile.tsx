@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DocumentDownloadButton } from "@/components/document-download-button";
 import { RatingEditor } from "@/components/rating-editor";
 import { fetchEligibleRatings, type EligibleRatingRecord } from "@/lib/fleet-catalog";
 import { cn, getStatusLabel } from "@/lib/utils";
@@ -32,7 +33,6 @@ import {
   CalendarDays,
   CheckCircle2,
   CloudUpload,
-  Download,
   ArrowRight,
   FileText,
   IdCard,
@@ -278,16 +278,15 @@ function DocumentSlot({
 
         <div className="flex shrink-0 items-center gap-2">
           {existingDocument ? (
-            <Button
+            <DocumentDownloadButton
+              fileUrl={existingDocument.fileUrl}
+              filename={existingName || undefined}
               type="button"
               variant="ghost"
               size="icon"
               className="h-10 w-10 rounded-full border border-slate-200 text-slate-500 hover:text-slate-900"
-              onClick={() => window.open(existingDocument.fileUrl, "_blank", "noopener,noreferrer")}
               aria-label={`Telecharger ${label}`}
-            >
-              <Download className="h-4 w-4" />
-            </Button>
+            />
           ) : null}
 
           <Button

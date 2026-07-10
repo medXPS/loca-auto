@@ -21,6 +21,7 @@ export function DocumentDownloadButton({
 }: DocumentDownloadButtonProps) {
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
+  const label = children ?? (size === "icon" ? null : "Télécharger");
 
   const handleClick = async (_event: MouseEvent<HTMLButtonElement>) => {
     if (disabled || isDownloading) return;
@@ -57,7 +58,7 @@ export function DocumentDownloadButton({
       onClick={handleClick}
     >
       <Download className="h-4 w-4" />
-      {isDownloading ? "Téléchargement..." : children ?? "Télécharger"}
+      {isDownloading ? "Téléchargement..." : label}
     </Button>
   );
 }

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { createDatabase } from "./lib/database.js";
+import { ensureDemoBlogPosts } from "./lib/demo-blog.js";
 import { ensureDemoCustomers } from "./lib/demo-customers.js";
 import { ensureDemoFleet } from "./lib/demo-fleet.js";
 import { ensureSuperAdmin, getDefaultSuperAdmin } from "./lib/super-admin.js";
@@ -67,8 +68,13 @@ async function seed() {
       `Demo fleet ready: ${demoFleet.expected} cars ensured (${demoFleet.inserted} inserted this run).`,
     );
 
+    const demoBlog = await ensureDemoBlogPosts({ db, schema });
+    console.log(
+      `Blog articles ready: ${demoBlog.expected} articles ensured (${demoBlog.inserted} inserted this run).`,
+    );
+
     if (shouldReset) {
-      console.log("Done. Demo admin, customers, and fleet are ready.");
+      console.log("Done. Demo admin, customers, fleet, and blog articles are ready.");
     } else {
       console.log("Done. Existing data was preserved.");
     }
