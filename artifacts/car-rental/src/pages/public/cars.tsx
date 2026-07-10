@@ -238,7 +238,11 @@ export default function Cars() {
     setFuelType(next.get("fuelType") || ALL_VALUE);
   }, [location]);
 
-  const { data: allCarsData } = useListCars({ limit: 200, sortBy: "year_desc" });
+  const { data: allCarsData } = useListCars({
+    limit: 200,
+    sortBy: "year_desc",
+    available: true,
+  });
   const { data: agencies = [] } = useQuery({
     queryKey: ["agencies"],
     queryFn: fetchAgencies,
@@ -289,6 +293,7 @@ export default function Cars() {
     limit: 50,
     startDate: startDate || undefined,
     returnDate: returnDate || undefined,
+    available: true,
   } as any;
 
   const { data, isLoading } = useListCars(carQueryParams);
@@ -431,7 +436,7 @@ export default function Cars() {
         </div>
       </FilterSection>
 
-      <FilterSection title="Boîte de vitesse">
+      <FilterSection title="Boîte de vitesses">
         <div className="grid gap-3">
           {transmissionOptions.map((item) => (
             <FilterCheckRow

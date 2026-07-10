@@ -1223,7 +1223,7 @@ export default function CustomerProfile() {
                   <div>
                     <CardTitle className="text-lg">Mes avis</CardTitle>
                     <CardDescription>
-                      Une seule fiche par réservation: note voiture, note service et commentaire, modifiables à tout moment.
+                      Une seule fiche par réservation : note du véhicule, note du service et commentaire, modifiables à tout moment.
                     </CardDescription>
                   </div>
                 </div>

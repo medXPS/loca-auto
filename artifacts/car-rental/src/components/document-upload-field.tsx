@@ -68,7 +68,7 @@ export function DocumentUploadField({
 
   const existingName = existingDocument ? fileNameFromUrl(existingDocument.fileUrl) : null;
   const titleHint = existingDocument
-    ? `Actuel: ${existingName}${existingDocument.uploadedAt ? ` · ${new Date(existingDocument.uploadedAt).toLocaleDateString("fr-MA")}` : ""}`
+    ? `Actuel : ${existingName}${existingDocument.uploadedAt ? ` · ${new Date(existingDocument.uploadedAt).toLocaleDateString("fr-MA")}` : ""}`
     : helperText;
   const canSubmitExistingDocument = allowExistingDocumentSubmit && Boolean(existingDocument);
   const confirmText =
