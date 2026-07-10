@@ -1,55 +1,105 @@
-import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, type ComponentType } from "react";
 import { Link } from "wouter";
-import { useGetCompanySettings, useListCars, type Car } from "@workspace/api-client-react";
-import { ArrowRight, BadgeCheck, CarFront, MapPin, ShieldCheck, Sparkles, Star, Users, Phone, Mail, MessageCircle } from "lucide-react";
+import { useGetCompanySettings, useListCars } from "@workspace/api-client-react";
+import {
+  ArrowRight,
+  BadgeCheck,
+  CarFront,
+  CheckCircle2,
+  FileText,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Workflow,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Seo } from "@/components/seo";
-import { fetchBrands, fetchPublicRatings } from "@/lib/fleet-catalog";
-import { CATEGORY_TRANSLATIONS, formatPrice } from "@/lib/utils";
 
-type BrandTile = {
-  name: string;
-  logoUrl?: string | null;
+type Metric = {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  detail: string;
 };
 
-const principles = [
+type Feature = {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+};
+
+type Step = {
+  number: string;
+  title: string;
+  description: string;
+};
+
+const features: Feature[] = [
   {
-    title: "Clarté",
+    icon: Search,
+    title: "Recherche claire",
     description:
-      "Des prix lisibles, des catégories bien expliquées et un parcours de réservation qui évite les mauvaises surprises.",
-    icon: BadgeCheck,
+      "Le catalogue est filtré par ville, catégorie, transmission et budget pour trouver rapidement la bonne voiture.",
   },
   {
-    title: "Service local",
+    icon: FileText,
+    title: "Documents centralisés",
     description:
-      "Une offre pensée pour les villes du Maroc, les aéroports et les besoins concrets des voyageurs comme des résidents.",
-    icon: MapPin,
+      "La CIN, le permis et les justificatifs sont regroupés dans un seul espace pour éviter les allers-retours inutiles.",
   },
   {
-    title: "Confiance",
+    icon: Workflow,
+    title: "Parcours guidé",
     description:
-      "Des données réelles sur les véhicules, les marques et les avis pour aider chaque client à réserver sereinement.",
+      "Chaque étape de la demande est structurée pour que la réservation reste simple, du choix du véhicule au suivi du dossier.",
+  },
+  {
     icon: ShieldCheck,
+    title: "Suivi transparent",
+    description:
+      "Le client et l’équipe voient l’avancement du dossier avec des statuts clairs et des actions faciles à comprendre.",
   },
+];
+
+const steps: Step[] = [
+  {
+    number: "01",
+    title: "Choisissez votre véhicule",
+    description: "Consultez le catalogue et ouvrez la fiche qui correspond à votre besoin.",
+  },
+  {
+    number: "02",
+    title: "Créez votre demande",
+    description: "Renseignez les dates, les informations utiles et les coordonnées de contact.",
+  },
+  {
+    number: "03",
+    title: "Téléversez vos documents",
+    description: "Ajoutez la pièce d’identité, le permis et les justificatifs demandés dans votre espace.",
+  },
+  {
+    number: "04",
+    title: "Suivez la validation",
+    description: "L’état du dossier reste visible jusqu’à la confirmation finale.",
+  },
+];
+
+const supportPoints = [
+  "Données synchronisées avec le catalogue réel.",
+  "Interface pensée pour le mobile et le desktop.",
+  "Un seul espace pour les véhicules, les documents et le suivi.",
+  "Assistance rapide par téléphone, e-mail ou WhatsApp.",
 ];
 
 function formatCount(value: number) {
   return new Intl.NumberFormat("fr-MA").format(value);
 }
 
-function HeroStat({
-  icon: Icon,
-  label,
-  value,
-  detail,
-}: {
-  icon: typeof BadgeCheck;
-  label: string;
-  value: string;
-  detail: string;
-}) {
+function MetricCard({ icon: Icon, label, value, detail }: Metric) {
   return (
     <div className="rounded-[1.35rem] border border-white/10 bg-white/6 p-4 backdrop-blur">
       <div className="flex items-center gap-3">
@@ -66,125 +116,35 @@ function HeroStat({
   );
 }
 
-function FleetCard({ car }: { car: Car }) {
-  const brandMeta = (car as any).brandMeta as { logoUrl?: string | null } | undefined;
-  const categoryLabel = CATEGORY_TRANSLATIONS[car.category] ?? car.category;
-
+function FeatureCard({ icon: Icon, title, description }: Feature) {
   return (
-    <article className="group overflow-hidden rounded-[1.7rem] border border-black/8 bg-white shadow-[0_24px_60px_-36px_rgba(16,23,34,0.22)]">
-      <Link href={`/voitures/${car.id}`} className="block">
-        <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
-          {car.mainImageUrl ? (
-            <img
-              src={car.mainImageUrl}
-              alt={`${car.brand} ${car.model}`}
-              className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.05]"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center bg-[linear-gradient(135deg,#111827,#334155)] px-6 text-center text-white">
-              <CarFront className="h-12 w-12 opacity-70" />
-            </div>
-          )}
-
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,15,31,0.04),rgba(7,15,31,0.24))]" />
-
-          <div className="absolute left-4 top-4 flex max-w-[calc(100%-5rem)] flex-wrap items-center gap-2">
-            {brandMeta?.logoUrl ? (
-              <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/92 p-1 shadow-sm">
-                <img src={brandMeta.logoUrl} alt={car.brand} className="max-h-full max-w-full object-contain" />
-              </span>
-            ) : null}
-            <span className="rounded-full border border-white/12 bg-white/90 px-3 py-1 text-[11px] font-semibold text-slate-700 shadow-sm backdrop-blur-sm">
-              {categoryLabel}
-            </span>
-          </div>
+    <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+      <CardContent className="space-y-4 p-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ff4d43]/10 text-[#ff4d43]">
+          <Icon className="h-5 w-5" />
         </div>
-
-        <div className="space-y-4 p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-400">{car.city || "Maroc"}</p>
-              <h3 className="mt-2 truncate text-xl font-semibold tracking-tight text-slate-950">
-                {car.brand} {car.model}
-              </h3>
-              <p className="mt-1 inline-flex items-center gap-2 text-sm text-slate-500">
-                <MapPin className="h-4 w-4 text-[#ff4d43]" />
-                {car.city || "Maroc"}
-              </p>
-            </div>
-
-            <div className="shrink-0 rounded-[1.2rem] border border-slate-200 bg-slate-50 px-4 py-3 text-right">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">À partir de</p>
-              <p className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">{formatPrice(car.dailyPrice)}</p>
-              <p className="text-xs text-slate-500">/ jour</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-3 rounded-[1.15rem] border border-slate-200 bg-slate-50 px-4 py-3">
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Transmission</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">
-                {car.transmission === "AUTOMATIQUE" ? "Automatique" : "Manuelle"}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Places</p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{car.seats} places</p>
-            </div>
-          </div>
+        <div>
+          <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
         </div>
-      </Link>
-    </article>
+      </CardContent>
+    </Card>
   );
 }
 
-function ReviewCard({
-  customerName,
-  location,
-  carLabel,
-  score,
-  serviceScore,
-  comment,
-}: {
-  customerName: string;
-  location: string;
-  carLabel: string;
-  score: number;
-  serviceScore: number;
-  comment: string;
-}) {
-  const initials = customerName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("") || "AA";
-
+function StepCard({ number, title, description }: Step) {
   return (
-    <article className="rounded-[1.45rem] border border-slate-200 bg-white p-5 shadow-[0_18px_42px_-28px_rgba(15,23,42,0.16)]">
-      <div className="flex items-start gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 to-slate-600 text-sm font-semibold text-white">
-          {initials}
+    <div className="rounded-[1.45rem] border border-slate-200 bg-white p-5 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.14)]">
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white">
+          {number}
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-950">{customerName}</p>
-          <p className="text-xs text-slate-500">{location}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-              <Star className="h-3.5 w-3.5 fill-current text-amber-400" />
-              Voiture {score.toFixed(1)}
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#ff4d43]/15 bg-[#ff4d43]/10 px-2.5 py-1 text-[11px] font-semibold text-[#ff4d43]">
-              <Star className="h-3.5 w-3.5 fill-current" />
-              Service {serviceScore.toFixed(1)}
-            </span>
-          </div>
+          <h3 className="text-base font-semibold text-slate-950">{title}</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
         </div>
       </div>
-      <p className="mt-4 text-sm leading-7 text-slate-600">{comment?.trim() || "Pas de commentaire"}</p>
-      <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{carLabel}</p>
-    </article>
+    </div>
   );
 }
 
@@ -194,22 +154,11 @@ export default function About() {
     limit: 200,
     sortBy: "year_desc",
   });
-  const { data: brands = [] } = useQuery({
-    queryKey: ["brands"],
-    queryFn: fetchBrands,
-    staleTime: 60_000,
-  });
-  const { data: publicRatings } = useQuery({
-    queryKey: ["public-ratings"],
-    queryFn: fetchPublicRatings,
-    staleTime: 60_000,
-  });
 
   const companyName = settings?.brandName?.trim() || "Location Auto Maroc";
-  const slogan = settings?.slogan?.trim() || "Une expérience claire, rapide et pensée pour les vrais trajets.";
+  const slogan = settings?.slogan?.trim() || "Une plateforme claire pour louer une voiture en toute confiance.";
   const cars = fleetData?.cars ?? [];
   const totalCars = fleetData?.total ?? cars.length;
-  const featuredCars = cars.slice(0, 3);
 
   const cities = useMemo(() => {
     const values = new Set<string>();
@@ -231,291 +180,283 @@ export default function About() {
     return Array.from(values).sort((left, right) => left.localeCompare(right, "fr"));
   }, [cars, settings?.city]);
 
-  const brandTiles = useMemo<BrandTile[]>(() => {
-    const seen = new Set<string>();
-    const items: BrandTile[] = [];
-
-    for (const brand of brands) {
-      const key = brand.name.trim().toLowerCase();
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      items.push({ name: brand.name, logoUrl: brand.logoUrl });
-    }
+  const brandCount = useMemo(() => {
+    const values = new Set<string>();
 
     for (const car of cars) {
-      const key = car.brand.trim().toLowerCase();
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
-      items.push({ name: car.brand, logoUrl: (car as any).brandMeta?.logoUrl });
+      const brand = car.brand?.trim().toLowerCase();
+      if (brand) {
+        values.add(brand);
+      }
     }
 
-    return items.slice(0, 8);
-  }, [brands, cars]);
+    return values.size;
+  }, [cars]);
 
-  const testimonials = publicRatings?.testimonials ?? [];
-  const averageRating = publicRatings?.summary.averageServiceScore ?? publicRatings?.summary.averageCarScore ?? null;
-  const totalReviews = publicRatings?.summary.totalReviews ?? 0;
-  const satisfiedClients = publicRatings?.summary.satisfiedClients ?? 0;
-  const whatsapp = settings?.whatsapp ?? "+212600000000";
-  const whatsappHref = `https://wa.me/${whatsapp.replace(/\D/g, "")}`;
-  const contactEmail = settings?.email ?? "contact@locationauto.ma";
-  const contactPhone = settings?.phone ?? "+212600000000";
-
-  const heroStats = [
+  const metrics: Metric[] = [
     {
       icon: CarFront,
       label: "Véhicules",
       value: formatCount(totalCars),
-      detail: "dans la flotte réelle",
+      detail: "publiés dans le catalogue",
     },
     {
       icon: BadgeCheck,
       label: "Marques",
-      value: formatCount(brands.length),
-      detail: "logos disponibles",
+      value: formatCount(brandCount),
+      detail: "intégrées à la plateforme",
     },
     {
       icon: MapPin,
       label: "Villes",
       value: formatCount(cities.length),
-      detail: "couvertes par le catalogue",
+      detail: "couvertes par l’offre",
     },
     {
-      icon: Users,
-      label: "Avis",
-      value: formatCount(totalReviews),
-      detail: averageRating ? `note moyenne ${averageRating.toFixed(1)}/5` : "en cours de collecte",
+      icon: Workflow,
+      label: "Étapes",
+      value: "4",
+      detail: "pour aller de la sélection au suivi",
     },
-  ] as const;
+  ];
+
+  const whatsapp = settings?.whatsapp ?? "+212600000000";
+  const whatsappHref = `https://wa.me/${whatsapp.replace(/\D/g, "")}`;
+  const contactEmail = settings?.email ?? "contact@locationauto.ma";
+  const contactPhone = settings?.phone ?? "+212600000000";
 
   return (
-    <div className="container mx-auto px-4 py-10">
+    <div className="relative overflow-hidden bg-slate-50">
       <Seo
-        title={`À propos de ${companyName}`}
-        description="Découvrez une présentation claire de notre flotte, de nos marques partenaires et de notre service de location au Maroc."
+        title={`Présentation de ${companyName}`}
+        description="Découvrez la plateforme de location: catalogue réel, réservation guidée, documents centralisés et suivi clair du dossier."
         canonical="/a-propos"
       />
 
-      <section className="overflow-hidden rounded-[2.2rem] marketing-dark-panel marketing-grid px-5 py-8 text-white sm:px-6 md:px-8 md:py-10">
-        <div className="relative z-10 grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[10px] marketing-kicker marketing-pill">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-              À propos
-            </div>
-            <h1 className="mt-6 text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl md:text-5xl">
-              {companyName} rassemble des données réelles pour vous aider à réserver en confiance.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-white/72 md:text-lg">
-              {slogan} Nous mettons en avant la flotte, les marques et les avis publics afin de rendre chaque choix plus simple, plus transparent et plus utile.
-            </p>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,77,67,0.10),_transparent_34%),radial-gradient(circle_at_top_right,_rgba(15,23,42,0.08),_transparent_28%)]" />
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link href="/voitures">
-                <Button className="w-full rounded-full px-6 marketing-accent-button sm:w-auto">
-                  Voir les voitures
-                  <ArrowRight className="h-4 w-4" />
+      <div className="container mx-auto px-4 py-10 sm:px-6 lg:px-8">
+        <section className="relative overflow-hidden rounded-[2.2rem] border border-slate-200 bg-white shadow-[0_30px_80px_-42px_rgba(15,23,42,0.28)]">
+          <div className="grid gap-10 px-6 py-8 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:px-10 lg:py-10">
+            <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#ff4d43]/15 bg-[#ff4d43]/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-[#ff4d43]">
+                <Sparkles className="h-3.5 w-3.5" />
+                Présentation de la plateforme
+              </div>
+
+              <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-slate-950 sm:text-5xl">
+                Une plateforme claire pour louer une voiture au Maroc.
+              </h1>
+
+              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-600 md:text-lg">
+                {companyName} centralise le catalogue, les marques, les documents et le suivi des demandes dans une interface
+                simple. L’objectif est de faire gagner du temps, de réduire les frictions et de garder chaque dossier lisible
+                du début à la fin.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Button asChild className="rounded-full bg-[#ff4d43] px-6 text-white hover:bg-[#f03d32]">
+                  <Link href="/voitures">
+                    Explorer le catalogue
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
                 </Button>
-              </Link>
-              <Link href="/contact">
-                <Button
-                  variant="outline"
-                  className="w-full rounded-full border-white/14 bg-white/6 px-6 text-white hover:bg-white/10 hover:text-white sm:w-auto"
-                >
-                  Nous contacter
+                <Button asChild variant="outline" className="rounded-full px-6">
+                  <Link href="/contact">Nous contacter</Link>
                 </Button>
-              </Link>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-3 text-sm text-slate-600">
+                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
+                  <BadgeCheck className="h-4 w-4 text-[#ff4d43]" />
+                  Catalogue en temps réel
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
+                  <FileText className="h-4 w-4 text-[#ff4d43]" />
+                  Documents centralisés
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 shadow-sm">
+                  <ShieldCheck className="h-4 w-4 text-[#ff4d43]" />
+                  Suivi transparent
+                </span>
+              </div>
             </div>
 
-            <div className="mt-8 flex flex-wrap gap-3 text-sm text-white/72">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                {settings?.city?.trim() || "Casablanca"} et partout au Maroc
-              </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/6 px-4 py-2">
-                <Star className="h-4 w-4 text-amber-300" />
-                {averageRating ? `${averageRating.toFixed(1)}/5 sur ${totalReviews} avis` : "Aucun avis publié pour le moment"}
-              </span>
+            <Card className="overflow-hidden border-slate-200 bg-slate-950 text-white shadow-[0_26px_70px_-38px_rgba(15,23,42,0.55)]">
+              <CardContent className="space-y-5 p-6">
+                <div className="rounded-[1.6rem] border border-white/10 bg-white/6 p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/55">
+                    Vue d’ensemble de la plateforme
+                  </p>
+                  <p className="mt-3 text-xl font-semibold tracking-tight text-white">
+                    Une expérience guidée, un dossier clair, une seule interface.
+                  </p>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {metrics.map((metric) => (
+                      <MetricCard key={metric.label} {...metric} />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-3 rounded-[1.45rem] border border-white/10 bg-white/6 p-4">
+                  {features.map((feature) => {
+                    const Icon = feature.icon;
+
+                    return (
+                      <div key={feature.title} className="flex items-start gap-3 rounded-2xl bg-white/6 px-3 py-3">
+                        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white">{feature.title}</p>
+                          <p className="mt-1 text-xs leading-5 text-white/65">{feature.description}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        <section className="pb-16 pt-12">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">
+                Ce que la plateforme permet
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Un seul espace pour chercher, réserver et suivre.
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
+                La page d’accueil et l’espace client parlent le même langage: moins d’étapes inutiles, plus de clarté et des
+                informations faciles à retrouver.
+              </p>
             </div>
           </div>
 
-          <Card className="overflow-hidden border-white/10 bg-white/6 text-white backdrop-blur">
-            <CardContent className="space-y-5 p-6">
-              <img
-                src="https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1200&q=80"
-                alt="Flotte de véhicules"
-                className="h-52 w-full rounded-[1.5rem] object-cover sm:h-64"
-              />
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {features.map((feature) => (
+              <FeatureCard key={feature.title} {...feature} />
+            ))}
+          </div>
+        </section>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                {heroStats.map((stat) => (
-                  <HeroStat
-                    key={stat.label}
-                    icon={stat.icon}
-                    label={stat.label}
-                    value={stat.value}
-                    detail={stat.detail}
-                  />
-                ))}
-              </div>
+        <section className="pb-16">
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+              <CardContent className="space-y-5 p-6">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">Comment ça marche</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                    Le parcours est pensé pour rester simple du début à la fin.
+                  </h2>
+                </div>
 
-              <div className="grid gap-3 rounded-[1.35rem] border border-white/10 bg-white/6 p-4 text-sm text-white/82 sm:grid-cols-2">
-                <div className="flex items-start gap-3">
-                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.24em] text-white/52">Téléphone</p>
-                    <p className="mt-1 font-medium">{contactPhone}</p>
+                <div className="grid gap-3">
+                  {steps.map((step) => (
+                    <StepCard key={step.number} {...step} />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden rounded-[1.6rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+              <CardContent className="space-y-5 p-6">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">Pourquoi c’est utile</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                    Une présentation claire pour rassurer et faire gagner du temps.
+                  </h2>
+                </div>
+
+                <ul className="space-y-3">
+                  {supportPoints.map((point) => (
+                    <li key={point} className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#ff4d43]" />
+                      <span className="text-sm leading-6 text-slate-600">{point}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">Couverture locale</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {cities.map((city) => (
+                      <span
+                        key={city}
+                        className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700"
+                      >
+                        <MapPin className="mr-1.5 h-3.5 w-3.5 text-[#ff4d43]" />
+                        {city}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="flex items-start gap-3">
-                  <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.24em] text-white/52">WhatsApp</p>
-                    <p className="mt-1 font-medium">{whatsapp}</p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        <section className="pb-10">
+          <Card className="overflow-hidden rounded-[1.8rem] border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+            <CardContent className="grid gap-6 p-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:p-8">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">Besoin d’aide ?</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">
+                  {slogan}
+                </h2>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                  Si vous avez une question sur le catalogue, les documents ou le suivi de votre dossier, l’équipe reste
+                  joignable rapidement.
+                </p>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <Button asChild className="rounded-full bg-[#ff4d43] px-6 text-white hover:bg-[#f03d32]">
+                    <Link href="/contact">
+                      Contacter l’équipe
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button asChild variant="outline" className="rounded-full px-6">
+                    <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                      Ouvrir WhatsApp
+                    </a>
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                    <Phone className="h-4 w-4 text-[#ff4d43]" />
+                    Téléphone
                   </div>
-                </a>
-                <a href={`mailto:${contactEmail}`} className="flex items-start gap-3">
-                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.24em] text-white/52">Email</p>
-                    <p className="mt-1 font-medium">{contactEmail}</p>
+                  <p className="mt-2 text-sm text-slate-600">{contactPhone}</p>
+                </div>
+
+                <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                    <MessageCircle className="h-4 w-4 text-[#ff4d43]" />
+                    WhatsApp
                   </div>
-                </a>
-                <div className="flex items-start gap-3">
-                  <Users className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.24em] text-white/52">Confiance</p>
-                    <p className="mt-1 font-medium">{satisfiedClients} client(s) satisfaits</p>
+                  <p className="mt-2 text-sm text-slate-600">{whatsapp}</p>
+                </div>
+
+                <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50 p-4 sm:col-span-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                    <FileText className="h-4 w-4 text-[#ff4d43]" />
+                    E-mail
                   </div>
+                  <p className="mt-2 text-sm text-slate-600">{contactEmail}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </div>
-      </section>
-
-      <section className="pb-16 pt-10">
-        <div className="grid gap-4 md:grid-cols-3">
-          {principles.map((principle) => {
-            const Icon = principle.icon;
-
-            return (
-              <Card key={principle.title} className="marketing-soft-panel">
-                <CardContent className="p-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h2 className="mt-4 text-lg font-semibold text-foreground">{principle.title}</h2>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{principle.description}</p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="pb-16">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-3xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">Flotte réelle</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl md:text-[2.6rem]">
-              Quelques véhicules réellement disponibles dans le catalogue.
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
-              Les modèles affichés ici proviennent des données du site. Ils reflètent la flotte, les catégories et les prix que les clients peuvent consulter.
-            </p>
-          </div>
-
-          <Link href="/voitures" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950">
-            Voir toutes les offres
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-        <div className="mt-8 grid gap-5 lg:grid-cols-3">
-          {featuredCars.length > 0 ? (
-            featuredCars.map((car) => <FleetCard key={car.id} car={car} />)
-          ) : (
-            <div className="col-span-full rounded-[1.5rem] border border-dashed border-black/10 bg-white/88 px-6 py-14 text-center text-sm text-muted-foreground">
-              Aucune voiture n'est disponible pour le moment.
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="pb-16">
-        <div className="max-w-3xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">Marques partenaires</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl md:text-[2.6rem]">
-            Les logos sont alimentés par les vraies marques du catalogue.
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
-            Lorsque les marques sont renseignées dans l’administration ou dans les données de démo, elles remontent automatiquement sur le site public.
-          </p>
-        </div>
-
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {brandTiles.length > 0 ? (
-            brandTiles.map((brand) => (
-              <div
-                key={brand.name}
-                className="flex min-h-[110px] items-center justify-center rounded-[1.35rem] border border-black/8 bg-white px-5 py-5 shadow-[0_14px_34px_-26px_rgba(15,23,42,0.18)]"
-              >
-                {brand.logoUrl ? (
-                  <img src={brand.logoUrl} alt={brand.name} className="max-h-10 max-w-[8rem] object-contain" />
-                ) : (
-                  <span className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
-                    {brand.name}
-                  </span>
-                )}
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full rounded-[1.5rem] border border-dashed border-black/10 bg-white/88 px-6 py-14 text-center text-sm text-muted-foreground">
-              Aucune marque n'est encore renseignée.
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="pb-16">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-3xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-[#ff4d43]">Avis publics</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl md:text-[2.6rem]">
-              Les retours clients visibles sur le site.
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
-              Les notes et les commentaires affichés ici proviennent des avis publiés par les clients. Ils apportent une preuve sociale concrète.
-            </p>
-          </div>
-
-          <div className="inline-flex items-center gap-2 rounded-full border border-black/8 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm">
-            <Star className="h-4 w-4 text-amber-400" />
-            {averageRating ? `${averageRating.toFixed(1)}/5 de moyenne` : "Pas encore de note"}
-          </div>
-        </div>
-
-        {testimonials.length > 0 ? (
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {testimonials.slice(0, 3).map((testimonial) => (
-              <ReviewCard
-                key={testimonial.id}
-                customerName={testimonial.customerName}
-                location={testimonial.location}
-                carLabel={testimonial.carLabel}
-                score={testimonial.score}
-                serviceScore={testimonial.serviceScore}
-                comment={testimonial.comment}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="mt-8 rounded-[1.5rem] border border-dashed border-black/10 bg-white/88 px-6 py-14 text-center text-sm text-muted-foreground">
-            Aucun avis public n'a encore été publié.
-          </div>
-        )}
-      </section>
+        </section>
+      </div>
     </div>
   );
 }
