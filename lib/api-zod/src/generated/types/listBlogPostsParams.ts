@@ -7,6 +7,7 @@
  */
 
 export type ListBlogPostsParams = {
+search?: string;
 page?: number;
 limit?: number;
 };

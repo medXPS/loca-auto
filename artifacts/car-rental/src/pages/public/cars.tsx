@@ -7,6 +7,7 @@ import { Seo } from "@/components/seo";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,6 +22,7 @@ import {
   Rows3,
   Settings2,
   SlidersHorizontal,
+  Search,
   Users,
   Wind,
 } from "lucide-react";
@@ -207,6 +209,7 @@ export default function Cars() {
   const initialBrand = initialParams.get("brand") || "";
   const initialModel = initialParams.get("model") || "";
   const initialAgencyId = initialParams.get("agencyId") || ALL_VALUE;
+  const initialSearch = initialParams.get("search") || "";
 
   const [vehicleKey, setVehicleKey] = useState(
     initialBrand || initialModel ? buildVehicleKey(initialBrand, initialModel) : ALL_VALUE,
@@ -219,6 +222,8 @@ export default function Cars() {
   const [sortBy, setSortBy] = useState(initialParams.get("sortBy") || "year_desc");
   const [transmission, setTransmission] = useState(initialParams.get("transmission") || ALL_VALUE);
   const [fuelType, setFuelType] = useState(initialParams.get("fuelType") || ALL_VALUE);
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [appliedSearch, setAppliedSearch] = useState(initialSearch);
   const [priceRange, setPriceRange] = useState([0, 2000]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -236,6 +241,9 @@ export default function Cars() {
     setSortBy(next.get("sortBy") || "year_desc");
     setTransmission(next.get("transmission") || ALL_VALUE);
     setFuelType(next.get("fuelType") || ALL_VALUE);
+    const nextSearch = next.get("search") || "";
+    setSearchInput(nextSearch);
+    setAppliedSearch(nextSearch);
   }, [location]);
 
   const { data: allCarsData } = useListCars({
@@ -280,6 +288,7 @@ export default function Cars() {
   );
 
   const carQueryParams = {
+    search: appliedSearch || undefined,
     brand: selectedVehicle?.brand || undefined,
     model: selectedVehicle?.model || undefined,
     agencyId: agencyId !== ALL_VALUE ? agencyId : undefined,
@@ -303,6 +312,7 @@ export default function Cars() {
     agencyId: string;
     category: string;
     city: string;
+    search: string;
     startDate: string;
     returnDate: string;
     sortBy: string;
@@ -313,6 +323,7 @@ export default function Cars() {
     const nextAgencyId = overrides?.agencyId ?? agencyId;
     const nextCategory = overrides?.category ?? category;
     const nextCity = overrides?.city ?? city;
+    const nextSearch = (overrides?.search ?? searchInput).trim();
     const nextStartDate = overrides?.startDate ?? startDate;
     const nextReturnDate = overrides?.returnDate ?? returnDate;
     const nextSortBy = overrides?.sortBy ?? sortBy;
@@ -329,12 +340,14 @@ export default function Cars() {
     if (nextCategory !== ALL_VALUE) next.set("category", nextCategory);
     if (nextAgency?.city) next.set("city", nextAgency.city);
     else if (nextCity) next.set("city", nextCity);
+    if (nextSearch) next.set("search", nextSearch);
     if (nextStartDate) next.set("startDate", nextStartDate);
     if (nextReturnDate) next.set("returnDate", nextReturnDate);
     if (nextSortBy) next.set("sortBy", nextSortBy);
     if (nextTransmission !== ALL_VALUE) next.set("transmission", nextTransmission);
     if (nextFuelType !== ALL_VALUE) next.set("fuelType", nextFuelType);
 
+    setAppliedSearch(nextSearch);
     setIsFilterOpen(false);
     setLocation(`/voitures${next.toString() ? `?${next.toString()}` : ""}`);
   };
@@ -344,6 +357,8 @@ export default function Cars() {
     setAgencyId(ALL_VALUE);
     setCategory(ALL_VALUE);
     setCity("");
+    setSearchInput("");
+    setAppliedSearch("");
     setStartDate("");
     setReturnDate("");
     setSortBy("year_desc");
@@ -365,6 +380,30 @@ export default function Cars() {
           Effacer tout
         </button>
       </div>
+
+      <FilterSection title="Recherche">
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+            <Search className="h-4 w-4 text-slate-400" />
+            Rechercher un véhicule
+          </label>
+          <Input
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                applyFilters({ search: searchInput });
+              }
+            }}
+            placeholder="Marque, modèle, ville ou mot-clé"
+            className="h-11 rounded-2xl border-slate-200 bg-white"
+          />
+          <p className="text-xs text-slate-500">
+            Appuyez sur Entrée ou cliquez sur « Appliquer les filtres ».
+          </p>
+        </div>
+      </FilterSection>
 
       <FilterSection title="Agence">
         <Select
@@ -496,7 +535,7 @@ export default function Cars() {
           <SectionHeading
             eyebrow="Catalogue"
             title="Tous nos véhicules disponibles"
-            description="Affinez les résultats avec les bons filtres, sans saisie libre pour le modèle."
+            description="Affinez les résultats avec une recherche libre et des filtres précis pour trouver le bon véhicule plus vite."
           />
 
           <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end md:w-auto">
@@ -508,10 +547,10 @@ export default function Cars() {
                 <SelectValue placeholder="Trier" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="year_desc">Prix : du plus bas au plus eleve</SelectItem>
+                <SelectItem value="year_desc">Année : du plus récent au plus ancien</SelectItem>
                 <SelectItem value="price_asc">Prix croissant</SelectItem>
-                <SelectItem value="price_desc">Prix decroissant</SelectItem>
-                <SelectItem value="newest">Les plus recentes</SelectItem>
+                <SelectItem value="price_desc">Prix décroissant</SelectItem>
+                <SelectItem value="newest">Ajout : les plus récentes</SelectItem>
               </SelectContent>
             </Select>
 
@@ -578,7 +617,7 @@ export default function Cars() {
                   </EmptyMedia>
                   <EmptyTitle>Aucun véhicule pour ces filtres</EmptyTitle>
                   <EmptyDescription>
-                    Changez l'agence, l'intervalle, le modèle ou les options du catalogue pour retrouver des disponibilités.
+                    Essayez un autre mot-clé, changez l'agence, l'intervalle ou les options du catalogue pour retrouver des disponibilités.
                   </EmptyDescription>
                 </EmptyHeader>
                 <Button className="rounded-full bg-[#FF4B43] text-white hover:bg-[#f03b33]" onClick={handleReset}>

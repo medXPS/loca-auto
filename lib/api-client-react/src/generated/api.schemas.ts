@@ -742,6 +742,7 @@ limit?: number;
 };
 
 export type ListBlogPostsParams = {
+search?: string;
 page?: number;
 limit?: number;
 };
@@ -764,4 +765,3 @@ export type ListAuditLogsParams = {
 page?: number;
 limit?: number;
 };
-

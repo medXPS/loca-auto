@@ -9,8 +9,10 @@ import {
   eq,
   gte,
   ilike,
+  inArray,
   lte,
   notInArray,
+  or,
   sql,
 } from "drizzle-orm";
 import { db, schema } from "../lib/db";
@@ -29,6 +31,13 @@ import {
   resolveAgencyForCar,
   resolveBrandForCar,
 } from "../lib/catalog";
+import {
+  ALGOLIA_CARS_INDEX,
+  buildCarSearchRecord,
+  deleteAlgoliaRecord,
+  searchAlgoliaObjectIds,
+  upsertAlgoliaRecord,
+} from "../lib/algolia";
 import {
   buildPublicUploadUrl,
   buildStoredUploadFilename,
@@ -220,6 +229,26 @@ async function getCarRatings(carId: number) {
   }));
 }
 
+async function syncCarSearchIndex(car: typeof schema.carsTable.$inferSelect) {
+  await upsertAlgoliaRecord(ALGOLIA_CARS_INDEX, buildCarSearchRecord(car));
+}
+
+async function syncCarSearchIndexById(carId: number) {
+  const [car] = await db
+    .select()
+    .from(schema.carsTable)
+    .where(eq(schema.carsTable.id, carId))
+    .limit(1);
+
+  if (car) {
+    await syncCarSearchIndex(car);
+  }
+}
+
+async function removeCarSearchIndex(carId: number) {
+  await deleteAlgoliaRecord(ALGOLIA_CARS_INDEX, String(carId));
+}
+
 // GET /api/cars
 router.get("/", async (req, res) => {
   try {
@@ -249,15 +278,39 @@ router.get("/", async (req, res) => {
       page = "1",
       limit = "12",
     } = req.query as Record<string, string>;
+    const normalizedSearch = search?.trim() || "";
 
     const pageNum = Math.max(1, parseInt(page, 10));
     const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10)));
 
     const conditions: any[] = [];
-    if (search) {
-      conditions.push(
-        sql`(${ilike(schema.carsTable.brand, `%${search}%`)} OR ${ilike(schema.carsTable.model, `%${search}%`)} OR ${ilike(schema.carsTable.city, `%${search}%`)})`,
+    let searchCarIds: number[] | null = null;
+
+    if (normalizedSearch) {
+      searchCarIds = await searchAlgoliaObjectIds(
+        ALGOLIA_CARS_INDEX,
+        normalizedSearch,
+        async () => {
+          const cars = await db.select().from(schema.carsTable);
+          return cars.map((car) => buildCarSearchRecord(car));
+        },
       );
+      if (searchCarIds && searchCarIds.length > 0) {
+        conditions.push(inArray(schema.carsTable.id, searchCarIds));
+      } else {
+        conditions.push(
+          or(
+            ilike(schema.carsTable.brand, `%${normalizedSearch}%`),
+            ilike(schema.carsTable.model, `%${normalizedSearch}%`),
+            ilike(schema.carsTable.city, `%${normalizedSearch}%`),
+            ilike(schema.carsTable.category, `%${normalizedSearch}%`),
+            ilike(schema.carsTable.description, `%${normalizedSearch}%`),
+            ilike(schema.carsTable.seoTitle, `%${normalizedSearch}%`),
+            ilike(schema.carsTable.internalReference, `%${normalizedSearch}%`),
+            ilike(schema.carsTable.licensePlate, `%${normalizedSearch}%`),
+          ),
+        );
+      }
     }
     if (brand) conditions.push(ilike(schema.carsTable.brand, `%${brand}%`));
     if (model) conditions.push(ilike(schema.carsTable.model, `%${model}%`));
@@ -365,6 +418,9 @@ router.post(
         entityType: "car",
         entityId: car.id,
       });
+      await syncCarSearchIndex(car).catch((error) => {
+        req.log.warn({ err: error, carId: car.id }, "Algolia car sync failed");
+      });
       const [enriched] = await enrichCars([car]);
       res.status(201).json(enriched);
     } catch (err) {
@@ -386,7 +442,7 @@ router.get("/:id", async (req, res) => {
       .limit(1);
 
     if (!car) {
-      res.status(404).json({ error: "Voiture non trouvee" });
+      res.status(404).json({ error: "Voiture non trouvée" });
       return;
     }
 
@@ -433,7 +489,7 @@ router.patch(
         .returning();
 
       if (!car) {
-        res.status(404).json({ error: "Voiture non trouvee" });
+        res.status(404).json({ error: "Voiture non trouvée" });
         return;
       }
 
@@ -442,6 +498,9 @@ router.patch(
         action: "UPDATE_CAR",
         entityType: "car",
         entityId: car.id,
+      });
+      await syncCarSearchIndex(car).catch((error) => {
+        req.log.warn({ err: error, carId: car.id }, "Algolia car sync failed");
       });
       const [enriched] = await enrichCars([car]);
       res.json(enriched);
@@ -470,6 +529,9 @@ router.delete(
         .where(eq(schema.carsTable.id, carId));
 
       await Promise.all(images.map((image) => removeStoredUpload(image.url)));
+      await removeCarSearchIndex(carId).catch((error) => {
+        req.log.warn({ err: error, carId }, "Algolia car delete sync failed");
+      });
       await logAudit(req, {
         userId: req.user!.userId,
         action: "DELETE_CAR",
@@ -543,6 +605,9 @@ router.post(
           .update(schema.carsTable)
           .set({ mainImageUrl: media.url })
           .where(eq(schema.carsTable.id, carId));
+        await syncCarSearchIndexById(carId).catch((error) => {
+          req.log.warn({ err: error, carId }, "Algolia car sync failed");
+        });
       }
 
       res.status(201).json(normalizedMedia);
@@ -564,6 +629,7 @@ router.delete(
       const [image] = await db
         .select({
           url: schema.carImagesTable.url,
+          isMain: schema.carImagesTable.isMain,
         })
         .from(schema.carImagesTable)
         .where(eq(schema.carImagesTable.id, imageId))
@@ -587,6 +653,22 @@ router.delete(
       if (image) {
         await removeStoredUpload(image.url);
       }
+      if (image?.isMain) {
+        const [nextImage] = await db
+          .select({ url: schema.carImagesTable.url })
+          .from(schema.carImagesTable)
+          .where(eq(schema.carImagesTable.carId, parseInt(String(req.params.id), 10)))
+          .orderBy(desc(schema.carImagesTable.isMain), asc(schema.carImagesTable.sortOrder), asc(schema.carImagesTable.id))
+          .limit(1);
+
+        await db
+          .update(schema.carsTable)
+          .set({ mainImageUrl: nextImage?.url ?? null })
+          .where(eq(schema.carsTable.id, parseInt(String(req.params.id), 10)));
+      }
+      await syncCarSearchIndexById(parseInt(String(req.params.id), 10)).catch((error) => {
+        req.log.warn({ err: error, carId: req.params.id }, "Algolia car sync failed");
+      });
       res.status(204).send();
     } catch (err) {
       req.log.error(err);
