@@ -411,8 +411,8 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
 
   return (
     <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50/80 p-5 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.12)]">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-4">
+      <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <div className="flex items-start gap-3">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#ff4d43]/10 text-[#ff4d43]">
               <CloudUpload className="h-5 w-5" />
@@ -425,8 +425,8 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-[240px_1fr]">
-            <div className="space-y-1.5">
+          <div className="grid min-w-0 gap-3 md:grid-cols-[minmax(0,240px)_minmax(0,1fr)]">
+            <div className="min-w-0 space-y-1.5">
               <Label className="text-xs font-medium text-slate-500">Type de document</Label>
               <Select value={selectedType} onValueChange={(value) => setSelectedType(value as typeof selectedType)}>
                 <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white">
@@ -442,7 +442,7 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
               </Select>
             </div>
 
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3">
+            <div className="min-w-0 rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Fichier sélectionné</p>
               <p className="mt-1 truncate text-sm font-medium text-slate-950">
                 {selectedFile ? selectedFile.name : "Aucun fichier sélectionné"}
@@ -452,13 +452,13 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" className="rounded-full border-slate-200" onClick={pickFile} disabled={isUploading}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <Button type="button" variant="outline" className="w-full rounded-full border-slate-200 sm:w-auto" onClick={pickFile} disabled={isUploading}>
             Choisir un fichier
           </Button>
           <Button
             type="button"
-            className="rounded-full bg-[#ff4d43] text-white hover:bg-[#f03d32]"
+            className="w-full rounded-full bg-[#ff4d43] text-white hover:bg-[#f03d32] sm:w-auto"
             onClick={() => void handleUpload()}
             disabled={!selectedFile || isUploading}
           >
