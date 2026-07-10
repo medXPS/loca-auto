@@ -24,6 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DocumentDownloadButton } from "@/components/document-download-button";
 import { RatingEditor } from "@/components/rating-editor";
@@ -73,6 +74,13 @@ const documentTypeLabels: Record<string, string> = {
   PERMIS_CONDUIRE: "Permis de conduire",
   AUTRE: "Autre document",
 };
+
+const profileDocumentUploadOptions = [
+  { value: "CIN", label: "Carte nationale d'identité" },
+  { value: "PERMIS_CONDUIRE", label: "Permis de conduire" },
+  { value: "PASSPORT", label: "Passeport" },
+  { value: "AUTRE", label: "Autre document" },
+] as const;
 
 function formatFileLabel(fileUrl: string) {
   const fileName = fileUrl.split("/").pop();
@@ -356,6 +364,7 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
   const uploadDocument = useUploadDocument();
   const inputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedType, setSelectedType] = useState<(typeof profileDocumentUploadOptions)[number]["value"]>("AUTRE");
   const [isUploading, setIsUploading] = useState(false);
 
   const pickFile = () => {
@@ -380,7 +389,7 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
 
       await uploadDocument.mutateAsync({
         data: {
-          type: "AUTRE",
+          type: selectedType,
           fileUrl: response.fileUrl || presign.fileUrl,
         },
       });
@@ -401,33 +410,61 @@ function QuickDocumentDropzone({ onUploaded }: { onUploaded: () => void }) {
   };
 
   return (
-    <div className="rounded-[1.35rem] border border-dashed border-slate-200 bg-slate-50/70 p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
-            <CloudUpload className="h-5 w-5" />
+    <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50/80 p-5 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.12)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#ff4d43]/10 text-[#ff4d43]">
+              <CloudUpload className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-950">Téléverser un document</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Choisissez le type de document, sélectionnez votre fichier puis envoyez-le.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-950">Glissez et déposez vos fichiers ici</p>
-            <p className="mt-1 text-xs text-slate-500">PDF, JPG ou PNG - 5 Mo maximum</p>
-            {selectedFile ? <p className="mt-1 text-[11px] text-slate-400">{selectedFile.name}</p> : null}
+
+          <div className="grid gap-3 sm:grid-cols-[240px_1fr]">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-slate-500">Type de document</Label>
+              <Select value={selectedType} onValueChange={(value) => setSelectedType(value as typeof selectedType)}>
+                <SelectTrigger className="h-11 rounded-2xl border-slate-200 bg-white">
+                  <SelectValue placeholder="Choisir un type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {profileDocumentUploadOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Fichier sélectionné</p>
+              <p className="mt-1 truncate text-sm font-medium text-slate-950">
+                {selectedFile ? selectedFile.name : "Aucun fichier sélectionné"}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">PDF, JPG ou PNG, 5 Mo maximum.</p>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" className="rounded-full" onClick={pickFile} disabled={isUploading}>
-            Parcourir
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" className="rounded-full border-slate-200" onClick={pickFile} disabled={isUploading}>
+            Choisir un fichier
           </Button>
-          {selectedFile ? (
-            <Button
-              type="button"
-              className="rounded-full bg-[#ff4d43] text-white hover:bg-[#f03d32]"
-              onClick={() => void handleUpload()}
-              disabled={isUploading}
-            >
-              {isUploading ? "Téléversement..." : "Téléverser"}
-            </Button>
-          ) : null}
+          <Button
+            type="button"
+            className="rounded-full bg-[#ff4d43] text-white hover:bg-[#f03d32]"
+            onClick={() => void handleUpload()}
+            disabled={!selectedFile || isUploading}
+          >
+            <Upload className="h-4 w-4" />
+            {isUploading ? "Téléversement..." : "Téléverser"}
+          </Button>
         </div>
       </div>
 
@@ -632,7 +669,6 @@ export default function CustomerProfile() {
   const cinDoc = documentsByType.get("CIN") ?? null;
   const passportDoc = documentsByType.get("PASSPORT") ?? null;
   const drivingDoc = documentsByType.get("PERMIS_CONDUIRE") ?? null;
-  const addressDoc = documentsByType.get("AUTRE") ?? null;
   const profileComplete = Boolean((profile?.cin || profile?.passportNumber || cinDoc || passportDoc) && (profile?.drivingLicenseNumber || drivingDoc));
 
   const refreshIdentity = () => {
@@ -993,59 +1029,19 @@ export default function CustomerProfile() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">Mes documents</CardTitle>
-                    <CardDescription>Téléchargez et gérez vos documents en toute simplicité.</CardDescription>
+                    <CardDescription>Téléversez un document et consultez vos derniers envois.</CardDescription>
                   </div>
                 </div>
               </CardHeader>
 
               <CardContent className="space-y-4 pt-5">
-                <DocumentSlot
-                  label="Carte nationale d'identité (CIN)"
-                  helperText="AB123456"
-                  icon={IdCard}
-                  accentClassName="bg-violet-50 text-violet-600"
-                  existingDocument={cinDoc}
-                  onUploaded={refreshProfile}
-                  docType="CIN"
-                />
-
-                <DocumentSlot
-                  label="Permis de conduire"
-                  helperText="12/34567"
-                  icon={IdCard}
-                  accentClassName="bg-emerald-50 text-emerald-600"
-                  existingDocument={drivingDoc}
-                  onUploaded={refreshProfile}
-                  docType="PERMIS_CONDUIRE"
-                />
-
-                <DocumentSlot
-                  label="Passeport (facultatif)"
-                  helperText="P12345678"
-                  icon={FileText}
-                  accentClassName="bg-orange-50 text-orange-500"
-                  existingDocument={passportDoc}
-                  onUploaded={refreshProfile}
-                  docType="PASSPORT"
-                />
-
-                <DocumentSlot
-                  label="Justificatif de domicile"
-                  helperText="Facture CIE - Janvier 2026"
-                  icon={MapPin}
-                  accentClassName="bg-sky-50 text-sky-600"
-                  existingDocument={addressDoc}
-                  onUploaded={refreshProfile}
-                  docType="AUTRE"
-                />
+                <QuickDocumentDropzone onUploaded={refreshProfile} />
 
                 <div className="rounded-[1.35rem] border border-slate-200 bg-slate-50/80 p-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-slate-950">Derniers téléversements</p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Les fichiers les plus récents apparaissent en premier.
-                      </p>
+                      <p className="text-sm font-semibold text-slate-950">Dernier téléversement</p>
+                      <p className="mt-1 text-xs text-slate-500">Le fichier le plus récent apparaît en premier.</p>
                     </div>
                     <span className="text-xs text-slate-400">
                       {profileDocs.length} fichier{profileDocs.length > 1 ? "s" : ""}
@@ -1054,42 +1050,85 @@ export default function CustomerProfile() {
 
                   <div className="mt-4 space-y-3">
                     {profileDocs.length > 0 ? (
-                      profileDocs.slice(0, 4).map((document) => (
-                        <div
-                          key={document.id}
-                          className="flex flex-col gap-3 rounded-2xl border border-white bg-white px-4 py-3 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.14)] sm:flex-row sm:items-center sm:justify-between"
-                        >
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-semibold text-slate-950">
-                                {getDocumentTypeLabel(document.type)}
+                      <>
+                        <div className="rounded-2xl border border-white bg-white px-4 py-4 shadow-[0_12px_28px_-22px_rgba(15,23,42,0.16)]">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge
+                                  variant="secondary"
+                                  className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                                >
+                                  Dernier téléversement
+                                </Badge>
+                                <p className="text-sm font-semibold text-slate-950">
+                                  {getDocumentTypeLabel(profileDocs[0].type)}
+                                </p>
+                              </div>
+                              <p className="mt-1 truncate text-sm text-slate-600">
+                                {formatFileLabel(profileDocs[0].fileUrl)}
                               </p>
-                              <Badge
-                                variant="secondary"
-                                className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
-                              >
-                                {document.status ? getStatusLabel(document.status, "document") : "Actif"}
-                              </Badge>
+                              <p className="mt-1 text-[11px] text-slate-400">
+                                Téléversé le {formatDate(profileDocs[0].uploadedAt)}
+                              </p>
                             </div>
-                            <p className="mt-1 truncate text-sm text-slate-600">
-                              {formatFileLabel(document.fileUrl)}
-                            </p>
-                            <p className="mt-1 text-[11px] text-slate-400">
-                              Téléversé le {formatDate(document.uploadedAt)}
-                            </p>
-                          </div>
 
-                          <DocumentDownloadButton
-                            fileUrl={document.fileUrl}
-                            filename={formatFileLabel(document.fileUrl)}
-                            variant="outline"
-                            size="sm"
-                            className="rounded-full border-slate-200 bg-white text-slate-700"
-                          >
-                            Télécharger
-                          </DocumentDownloadButton>
+                            <DocumentDownloadButton
+                              fileUrl={profileDocs[0].fileUrl}
+                              filename={formatFileLabel(profileDocs[0].fileUrl)}
+                              variant="outline"
+                              size="sm"
+                              className="rounded-full border-slate-200 bg-white text-slate-700"
+                            >
+                              Télécharger
+                            </DocumentDownloadButton>
+                          </div>
                         </div>
-                      ))
+
+                        {profileDocs.length > 1 ? (
+                          <div className="space-y-3 rounded-2xl border border-dashed border-slate-200 bg-white/80 p-4">
+                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                              Autres documents récents
+                            </p>
+                            {profileDocs.slice(1, 4).map((document) => (
+                              <div
+                                key={document.id}
+                                className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                              >
+                                <div className="min-w-0">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <p className="text-sm font-semibold text-slate-950">
+                                      {getDocumentTypeLabel(document.type)}
+                                    </p>
+                                    <Badge
+                                      variant="secondary"
+                                      className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                                    >
+                                      {document.status ? getStatusLabel(document.status, "document") : "Actif"}
+                                    </Badge>
+                                  </div>
+                                  <p className="mt-1 truncate text-sm text-slate-600">
+                                    {formatFileLabel(document.fileUrl)}
+                                  </p>
+                                  <p className="mt-1 text-[11px] text-slate-400">
+                                    Téléversé le {formatDate(document.uploadedAt)}
+                                  </p>
+                                </div>
+
+                                <DocumentDownloadButton
+                                  fileUrl={document.fileUrl}
+                                  filename={formatFileLabel(document.fileUrl)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-full border-slate-200 bg-white text-slate-700"
+                                >
+                                  Télécharger
+                                </DocumentDownloadButton>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                      </>
                     ) : (
                       <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
                         Aucun document n’a encore été téléversé.
