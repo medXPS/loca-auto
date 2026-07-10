@@ -669,7 +669,7 @@ export default function CustomerProfile() {
   const cinDoc = documentsByType.get("CIN") ?? null;
   const passportDoc = documentsByType.get("PASSPORT") ?? null;
   const drivingDoc = documentsByType.get("PERMIS_CONDUIRE") ?? null;
-  const addressDoc = documentsByType.get("AUTRE") ?? null;
+  const currentDocuments = useMemo(() => Array.from(documentsByType.values()), [documentsByType]);
   const profileComplete = Boolean((profile?.cin || profile?.passportNumber || cinDoc || passportDoc) && (profile?.drivingLicenseNumber || drivingDoc));
 
   const refreshIdentity = () => {
@@ -1030,7 +1030,7 @@ export default function CustomerProfile() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">Mes documents</CardTitle>
-                    <CardDescription>Téléversez un document. Chaque type n’affiche que sa dernière version.</CardDescription>
+                    <CardDescription>Téléversez un document. La version la plus récente est conservée pour chaque type.</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -1038,47 +1038,55 @@ export default function CustomerProfile() {
               <CardContent className="space-y-4 pt-5">
                 <QuickDocumentDropzone onUploaded={refreshProfile} />
 
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <DocumentSlot
-                    label="Carte nationale d'identité (CIN)"
-                    helperText="AB123456"
-                    icon={IdCard}
-                    accentClassName="bg-violet-50 text-violet-600"
-                    existingDocument={cinDoc}
-                    onUploaded={refreshProfile}
-                    docType="CIN"
-                  />
+                {currentDocuments.length > 0 ? (
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {currentDocuments.map((document) => (
+                      <div
+                        key={document.id}
+                        className="flex min-w-0 flex-col gap-3 rounded-[1.2rem] border border-slate-200 bg-white p-4 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.16)]"
+                      >
+                        <div className="flex min-w-0 items-start gap-3">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-slate-500">
+                            <FileText className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="truncate text-sm font-semibold text-slate-950">
+                                {getDocumentTypeLabel(document.type)}
+                              </p>
+                              <Badge
+                                variant="secondary"
+                                className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                              >
+                                {document.status ? getStatusLabel(document.status, "document") : "Actif"}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 truncate text-sm text-slate-600">{formatFileLabel(document.fileUrl)}</p>
+                            <p className="mt-1 text-[11px] text-slate-400">
+                              Téléversé le {formatDate(document.uploadedAt)}
+                            </p>
+                          </div>
+                        </div>
 
-                  <DocumentSlot
-                    label="Permis de conduire"
-                    helperText="12/34567"
-                    icon={IdCard}
-                    accentClassName="bg-emerald-50 text-emerald-600"
-                    existingDocument={drivingDoc}
-                    onUploaded={refreshProfile}
-                    docType="PERMIS_CONDUIRE"
-                  />
-
-                  <DocumentSlot
-                    label="Passeport (facultatif)"
-                    helperText="P12345678"
-                    icon={FileText}
-                    accentClassName="bg-orange-50 text-orange-500"
-                    existingDocument={passportDoc}
-                    onUploaded={refreshProfile}
-                    docType="PASSPORT"
-                  />
-
-                  <DocumentSlot
-                    label="Justificatif de domicile"
-                    helperText="Facture CIE - Janvier 2026"
-                    icon={MapPin}
-                    accentClassName="bg-sky-50 text-sky-600"
-                    existingDocument={addressDoc}
-                    onUploaded={refreshProfile}
-                    docType="AUTRE"
-                  />
-                </div>
+                        <div className="flex flex-wrap gap-2">
+                          <DocumentDownloadButton
+                            fileUrl={document.fileUrl}
+                            filename={formatFileLabel(document.fileUrl)}
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full border-slate-200 bg-white text-slate-700"
+                          >
+                            Télécharger
+                          </DocumentDownloadButton>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
+                    Aucun document n’a encore été téléversé.
+                  </div>
+                )}
               </CardContent>
             </Card>
 

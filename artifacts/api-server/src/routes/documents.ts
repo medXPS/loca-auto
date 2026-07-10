@@ -20,12 +20,107 @@ async function getRentalRequestById(rentalRequestId: number) {
   return request ?? null;
 }
 
-async function getDocumentsForRentalRequest(rentalRequestId: number) {
-  return db
+type DocumentType = typeof schema.documentsTable.$inferSelect["type"];
+type DocumentRow = typeof schema.documentsTable.$inferSelect;
+
+async function getDocumentsForRentalRequest(rentalRequestId: number): Promise<DocumentRow[]> {
+  const documents = await db
     .select()
     .from(schema.documentsTable)
     .where(eq(schema.documentsTable.rentalRequestId, rentalRequestId))
-    .orderBy(desc(schema.documentsTable.uploadedAt));
+    .orderBy(desc(schema.documentsTable.uploadedAt), desc(schema.documentsTable.id));
+
+  const latestDocumentsByType = new Map<DocumentType, DocumentRow>();
+  for (const document of documents) {
+    if (!latestDocumentsByType.has(document.type)) {
+      latestDocumentsByType.set(document.type, document);
+    }
+  }
+
+  const latestDocuments = [...latestDocumentsByType.values()];
+  const latestDocumentIds = new Set(latestDocuments.map((document) => document.id));
+  const staleDocuments = documents.filter((document) => !latestDocumentIds.has(document.id));
+
+  if (staleDocuments.length > 0) {
+    await db.delete(schema.documentsTable).where(inArray(schema.documentsTable.id, staleDocuments.map((document) => document.id)));
+
+    const staleFileUrls = [...new Set(staleDocuments.map((document) => document.fileUrl))];
+    for (const fileUrl of staleFileUrls) {
+      const [remaining] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(schema.documentsTable)
+        .where(eq(schema.documentsTable.fileUrl, fileUrl));
+
+      if ((remaining?.count ?? 0) === 0) {
+        await deleteStoredUploadFile(fileUrl);
+      }
+    }
+  }
+
+  return latestDocuments;
+}
+
+function getStoredUploadFileName(fileUrl: string) {
+  const cleanUrl = String(fileUrl ?? "").split("?")[0].split("#")[0];
+  const fileName = path.basename(cleanUrl);
+  return fileName || null;
+}
+
+async function deleteStoredUploadFile(fileUrl: string) {
+  const fileName = getStoredUploadFileName(fileUrl);
+  if (!fileName) {
+    return;
+  }
+
+  const filePath = findStoredUploadPath(fileName);
+  if (!filePath) {
+    return;
+  }
+
+  try {
+    await fs.unlink(filePath);
+  } catch {
+    // Ignore missing files so cleanup never blocks document saves.
+  }
+}
+
+async function pruneDuplicateDocuments(params: {
+  customerId: number;
+  type: DocumentType;
+  rentalRequestId: number | null;
+  keepId: number;
+}) {
+  const scopeConditions = [
+    eq(schema.documentsTable.customerId, params.customerId),
+    eq(schema.documentsTable.type, params.type),
+    params.rentalRequestId != null
+      ? eq(schema.documentsTable.rentalRequestId, params.rentalRequestId)
+      : sql`${schema.documentsTable.rentalRequestId} IS NULL`,
+  ];
+
+  const duplicates = await db
+    .select()
+    .from(schema.documentsTable)
+    .where(and(...scopeConditions, sql`${schema.documentsTable.id} <> ${params.keepId}`))
+    .orderBy(desc(schema.documentsTable.uploadedAt), desc(schema.documentsTable.id));
+
+  if (duplicates.length === 0) {
+    return;
+  }
+
+  await db.delete(schema.documentsTable).where(inArray(schema.documentsTable.id, duplicates.map((document) => document.id)));
+
+  const staleFileUrls = [...new Set(duplicates.map((document) => document.fileUrl).filter(Boolean))];
+  for (const fileUrl of staleFileUrls) {
+    const [remaining] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.documentsTable)
+      .where(eq(schema.documentsTable.fileUrl, fileUrl));
+
+    if ((remaining?.count ?? 0) === 0) {
+      await deleteStoredUploadFile(fileUrl);
+    }
+  }
 }
 
 // POST /api/documents
@@ -34,6 +129,7 @@ router.post("/", authMiddleware, async (req, res) => {
     await expireStaleAvailabilityLocks();
 
     const { rentalRequestId, type, fileUrl } = req.body;
+    const documentType = String(type) as DocumentType;
     const customerId = await getCurrentCustomerId(req.user!.userId);
     if (!customerId) {
       res.status(404).json({ error: "Profil client non trouve" });
@@ -57,7 +153,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
     const existingConditions = [
       eq(schema.documentsTable.customerId, customerId),
-      eq(schema.documentsTable.type, type),
+      eq(schema.documentsTable.type, documentType),
       requestId
         ? eq(schema.documentsTable.rentalRequestId, requestId)
         : sql`${schema.documentsTable.rentalRequestId} IS NULL`,
@@ -65,6 +161,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
     const [existing] = await db.select().from(schema.documentsTable)
       .where(and(...existingConditions))
+      .orderBy(desc(schema.documentsTable.uploadedAt), desc(schema.documentsTable.id))
       .limit(1);
 
     let doc;
@@ -81,35 +178,66 @@ router.post("/", authMiddleware, async (req, res) => {
       [doc] = await db.insert(schema.documentsTable).values({
         customerId,
         rentalRequestId: requestId,
-        type,
+        type: documentType,
         fileUrl,
         status: "PENDING",
       }).returning();
     }
 
-    const [profileDocument] = await db.select().from(schema.documentsTable)
-      .where(and(
-        eq(schema.documentsTable.customerId, customerId),
-        eq(schema.documentsTable.type, type),
-        sql`${schema.documentsTable.rentalRequestId} IS NULL`,
-      ))
-      .limit(1);
+    if (!doc) {
+      throw new Error("Failed to persist document");
+    }
 
-    if (profileDocument) {
-      await db.update(schema.documentsTable)
-        .set({
+    let profileDocument = doc;
+    if (requestId) {
+      const [currentProfileDocument] = await db
+        .select()
+        .from(schema.documentsTable)
+          .where(and(
+            eq(schema.documentsTable.customerId, customerId),
+            eq(schema.documentsTable.type, documentType),
+            sql`${schema.documentsTable.rentalRequestId} IS NULL`,
+          ))
+        .orderBy(desc(schema.documentsTable.uploadedAt), desc(schema.documentsTable.id))
+        .limit(1);
+
+      if (currentProfileDocument) {
+        [profileDocument] = await db.update(schema.documentsTable)
+          .set({
+            fileUrl,
+            status: "PENDING",
+            uploadedAt: new Date(),
+          })
+          .where(eq(schema.documentsTable.id, currentProfileDocument.id))
+          .returning();
+      } else {
+        [profileDocument] = await db.insert(schema.documentsTable).values({
+          customerId,
+          rentalRequestId: null,
+          type: documentType,
           fileUrl,
           status: "PENDING",
-          uploadedAt: new Date(),
-        })
-        .where(eq(schema.documentsTable.id, profileDocument.id));
-    } else {
-      await db.insert(schema.documentsTable).values({
+        }).returning();
+      }
+    }
+
+    if (!profileDocument) {
+      throw new Error("Failed to persist profile document");
+    }
+
+    await pruneDuplicateDocuments({
+      customerId,
+      type: documentType,
+      rentalRequestId: requestId,
+      keepId: doc.id,
+    });
+
+    if (requestId && profileDocument.id !== doc.id) {
+      await pruneDuplicateDocuments({
         customerId,
+        type: documentType,
         rentalRequestId: null,
-        type,
-        fileUrl,
-        status: "PENDING",
+        keepId: profileDocument.id,
       });
     }
 
