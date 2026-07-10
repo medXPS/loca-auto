@@ -1039,48 +1039,47 @@ export default function CustomerProfile() {
                 <QuickDocumentDropzone onUploaded={refreshProfile} />
 
                 {currentDocuments.length > 0 ? (
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                    {currentDocuments.map((document) => (
-                      <div
-                        key={document.id}
-                        className="flex min-w-0 flex-col gap-3 rounded-[1.2rem] border border-slate-200 bg-white p-4 shadow-[0_16px_34px_-28px_rgba(15,23,42,0.16)]"
-                      >
-                        <div className="flex min-w-0 items-start gap-3">
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-slate-500">
-                            <FileText className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="truncate text-sm font-semibold text-slate-950">
-                                {getDocumentTypeLabel(document.type)}
-                              </p>
-                              <Badge
-                                variant="secondary"
-                                className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
-                              >
-                                {document.status ? getStatusLabel(document.status, "document") : "Actif"}
-                              </Badge>
+                  <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white">
+                    <ul className="divide-y divide-slate-200">
+                      {currentDocuments.map((document) => (
+                        <li key={document.id} className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex min-w-0 items-start gap-3">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-50 text-slate-500">
+                              <FileText className="h-5 w-5" />
                             </div>
-                            <p className="mt-1 truncate text-sm text-slate-600">{formatFileLabel(document.fileUrl)}</p>
-                            <p className="mt-1 text-[11px] text-slate-400">
-                              Téléversé le {formatDate(document.uploadedAt)}
-                            </p>
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="truncate text-sm font-semibold text-slate-950">
+                                  {getDocumentTypeLabel(document.type)}
+                                </p>
+                                <Badge
+                                  variant="secondary"
+                                  className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em]"
+                                >
+                                  {document.status ? getStatusLabel(document.status, "document") : "Actif"}
+                                </Badge>
+                              </div>
+                              <p className="mt-1 truncate text-sm text-slate-600">{formatFileLabel(document.fileUrl)}</p>
+                              <p className="mt-1 text-[11px] text-slate-400">
+                                Téléversé le {formatDate(document.uploadedAt)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="flex flex-wrap gap-2">
-                          <DocumentDownloadButton
-                            fileUrl={document.fileUrl}
-                            filename={formatFileLabel(document.fileUrl)}
-                            variant="outline"
-                            size="sm"
-                            className="rounded-full border-slate-200 bg-white text-slate-700"
-                          >
-                            Télécharger
-                          </DocumentDownloadButton>
-                        </div>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-3 sm:shrink-0">
+                            <DocumentDownloadButton
+                              fileUrl={document.fileUrl}
+                              filename={formatFileLabel(document.fileUrl)}
+                              variant="outline"
+                              size="sm"
+                              className="rounded-full border-slate-200 bg-white text-slate-700"
+                            >
+                              Télécharger
+                            </DocumentDownloadButton>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
